@@ -17,11 +17,10 @@ public static class GameSessionInfoLoadPatches
             return;
 
         int slotId = MimesisSaveManager.GetCurrentSaveSlotId();
-        if (!MMSaveGameData.CheckSaveSlotID(slotId, true))
+        if (!MimesisSaveManager.IsValidSaveSlotId(slotId))
             return;
 
         StatisticsTracker.LoadForSlot(slotId);
-        StatisticsTracker.RegisterConnectedPlayers();
     }
 }
 

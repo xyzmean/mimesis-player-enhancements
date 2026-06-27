@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using HarmonyLib;
+using MimesisPlayerEnhancement.Features.Persistence;
 using ReluProtocol.Enum;
 
 namespace MimesisPlayerEnhancement.Features.Statistics.Patches;
@@ -13,6 +14,8 @@ public static class StatisticsMaintenanceRoomSavePatches
         if (!ModConfig.EnableStatistics.Value)
             return;
         if (__result != MsgErrorCode.Success)
+            return;
+        if (!MimesisSaveManager.IsHost())
             return;
 
         int slotId = isAutoSave ? 0 : saveSlotID;

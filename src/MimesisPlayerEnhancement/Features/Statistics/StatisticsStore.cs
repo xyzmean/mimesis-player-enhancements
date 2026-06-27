@@ -40,15 +40,6 @@ public static class StatisticsStore
         return Path.Combine(root, LeaderboardFile);
     }
 
-    public static bool IsActiveHostWithSlot()
-    {
-        if (!MimesisSaveManager.IsHost()) return false;
-        int slotId = MimesisSaveManager.GetCurrentSaveSlotId();
-        return MMSaveGameData.CheckSaveSlotID(slotId, true);
-    }
-
-    public static int GetActiveSlotId() => MimesisSaveManager.GetCurrentSaveSlotId();
-
     public static void SafeWriteText(string filePath, string text)
     {
         string tmpPath = filePath + TempSuffix;

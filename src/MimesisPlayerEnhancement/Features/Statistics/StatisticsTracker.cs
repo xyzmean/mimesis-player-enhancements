@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using Mimic.Actors;
 using Mimic.Voice.SpeechSystem;
+using MimesisPlayerEnhancement.Features.Persistence;
 using MimesisPlayerEnhancement.Features.Statistics.Models;
 using ReluProtocol;
 using UnityEngine;
@@ -50,6 +51,7 @@ public static class StatisticsTracker
 
     public static void LoadForSlot(int slotId)
     {
+        if (!MimesisSaveManager.IsValidSaveSlotId(slotId)) return;
         if (slotId == _loadedSlotId) return;
         _loadedSlotId = slotId;
         _players.Clear();
@@ -63,43 +65,30 @@ public static class StatisticsTracker
         ModLog.Info(Feature, $"Loaded statistics for save slot {slotId} ({_players.Count} players).");
     }
 
-    /// <summary>
-    /// Registers players whose archives are active but were missed by earlier hooks
-    /// (e.g. before SaveSlotID was available).
-    /// </summary>
-    public static void RegisterConnectedPlayers()
+    internal static void HandleArchiveStarted(SpeechEventArchive archive, int slotId)
     {
-        if (!CanTrack()) return;
+        if (!ModConfig.EnableStatistics.Value) return;
+        if (!MimesisSaveManager.IsValidSaveSlotId(slotId)) return;
 
-        int slotId = StatisticsStore.GetActiveSlotId();
-        LoadForSlot(slotId);
+        if (slotId != _loadedSlotId)
+            LoadForSlot(slotId);
 
-        try
-        {
-            var archives = UnityEngine.Object.FindObjectsByType<SpeechEventArchive>(FindObjectsSortMode.None);
-            if (archives == null) return;
+        if (!IsArchiveIdentityReady(archive))
+            return;
 
-            foreach (var archive in archives)
-            {
-                if (archive == null) continue;
-                ulong steamId = ResolveSteamIdFromArchive(archive);
-                if (steamId == 0) continue;
-                OnPlayerRegistered(steamId);
-            }
-        }
-        catch (Exception ex)
-        {
-            ModLog.Warn(Feature, $"RegisterConnectedPlayers: {ex.Message}");
-        }
+        ulong steamId = ResolveSteamIdFromArchive(archive);
+        if (steamId == 0) return;
+
+        OnPlayerRegistered(steamId, slotId);
     }
 
-    public static void OnPlayerRegistered(ulong steamId)
+    public static void OnPlayerRegistered(ulong steamId, int slotId)
     {
-        if (!CanTrack()) return;
+        if (!ModConfig.EnableStatistics.Value) return;
         if (steamId == 0) return;
+        if (!MimesisSaveManager.IsValidSaveSlotId(slotId)) return;
         if (_connectedSince.ContainsKey(steamId)) return;
 
-        int slotId = StatisticsStore.GetActiveSlotId();
         LoadForSlot(slotId);
 
         var doc = GetOrCreatePlayer(steamId);
@@ -139,7 +128,6 @@ public static class StatisticsTracker
         if (!CanTrack()) return;
         if (steamId == 0) return;
 
-        int slotId = StatisticsStore.GetActiveSlotId();
         if (!_players.TryGetValue(steamId, out var doc))
             doc = GetOrCreatePlayer(steamId);
 
@@ -152,8 +140,8 @@ public static class StatisticsTracker
         }
 
         ModLog.Info(Feature, $"Player disconnected — steamId={steamId} displayName={doc.DisplayName}");
-        StatisticsStore.SavePlayer(slotId, doc);
-        PersistLeaderboard(slotId);
+        StatisticsStore.SavePlayer(_loadedSlotId, doc);
+        PersistLeaderboard(_loadedSlotId);
         InGameMessageHelper.ShowLeave(doc.DisplayName);
     }
 
@@ -163,7 +151,7 @@ public static class StatisticsTracker
 
         int graceMinutes = ModConfig.SessionReconnectGraceMinutes.Value;
         var now = DateTime.UtcNow;
-        int slotId = StatisticsStore.GetActiveSlotId();
+        int slotId = _loadedSlotId;
         bool changed = false;
 
         foreach (var kvp in _players)
@@ -182,12 +170,16 @@ public static class StatisticsTracker
             changed = true;
         }
 
+        var connectedSteamIds = new List<ulong>();
         foreach (var kvp in _connectedSince)
+            connectedSteamIds.Add(kvp.Key);
+
+        foreach (ulong steamId in connectedSteamIds)
         {
-            if (!_players.TryGetValue(kvp.Key, out var doc)) continue;
+            if (!_players.TryGetValue(steamId, out var doc)) continue;
             if (doc.CurrentSession?.LastDisconnectedAtUtc.HasValue == true)
                 continue;
-            FlushConnectedTime(kvp.Key, doc);
+            FlushConnectedTime(steamId, doc);
         }
 
         if (changed)
@@ -198,8 +190,7 @@ public static class StatisticsTracker
     {
         if (!CanTrack()) return;
 
-        int slotId = StatisticsStore.GetActiveSlotId();
-        LoadForSlot(slotId);
+        int slotId = _loadedSlotId;
 
         long currencyNow = manager?.AccumulatedCurrency ?? 0;
         long currencyDelta = Math.Max(0, currencyNow - _lastCurrencyBaseline);
@@ -237,7 +228,11 @@ public static class StatisticsTracker
         foreach (ulong steamId in _connectedSince.Keys)
             affected.Add(steamId);
 
+        var connectedSteamIds = new List<ulong>();
         foreach (ulong steamId in _connectedSince.Keys)
+            connectedSteamIds.Add(steamId);
+
+        foreach (ulong steamId in connectedSteamIds)
         {
             if (_players.TryGetValue(steamId, out var connectedDoc))
                 FlushConnectedTime(steamId, connectedDoc);
@@ -264,9 +259,9 @@ public static class StatisticsTracker
 
     public static void OnGameSaved(int slotId)
     {
-        if (!MimesisPlayerEnhancement.Features.Persistence.MimesisSaveManager.IsHost()) return;
+        if (!MimesisSaveManager.IsHost()) return;
         if (!ModConfig.EnableStatistics.Value) return;
-        if (!MMSaveGameData.CheckSaveSlotID(slotId, true)) return;
+        if (!MimesisSaveManager.IsValidSaveSlotId(slotId)) return;
 
         LoadForSlot(slotId);
         foreach (var doc in _players.Values)
@@ -342,18 +337,20 @@ public static class StatisticsTracker
 
     private static void PersistCombatStats(ulong steamId, PlayerStatisticsDocument doc)
     {
-        int slotId = StatisticsStore.GetActiveSlotId();
-        StatisticsStore.SavePlayer(slotId, doc);
+        StatisticsStore.SavePlayer(_loadedSlotId, doc);
     }
 
     private static bool CanTrack() =>
-        ModConfig.EnableStatistics.Value && StatisticsStore.IsActiveHostWithSlot();
+        ModConfig.EnableStatistics.Value
+        && MimesisSaveManager.IsHost()
+        && _loadedSlotId >= 0
+        && MimesisSaveManager.IsValidSaveSlotId(_loadedSlotId);
 
     private static PlayerStatisticsDocument GetOrCreatePlayer(ulong steamId)
     {
         if (!_players.TryGetValue(steamId, out var doc))
         {
-            doc = StatisticsStore.LoadPlayer(StatisticsStore.GetActiveSlotId(), steamId);
+            doc = StatisticsStore.LoadPlayer(_loadedSlotId, steamId);
             doc.SteamId = steamId;
             _players[steamId] = doc;
         }
@@ -613,6 +610,35 @@ public static class StatisticsTracker
         }
 
         return ResolveSteamIdFromUid(playerUid, isLocal);
+    }
+
+    private static bool IsArchiveIdentityReady(SpeechEventArchive archive)
+    {
+        long playerUid = 0;
+        bool isLocal = false;
+        try
+        {
+            playerUid = archive.PlayerUID;
+            isLocal = archive.IsLocal;
+        }
+        catch
+        {
+            return false;
+        }
+
+        if (!isLocal && playerUid == 0)
+        {
+            try
+            {
+                return !string.IsNullOrEmpty(archive.PlayerId);
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private static ulong ResolveSteamIdFromActor(ProtoActor actor)

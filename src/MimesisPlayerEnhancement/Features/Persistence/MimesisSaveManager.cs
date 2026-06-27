@@ -316,6 +316,15 @@ namespace MimesisPlayerEnhancement.Features.Persistence
             catch { return -1; }
         }
 
+        public static bool IsValidSaveSlotId(int slotId) =>
+            MMSaveGameData.CheckSaveSlotID(slotId, true);
+
+        public static bool TryGetActiveSaveSlotId(out int slotId)
+        {
+            slotId = GetCurrentSaveSlotId();
+            return IsHost() && IsValidSaveSlotId(slotId);
+        }
+
         public static object? GetHubMember(string name)
         {
             if (Hub.s == null) return null;

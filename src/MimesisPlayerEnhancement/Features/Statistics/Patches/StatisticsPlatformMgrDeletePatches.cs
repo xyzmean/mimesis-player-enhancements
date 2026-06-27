@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using HarmonyLib;
+using MimesisPlayerEnhancement.Features.Persistence;
 using ReluProtocol;
 
 namespace MimesisPlayerEnhancement.Features.Statistics.Patches;
@@ -22,7 +23,7 @@ public static class StatisticsPlatformMgrDeletePatches
                 return;
 
             string slotStr = Path.GetFileNameWithoutExtension(fileName).Replace("MMGameData", "");
-            if (int.TryParse(slotStr, out int slotId) && MMSaveGameData.CheckSaveSlotID(slotId, true))
+            if (int.TryParse(slotStr, out int slotId) && MimesisSaveManager.IsValidSaveSlotId(slotId))
                 StatisticsStore.DeleteStatisticsData(slotId);
         }
         catch (Exception ex)

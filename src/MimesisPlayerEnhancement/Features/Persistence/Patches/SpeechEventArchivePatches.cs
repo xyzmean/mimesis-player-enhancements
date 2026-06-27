@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using HarmonyLib;
 using Mimic.Voice.SpeechSystem;
+using MimesisPlayerEnhancement.Features.Statistics;
 using ReluProtocol;
 
 namespace MimesisPlayerEnhancement.Features.Persistence.Patches
@@ -20,25 +21,38 @@ namespace MimesisPlayerEnhancement.Features.Persistence.Patches
         [HarmonyPostfix]
         public static void Postfix(SpeechEventArchive __instance)
         {
-            if (!ModConfig.EnablePersistence.Value)
-                return;
-
             try
             {
                 if (!MimesisSaveManager.IsHost())
                 {
-                    ModLog.Debug(Feature, $"Archive started (non-host) — {VoiceEventStats.DescribePlayer(__instance)}");
+                    if (ModConfig.EnablePersistence.Value)
+                        ModLog.Debug(Feature, $"Archive started (non-host) — {VoiceEventStats.DescribePlayer(__instance)}");
                     return;
                 }
 
                 int slotId = MimesisSaveManager.GetCurrentSaveSlotId();
-                if (!MMSaveGameData.CheckSaveSlotID(slotId, true))
+                if (!MimesisSaveManager.IsValidSaveSlotId(slotId))
                 {
-                    ModLog.Debug(Feature, $"Archive started outside save slot — {VoiceEventStats.DescribePlayer(__instance)}");
+                    if (ModConfig.EnablePersistence.Value)
+                        ModLog.Debug(Feature, $"Archive started outside save slot — {VoiceEventStats.DescribePlayer(__instance)}");
                     return;
                 }
 
-                if (slotId != _poolLoadedForSlot)
+                if (ModConfig.EnablePersistence.Value)
+                    HandlePersistence(__instance, slotId);
+
+                if (ModConfig.EnableStatistics.Value)
+                    StatisticsTracker.HandleArchiveStarted(__instance, slotId);
+            }
+            catch (Exception ex)
+            {
+                ModLog.Warn(Feature, $"SpeechEventArchive inject failed: {ex.Message}");
+            }
+        }
+
+        private static void HandlePersistence(SpeechEventArchive __instance, int slotId)
+        {
+            if (slotId != _poolLoadedForSlot)
                 {
                     _poolLoadedForSlot = slotId;
                     SpeechEventPoolManager.Reset();
@@ -177,11 +191,6 @@ namespace MimesisPlayerEnhancement.Features.Persistence.Patches
                     Feature,
                     $"Archive detail — slot={slotId} time={currentTime:F1} poolState={counts.pending}P/{counts.injected}I/0F " +
                     $"disconnectedCache={SpeechEventPoolManager.DisconnectedCacheCount}");
-            }
-            catch (Exception ex)
-            {
-                ModLog.Warn(Feature, $"SpeechEventArchive inject failed: {ex.Message}");
-            }
         }
 
     }
