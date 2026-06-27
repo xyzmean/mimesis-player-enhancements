@@ -42,7 +42,36 @@ After the first launch, the mod creates a config file here:
 
 You can edit it anytime. The game reloads the file while running, but **most changes only fully apply after a restart**. Some settings may not update correctly until you quit and start again.
 
-Turn features on or off and tweak limits (player cap, voice count, etc.) in that file.
+### Options
+
+| Key | Type | Default | What it does |
+|-----|------|---------|--------------|
+| `EnableMorePlayers` | bool | `true` | Turn the higher player cap on or off. When off, the game stays at 4 players. |
+| `MaxPlayers` | int | `999` | Max players in a session, host included. `1` = solo, `2` = host + one friend, and so on. Minimum is `1`. |
+| `EnableMoreVoices` | bool | `true` | Turn higher voice recording limits on or off. |
+| `MaxVoiceEvents` | int | `3000` | How many mimic voice lines each player can store. The normal game limit is much lower. Minimum is `1`. |
+| `EnablePersistence` | bool | `true` | Save mimic voices when you save the game and bring them back when you load. |
+| `EnableStatistics` | bool | `true` | Track player stats (deaths, kills, voice events, play time, etc.) per save slot. Host only. |
+| `SessionReconnectGraceMinutes` | int | `5` | If someone disconnects and rejoins within this many minutes, their stats session continues instead of starting fresh. Minimum is `1`. |
+| `ShowStatisticsToasts` | bool | `true` | Show small join/leave/cycle messages in the bottom-left corner when statistics are enabled. |
+| `EnableJoinAnytime` | bool | `true` | Let players join after a round has already started. Every player in the lobby needs the mod for this. |
+| `EnableDebugLogging` | bool | `false` | Write extra detail to the MelonLoader console. Useful for troubleshooting; leave off for normal play. |
+
+Example:
+
+```toml
+[MimesisPlayerEnhancement]
+EnableMorePlayers = true
+MaxPlayers = 32
+EnableMoreVoices = true
+MaxVoiceEvents = 3000
+EnablePersistence = true
+EnableStatistics = true
+SessionReconnectGraceMinutes = 5
+ShowStatisticsToasts = true
+EnableJoinAnytime = true
+EnableDebugLogging = false
+```
 
 ## Build from source
 
