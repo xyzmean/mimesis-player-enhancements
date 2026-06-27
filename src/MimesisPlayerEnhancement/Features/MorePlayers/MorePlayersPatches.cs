@@ -30,80 +30,20 @@ public static class MorePlayersPatches
     {
         _ = GameNetworkApi.GetGameAssembly();
 
-        var patchTypes = typeof(MorePlayersPatches).GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic)
-            .Where(t => t.GetCustomAttributes(typeof(HarmonyPatch), false).Length > 0);
-
-        foreach (var patchType in patchTypes)
-        {
-            try
-            {
-                var patchedMethods = harmony.CreateClassProcessor(patchType).Patch();
-                if (patchedMethods == null || patchedMethods.Count == 0)
-                    ModLog.Warn(Feature, $"Patch class {patchType.Name} did not apply to any methods.");
-            }
-            catch (Exception ex)
-            {
-                ModLog.Warn(Feature, $"Patch class {patchType.Name} failed: {ex.Message}");
-            }
-        }
+        var result = HarmonyPatchHelper.ApplyPatchTypes(
+            harmony,
+            Feature,
+            HarmonyPatchHelper.GetNestedPatchTypes(typeof(MorePlayersPatches)));
 
         LogPatchAudit(harmony);
-        ModLog.Info(Feature, "Patches applied.");
-    }
-
-    private static bool IsPatched(IReadOnlyCollection<MethodBase> patched, MethodBase? expected)
-    {
-        if (expected == null)
-            return false;
-
-        foreach (var candidate in patched)
-        {
-            if (candidate.MetadataToken == expected.MetadataToken && ReferenceEquals(candidate.Module, expected.Module))
-                return true;
-
-            if (candidate.Name != expected.Name)
-                continue;
-
-            if (candidate.DeclaringType != expected.DeclaringType)
-                continue;
-
-            var candidateParams = candidate.GetParameters();
-            var expectedParams = expected.GetParameters();
-            if (candidateParams.Length != expectedParams.Length)
-                continue;
-
-            bool paramsMatch = true;
-            for (int i = 0; i < candidateParams.Length; i++)
-            {
-                if (candidateParams[i].ParameterType != expectedParams[i].ParameterType)
-                {
-                    paramsMatch = false;
-                    break;
-                }
-            }
-
-            if (paramsMatch)
-                return true;
-        }
-
-        return false;
+        HarmonyPatchHelper.LogPatchSummary(Feature, result);
     }
 
     private static void LogPatchAudit(HarmonyLib.Harmony harmony)
     {
-        var patched = harmony.GetPatchedMethods().ToList();
-        var applied = new List<string>();
-        var missing = new List<string>();
+        var checks = new List<(string label, MethodBase? method)>();
 
-        void Check(string label, MethodBase? method)
-        {
-            if (method == null)
-                missing.Add($"{label} (type/method not found)");
-            else if (IsPatched(patched, method))
-                applied.Add(label);
-            else
-                missing.Add(label);
-        }
+        void Check(string label, MethodBase? method) => checks.Add((label, method));
 
         Check("CanEnterChannel/IVroom", ResolveRoomMethod("IVroom", "CanEnterChannel"));
         Check("CanEnterChannel/VWaitingRoom", ResolveRoomMethod("VWaitingRoom", "CanEnterChannel"));
@@ -125,11 +65,7 @@ public static class MorePlayersPatches
         Check("EnterWaitingRoom/VRoomManager", ResolveVRoomManagerMethod("EnterWaitingRoom"));
         Check("EnterMaintenenceRoom/VRoomManager", ResolveVRoomManagerMethod("EnterMaintenenceRoom"));
 
-        if (applied.Count > 0)
-            ModLog.Debug(Feature, $"Patch audit — applied: {string.Join(", ", applied)}");
-
-        foreach (string label in missing)
-            ModLog.Warn(Feature, $"Patch audit — not applied: {label}");
+        HarmonyPatchHelper.LogPatchAudit(Feature, harmony, checks);
     }
 
     /// <summary>Re-applies player-cap limits to live networking state after config changes.</summary>

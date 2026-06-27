@@ -1,5 +1,7 @@
-using System.Linq;
+using System.Reflection;
 using HarmonyLib;
+using Mimic.Voice.SpeechSystem;
+using MimesisPlayerEnhancement.Util;
 
 namespace MimesisPlayerEnhancement.Features.Persistence;
 
@@ -9,14 +11,24 @@ public static class PersistencePatches
 
     public static void Apply(HarmonyLib.Harmony harmony)
     {
-        var patchNamespace = typeof(PersistencePatches).Namespace + ".Patches";
-        var patchTypes = typeof(PersistencePatches).Assembly
-            .GetTypes()
-            .Where(t => t.Namespace == patchNamespace && t.GetCustomAttributes(typeof(HarmonyPatch), false).Length > 0);
+        var result = HarmonyPatchHelper.ApplyPatchTypes(
+            harmony,
+            Feature,
+            HarmonyPatchHelper.GetNamespacePatchTypes(typeof(PersistencePatches)));
 
-        foreach (var type in patchTypes)
-            harmony.CreateClassProcessor(type).Patch();
+        LogPatchAudit(harmony);
+        HarmonyPatchHelper.LogPatchSummary(Feature, result);
+    }
 
-        ModLog.Info(Feature, "Patches applied.");
+    private static void LogPatchAudit(HarmonyLib.Harmony harmony)
+    {
+        HarmonyPatchHelper.LogPatchAudit(Feature, harmony, new (string, MethodBase?)[]
+        {
+            ("Delete/PlatformMgr", AccessTools.Method(typeof(PlatformMgr), nameof(PlatformMgr.Delete))),
+            ("SaveGameData/MaintenanceRoom", AccessTools.Method(typeof(MaintenanceRoom), nameof(MaintenanceRoom.SaveGameData))),
+            ("OnStartClient/SpeechEventArchive", AccessTools.Method(typeof(SpeechEventArchive), "OnStartClient")),
+            ("OnStopClient/SpeechEventArchive", AccessTools.Method(typeof(SpeechEventArchive), nameof(SpeechEventArchive.OnStopClient))),
+            ("GetRandomOtherSpeechEventArchive/VoiceManager", AccessTools.Method(typeof(VoiceManager), "GetRandomOtherSpeechEventArchive")),
+        });
     }
 }

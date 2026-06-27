@@ -1,5 +1,6 @@
-using System.Linq;
+using System.Reflection;
 using HarmonyLib;
+using MimesisPlayerEnhancement.Util;
 
 namespace MimesisPlayerEnhancement.Features.Statistics;
 
@@ -9,14 +10,28 @@ public static class StatisticsPatches
 
     public static void Apply(HarmonyLib.Harmony harmony)
     {
-        var patchNamespace = typeof(StatisticsPatches).Namespace + ".Patches";
-        var patchTypes = typeof(StatisticsPatches).Assembly
-            .GetTypes()
-            .Where(t => t.Namespace == patchNamespace && t.GetCustomAttributes(typeof(HarmonyPatch), false).Length > 0);
+        var result = HarmonyPatchHelper.ApplyPatchTypes(
+            harmony,
+            Feature,
+            HarmonyPatchHelper.GetNamespacePatchTypes(typeof(StatisticsPatches)));
 
-        foreach (var type in patchTypes)
-            harmony.CreateClassProcessor(type).Patch();
+        LogPatchAudit(harmony);
+        HarmonyPatchHelper.LogPatchSummary(Feature, result);
+    }
 
-        ModLog.Info(Feature, "Patches applied.");
+    private static void LogPatchAudit(HarmonyLib.Harmony harmony)
+    {
+        HarmonyPatchHelper.LogPatchAudit(Feature, harmony, new (string, MethodBase?)[]
+        {
+            ("IncreaseCycleCount/PlayReportManager", AccessTools.Method(typeof(PlayReportManager), nameof(PlayReportManager.IncreaseCycleCount))),
+            ("OnRegistPlayer/VRoomManager", AccessTools.Method(typeof(VRoomManager), nameof(VRoomManager.OnRegistPlayer))),
+            ("ApplyLoadedGameData/GameSessionInfo", AccessTools.Method(typeof(GameSessionInfo), nameof(GameSessionInfo.ApplyLoadedGameData))),
+            ("OnPlayerDeath/GameMainBase", AccessTools.Method(typeof(GameMainBase), nameof(GameMainBase.OnPlayerDeath))),
+            ("OnPlayerRevive/GameMainBase", AccessTools.Method(typeof(GameMainBase), nameof(GameMainBase.OnPlayerRevive))),
+            ("OnKillCountChanged/GameMainBase", AccessTools.Method(typeof(GameMainBase), nameof(GameMainBase.OnKillCountChanged))),
+            ("Delete/PlatformMgr", AccessTools.Method(typeof(PlatformMgr), nameof(PlatformMgr.Delete))),
+            ("SaveGameData/MaintenanceRoom", AccessTools.Method(typeof(MaintenanceRoom), nameof(MaintenanceRoom.SaveGameData))),
+            ("OnUnregistPlayer/VWorld", AccessTools.Method(typeof(VWorld), nameof(VWorld.OnUnregistPlayer))),
+        });
     }
 }

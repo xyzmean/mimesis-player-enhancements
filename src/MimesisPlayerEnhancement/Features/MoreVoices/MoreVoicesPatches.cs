@@ -3,6 +3,7 @@ using System.Linq;
 using System.Reflection;
 using HarmonyLib;
 using Mimic.Voice.SpeechSystem;
+using MimesisPlayerEnhancement.Util;
 using UnityEngine;
 
 namespace MimesisPlayerEnhancement.Features.MoreVoices;
@@ -28,28 +29,13 @@ public static class MoreVoicesPatches
         if (MaxEventsField == null || MaxDeathMatchEventsField == null || MaxOutDoorEventsField == null)
             ModLog.Warn(Feature, "One or more SpeechEventArchive limit fields not found — voice cap patches may not apply");
 
-        var patchTypes = typeof(MoreVoicesPatches).GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic)
-            .Where(t => t.GetCustomAttributes(typeof(HarmonyPatch), false).Length > 0);
+        var result = HarmonyPatchHelper.ApplyPatchTypes(
+            harmony,
+            Feature,
+            HarmonyPatchHelper.GetNestedPatchTypes(typeof(MoreVoicesPatches)));
 
-        int applied = 0;
-        foreach (var patchType in patchTypes)
-        {
-            try
-            {
-                var results = harmony.CreateClassProcessor(patchType).Patch();
-                if (results != null)
-                    applied += results.Count;
-            }
-            catch (Exception ex)
-            {
-                ModLog.Warn(Feature, $"Patch class {patchType.Name} failed: {ex.Message}");
-            }
-        }
-
-        if (applied == 0)
-            ModLog.Warn(Feature, "SpeechEventArchive.OnStartClient patch not applied");
-        else
-            ModLog.Info(Feature, "Patches applied.");
+        LogPatchAudit(harmony);
+        HarmonyPatchHelper.LogPatchSummary(Feature, result);
     }
 
     /// <summary>Updates voice limits on all live archives after config changes.</summary>
@@ -78,6 +64,14 @@ public static class MoreVoicesPatches
         {
             ModLog.Debug(Feature, $"Voice limit refresh complete — maxCap={max}, no active archives.");
         }
+    }
+
+    private static void LogPatchAudit(HarmonyLib.Harmony harmony)
+    {
+        HarmonyPatchHelper.LogPatchAudit(Feature, harmony, new (string, MethodBase?)[]
+        {
+            ("OnStartClient/SpeechEventArchive", AccessTools.Method(typeof(SpeechEventArchive), "OnStartClient")),
+        });
     }
 
     [HarmonyPatch(typeof(SpeechEventArchive), "OnStartClient")]

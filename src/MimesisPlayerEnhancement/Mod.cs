@@ -54,7 +54,11 @@ public sealed class Mod : MelonMod
     public override void OnDeinitializeMelon()
     {
         ModConfig.Changed -= SyncFromConfig;
-        _harmony?.UnpatchSelf();
+        if (_harmony != null)
+        {
+            _harmony.UnpatchSelf();
+            ModLog.Debug("Startup", "Harmony patches removed.");
+        }
     }
 
     private static bool IsOurConfigFile(string filepath) =>
