@@ -2,6 +2,7 @@ using System;
 using System.Reflection;
 using HarmonyLib;
 using Mimic.Voice.SpeechSystem;
+using UnityEngine;
 
 namespace MimesisPlayerEnhancement.Features.MoreVoices;
 
@@ -27,6 +28,34 @@ public static class MoreVoicesPatches
         ModLog.Info(Feature, "Patches applied.");
     }
 
+    /// <summary>Updates voice limits on all live archives after config changes.</summary>
+    public static void RefreshFromConfig()
+    {
+        if (!ModConfig.EnableMoreVoices.Value)
+            return;
+
+        int max = ModConfig.MaxVoiceEvents.Value;
+        int updated = 0;
+
+        foreach (var archive in UnityEngine.Object.FindObjectsByType<SpeechEventArchive>(FindObjectsSortMode.None))
+        {
+            if (archive == null)
+                continue;
+
+            if (ApplyLimitsToArchive(archive, max))
+                updated++;
+        }
+
+        if (updated > 0)
+        {
+            ModLog.Info(Feature, $"Refreshed voice limits on {updated} archive(s) — maxCap={max}.");
+        }
+        else
+        {
+            ModLog.Debug(Feature, $"Voice limit refresh complete — maxCap={max}, no active archives.");
+        }
+    }
+
     [HarmonyPatch(typeof(SpeechEventArchive), "OnStartClient")]
     public static class SpeechEventArchiveLimitsPatch
     {
@@ -36,27 +65,7 @@ public static class MoreVoicesPatches
             if (!ModConfig.EnableMoreVoices.Value || __instance == null)
                 return;
 
-            int max = ModConfig.MaxVoiceEvents.Value;
-
-            try
-            {
-                int oldMaxEvents = GetFieldValue(__instance, MaxEventsField);
-                int oldMaxDeathMatch = GetFieldValue(__instance, MaxDeathMatchEventsField);
-                int oldMaxOutdoor = GetFieldValue(__instance, MaxOutDoorEventsField);
-
-                SetFieldValue(__instance, MaxEventsField, max);
-                SetFieldValue(__instance, MaxDeathMatchEventsField, max);
-                SetFieldValue(__instance, MaxOutDoorEventsField, max);
-
-                ModLog.Debug(
-                    Feature,
-                    $"Applied instance limits -> {max} " +
-                    $"(was maxEvents={oldMaxEvents}, maxDeathMatch={oldMaxDeathMatch}, maxOutdoor={oldMaxOutdoor}).");
-            }
-            catch (Exception ex)
-            {
-                ModLog.Warn(Feature, $"Failed to set voice limit fields: {ex.Message}");
-            }
+            ApplyLimitsToArchive(__instance, ModConfig.MaxVoiceEvents.Value);
         }
 
         [HarmonyPostfix]
@@ -70,6 +79,31 @@ public static class MoreVoicesPatches
                 $"Voice archive started — maxCap={ModConfig.MaxVoiceEvents.Value}, " +
                 $"maxEvents={GetFieldValue(__instance, MaxEventsField)}, " +
                 $"{VoiceEventStats.DescribePlayer(__instance)}");
+        }
+    }
+
+    private static bool ApplyLimitsToArchive(SpeechEventArchive archive, int max)
+    {
+        try
+        {
+            int oldMaxEvents = GetFieldValue(archive, MaxEventsField);
+            int oldMaxDeathMatch = GetFieldValue(archive, MaxDeathMatchEventsField);
+            int oldMaxOutdoor = GetFieldValue(archive, MaxOutDoorEventsField);
+
+            SetFieldValue(archive, MaxEventsField, max);
+            SetFieldValue(archive, MaxDeathMatchEventsField, max);
+            SetFieldValue(archive, MaxOutDoorEventsField, max);
+
+            ModLog.Debug(
+                Feature,
+                $"Applied instance limits -> {max} " +
+                $"(was maxEvents={oldMaxEvents}, maxDeathMatch={oldMaxDeathMatch}, maxOutdoor={oldMaxOutdoor}).");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            ModLog.Warn(Feature, $"Failed to set voice limit fields: {ex.Message}");
+            return false;
         }
     }
 

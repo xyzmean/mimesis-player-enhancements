@@ -13,6 +13,9 @@ namespace MimesisPlayerEnhancement.Features.Persistence.Patches
         [HarmonyPostfix]
         public static void Postfix(string fileName)
         {
+            if (!ModConfig.EnablePersistence.Value)
+                return;
+
             try
             {
                 if (string.IsNullOrEmpty(fileName) || !fileName.StartsWith("MMGameData", StringComparison.OrdinalIgnoreCase))

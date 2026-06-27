@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using MelonLoader;
 using MelonLoader.Utils;
@@ -11,6 +12,13 @@ namespace MimesisPlayerEnhancement;
 public static class ModConfig
 {
     private const string CategoryId = "MimesisPlayerEnhancement";
+
+    /// <summary>Fired when any preference value changes (UI save, file reload, or programmatic update).</summary>
+    public static event Action? Changed;
+
+    public static bool IsInitialized { get; private set; }
+
+    public static string FilePath { get; private set; } = "";
 
     public static MelonPreferences_Category Category { get; private set; } = null!;
 
@@ -27,7 +35,8 @@ public static class ModConfig
     public static void Initialize(MelonLogger.Instance logger)
     {
         Category = MelonPreferences.CreateCategory(CategoryId, "Mimesis Player Enhancement");
-        Category.SetFilePath(Path.Combine(MelonEnvironment.UserDataDirectory, "MimesisPlayerEnhancement.cfg"));
+        FilePath = Path.Combine(MelonEnvironment.UserDataDirectory, "MimesisPlayerEnhancement.cfg");
+        Category.SetFilePath(FilePath);
 
         EnableMorePlayers = Category.CreateEntry(
             "EnableMorePlayers",
@@ -39,7 +48,7 @@ public static class ModConfig
             "MaxPlayers",
             999,
             "Max Players",
-            "Maximum players allowed in a session when More Players is enabled.");
+            "Maximum players in a session including the host (1 = solo, 2 = host + 1 client, etc.).");
 
         EnableMoreVoices = Category.CreateEntry(
             "EnableMoreVoices",
@@ -65,13 +74,22 @@ public static class ModConfig
             "Enable Debug Logging",
             "Emit verbose diagnostic lines to the MelonLoader console.");
 
+        if (MaxPlayers.Value < 1)
+        {
+            logger.Warning("MaxPlayers must be at least 1; resetting to 1.");
+            MaxPlayers.Value = 1;
+        }
+
         MaxPlayers.OnEntryValueChanged.Subscribe((_, value) =>
         {
-            if (value < 2)
+            if (value < 1)
             {
-                logger.Warning("MaxPlayers must be at least 2; resetting to 2.");
-                MaxPlayers.Value = 2;
+                logger.Warning("MaxPlayers must be at least 1; resetting to 1.");
+                MaxPlayers.Value = 1;
+                return;
             }
+
+            NotifyChanged();
         });
 
         MaxVoiceEvents.OnEntryValueChanged.Subscribe((_, value) =>
@@ -80,7 +98,19 @@ public static class ModConfig
             {
                 logger.Warning("MaxVoiceEvents must be at least 1; resetting to 1.");
                 MaxVoiceEvents.Value = 1;
+                return;
             }
+
+            NotifyChanged();
         });
+
+        EnableMorePlayers.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
+        EnableMoreVoices.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
+        EnablePersistence.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
+        EnableDebugLogging.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
+
+        IsInitialized = true;
     }
+
+    private static void NotifyChanged() => Changed?.Invoke();
 }

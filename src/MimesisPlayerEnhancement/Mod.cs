@@ -1,3 +1,4 @@
+using System;
 using MelonLoader;
 
 [assembly: MelonInfo(typeof(MimesisPlayerEnhancement.Mod), "MimesisPlayerEnhancement", MimesisPlayerEnhancement.VersionInfo.ModuleVersion, "kalle")]
@@ -13,33 +14,27 @@ public sealed class Mod : MelonMod
     public override void OnInitializeMelon()
     {
         ModConfig.Initialize(LoggerInstance);
+        ModConfig.Changed += SyncFromConfig;
 
         _harmony = new HarmonyLib.Harmony("com.mimesis.playerenhancement");
+        Features.MorePlayers.MorePlayersPatches.Apply(_harmony);
+        Features.MoreVoices.MoreVoicesPatches.Apply(_harmony);
+        Features.Persistence.PersistencePatches.Apply(_harmony);
 
-        if (ModConfig.EnableMorePlayers.Value)
-            Features.MorePlayers.MorePlayersPatches.Apply(_harmony);
+        SyncFromConfig();
+        LogStartupSummary();
+    }
 
-        if (ModConfig.EnableMoreVoices.Value)
-            Features.MoreVoices.MoreVoicesPatches.Apply(_harmony);
+    public override void OnPreferencesSaved(string filepath)
+    {
+        if (IsOurConfigFile(filepath))
+            SyncFromConfig();
+    }
 
-        if (ModConfig.EnablePersistence.Value)
-            Features.Persistence.PersistencePatches.Apply(_harmony);
-
-        LoggerInstance.Msg(
-            $"MimesisPlayerEnhancement v{VersionInfo.ModuleVersion} loaded — " +
-            $"MorePlayers={ModConfig.EnableMorePlayers.Value}, " +
-            $"MoreVoices={ModConfig.EnableMoreVoices.Value} (max {ModConfig.MaxVoiceEvents.Value}), " +
-            $"Persistence={ModConfig.EnablePersistence.Value}, " +
-            $"DebugLogging={ModConfig.EnableDebugLogging.Value}");
-
-        if (ModConfig.EnableMorePlayers.Value)
-            ModLog.Info("MorePlayers", $"Enabled — session player cap raised to {ModConfig.MaxPlayers.Value}.");
-
-        if (ModConfig.EnableMoreVoices.Value)
-            ModLog.Info("MoreVoices", $"Enabled — per-player voice event cap set to {ModConfig.MaxVoiceEvents.Value}.");
-
-        if (ModConfig.EnablePersistence.Value)
-            ModLog.Info("Persistence", "Enabled — mimic voices will be saved with game saves.");
+    public override void OnPreferencesLoaded(string filepath)
+    {
+        if (IsOurConfigFile(filepath))
+            SyncFromConfig();
     }
 
     public override void OnUpdate()
@@ -50,6 +45,48 @@ public sealed class Mod : MelonMod
 
     public override void OnDeinitializeMelon()
     {
+        ModConfig.Changed -= SyncFromConfig;
         _harmony?.UnpatchSelf();
+    }
+
+    private static bool IsOurConfigFile(string filepath) =>
+        string.Equals(filepath, ModConfig.FilePath, StringComparison.OrdinalIgnoreCase);
+
+    private void SyncFromConfig()
+    {
+        if (!ModConfig.IsInitialized)
+            return;
+
+        Features.MorePlayers.MorePlayersPatches.RefreshFromConfig();
+        Features.MoreVoices.MoreVoicesPatches.RefreshFromConfig();
+
+        int sessionCap = ModConfig.EnableMorePlayers.Value ? ModConfig.MaxPlayers.Value : 4;
+        int clientSlots = Math.Max(0, sessionCap - 1);
+
+        ModLog.Debug(
+            "Config",
+            $"Synced — MorePlayers={ModConfig.EnableMorePlayers.Value} (session {sessionCap}, {clientSlots} client slots), " +
+            $"MoreVoices={ModConfig.EnableMoreVoices.Value} (max {ModConfig.MaxVoiceEvents.Value}), " +
+            $"Persistence={ModConfig.EnablePersistence.Value}, " +
+            $"DebugLogging={ModConfig.EnableDebugLogging.Value}");
+    }
+
+    private void LogStartupSummary()
+    {
+        LoggerInstance.Msg(
+            $"MimesisPlayerEnhancement v{VersionInfo.ModuleVersion} loaded — " +
+            $"MorePlayers={ModConfig.EnableMorePlayers.Value}, " +
+            $"MoreVoices={ModConfig.EnableMoreVoices.Value} (max {ModConfig.MaxVoiceEvents.Value}), " +
+            $"Persistence={ModConfig.EnablePersistence.Value}, " +
+            $"DebugLogging={ModConfig.EnableDebugLogging.Value}");
+
+        if (ModConfig.EnableMorePlayers.Value)
+            ModLog.Info("MorePlayers", $"Enabled — session player cap set to {ModConfig.MaxPlayers.Value} (including host).");
+
+        if (ModConfig.EnableMoreVoices.Value)
+            ModLog.Info("MoreVoices", $"Enabled — per-player voice event cap set to {ModConfig.MaxVoiceEvents.Value}.");
+
+        if (ModConfig.EnablePersistence.Value)
+            ModLog.Info("Persistence", "Enabled — mimic voices will be saved with game saves.");
     }
 }

@@ -82,10 +82,20 @@ internal static class GameNetworkApi
     }
 
     // MimicAPI: CoreAPI.GetHub() — upstream uses typed Hub.s; we resolve via reflection.
-    private static object? GetHub()
+    public static object? GetHub()
     {
         var hubType = GetGameAssembly()?.GetType("Hub");
         return hubType?.GetProperty("s", StaticFlags)?.GetValue(null);
+    }
+
+    public static object? GetVRoomManager()
+    {
+        var hubType = GetGameAssembly()?.GetType("Hub");
+        var hub = GetHub();
+        if (hubType == null || hub == null)
+            return null;
+
+        return hubType.GetProperty("VRoomManager", BindingFlags.Public | BindingFlags.Instance)?.GetValue(hub);
     }
 }
 

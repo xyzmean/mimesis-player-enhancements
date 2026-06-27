@@ -15,6 +15,7 @@ namespace MimesisPlayerEnhancement.Features.MorePlayers;
 public static class MorePlayersPatches
 {
     private const string Feature = "MorePlayers";
+    private const int VanillaMaxPlayers = 4;
 
     private static readonly MethodInfo GetMaxPlayersMethod =
         AccessTools.Method(typeof(MorePlayersPatches), nameof(GetMaxPlayers))!;
@@ -22,28 +23,72 @@ public static class MorePlayersPatches
     public static void Apply(HarmonyLib.Harmony harmony)
     {
         harmony.CreateClassProcessor(typeof(MorePlayersPatches)).Patch();
+        ModLog.Info(Feature, "Patches applied.");
+    }
+
+    /// <summary>Re-applies player-cap limits to live networking state after config changes.</summary>
+    public static void RefreshFromConfig()
+    {
+        if (!ModConfig.EnableMorePlayers.Value)
+            return;
 
         try
         {
             var socket = GameNetworkApi.GetServerSocket();
             if (socket != null)
             {
-                GameNetworkApi.SetMaximumClients(socket, MaxPlayers);
-                ModLog.Debug(Feature, $"Server socket max clients set to {MaxPlayers}.");
+                GameNetworkApi.SetMaximumClients(socket, MaxClientConnections);
+                ModLog.Debug(
+                    Feature,
+                    $"Server socket max clients refreshed to {MaxClientConnections} (session cap {MaxPlayers} including host).");
             }
         }
         catch (Exception ex)
         {
-            ModLog.Warn(Feature, $"Initial server socket setup: {ex.Message}");
+            ModLog.Warn(Feature, $"Server socket refresh: {ex.Message}");
         }
 
-        ModLog.Info(Feature, "Patches applied.");
+        try
+        {
+            UpdateRoomMaxPlayers(GameNetworkApi.GetVRoomManager());
+        }
+        catch (Exception ex)
+        {
+            ModLog.Warn(Feature, $"Room max players refresh: {ex.Message}");
+        }
+    }
+
+    private static void UpdateRoomMaxPlayers(object? vroomManager)
+    {
+        if (vroomManager == null)
+            return;
+
+        var vrooms = ReflectionHelper.GetFieldValue(vroomManager, "_vrooms") as IDictionary;
+        if (vrooms == null)
+            return;
+
+        foreach (var room in vrooms.Values)
+        {
+            if (room == null)
+                continue;
+
+            var maxPlayersField = room.GetType().BaseType?.GetField("_maxPlayers", BindingFlags.NonPublic | BindingFlags.Instance);
+            maxPlayersField?.SetValue(room, MaxPlayers);
+            ModLog.Debug(Feature, $"Room {room.GetType().Name} _maxPlayers refreshed to {MaxPlayers}.");
+        }
     }
 
     /// <summary>Called from transpiled game IL — must not bake config in at patch time.</summary>
-    public static int GetMaxPlayers() => ModConfig.MaxPlayers.Value;
+    public static int GetMaxPlayers() =>
+        ModConfig.EnableMorePlayers.Value ? ModConfig.MaxPlayers.Value : VanillaMaxPlayers;
 
     internal static int MaxPlayers => GetMaxPlayers();
+
+    /// <summary>Remote client slots; the host always occupies one player slot.</summary>
+    internal static int MaxClientConnections => Math.Max(0, MaxPlayers - 1);
+
+    private static int TotalPlayersInRoom(IDictionary? vPlayerDict) =>
+        1 + (vPlayerDict?.Count ?? 0);
 
     private static CodeInstruction LoadMaxPlayers() =>
         new(OpCodes.Call, GetMaxPlayersMethod);
@@ -85,7 +130,10 @@ public static class MorePlayersPatches
 
         static bool Prefix(ref int __result)
         {
-            __result = MaxPlayers;
+            if (!ModConfig.EnableMorePlayers.Value)
+                return true;
+
+            __result = MaxClientConnections;
             return false;
         }
     }
@@ -97,8 +145,10 @@ public static class MorePlayersPatches
 
         static bool Prefix(ref int value)
         {
-            if (value < MaxPlayers)
-                value = MaxPlayers;
+            if (!ModConfig.EnableMorePlayers.Value)
+                return true;
+
+            value = MaxClientConnections;
             return true;
         }
     }
@@ -137,9 +187,12 @@ public static class MorePlayersPatches
 
         static void Postfix(object __instance)
         {
+            if (!ModConfig.EnableMorePlayers.Value)
+                return;
+
             try
             {
-                GameNetworkApi.SetMaximumClients(__instance, MaxPlayers);
+                GameNetworkApi.SetMaximumClients(__instance, MaxClientConnections);
             }
             catch (Exception ex)
             {
@@ -161,6 +214,9 @@ public static class MorePlayersPatches
 
         static bool Prefix(ref int __result, object __instance)
         {
+            if (!ModConfig.EnableMorePlayers.Value)
+                return true;
+
             try
             {
                 int actualCount = GameNetworkApi.GetRoomPlayerCount(__instance);
@@ -239,6 +295,9 @@ public static class MorePlayersPatches
 
         static bool Prefix(ref object __result, object __instance, long playerUID)
         {
+            if (!ModConfig.EnableMorePlayers.Value)
+                return true;
+
             try
             {
                 var msgErrorCodeType = GameNetworkApi.GetGameAssembly()?.GetTypes().FirstOrDefault(t => t.Name == "MsgErrorCode");
@@ -271,21 +330,30 @@ public static class MorePlayersPatches
                         }
                     }
 
-                    if (vPlayerDict.Count >= MaxPlayers)
+                    int connectedClients = vPlayerDict.Count;
+                    if (connectedClients >= MaxClientConnections)
                     {
                         __result = Enum.Parse(msgErrorCodeType, "PlayerCountExceeded");
                         ModLog.Info(
                             Feature,
-                            $"Join denied — room full ({vPlayerDict.Count}/{MaxPlayers}) in {__instance.GetType().Name}, uid={playerUID}.");
+                            $"Join denied — session full ({TotalPlayersInRoom(vPlayerDict)}/{MaxPlayers} players) in {__instance.GetType().Name}, uid={playerUID}.");
                         return false;
                     }
                 }
+                else if (MaxClientConnections == 0)
+                {
+                    __result = Enum.Parse(msgErrorCodeType, "PlayerCountExceeded");
+                    ModLog.Info(
+                        Feature,
+                        $"Join denied — solo session (max {MaxPlayers} player) in {__instance.GetType().Name}, uid={playerUID}.");
+                    return false;
+                }
 
                 __result = Enum.Parse(msgErrorCodeType, "Success");
-                int memberCount = vPlayerDict?.Count ?? 0;
+                int totalAfterJoin = TotalPlayersInRoom(vPlayerDict) + 1;
                 ModLog.Info(
                     Feature,
-                    $"Join allowed — uid={playerUID} in {__instance.GetType().Name} ({memberCount + 1}/{MaxPlayers} players).");
+                    $"Join allowed — uid={playerUID} in {__instance.GetType().Name} ({totalAfterJoin}/{MaxPlayers} players).");
                 return false;
             }
             catch (Exception ex)
@@ -318,23 +386,12 @@ public static class MorePlayersPatches
 
         static void Prefix(object __instance)
         {
+            if (!ModConfig.EnableMorePlayers.Value)
+                return;
+
             try
             {
-                var vrooms = ReflectionHelper.GetFieldValue(__instance, "_vrooms") as IDictionary;
-                if (vrooms == null)
-                    return;
-
-                foreach (var room in vrooms.Values)
-                {
-                    if (room == null)
-                        continue;
-
-                    var maxPlayersField = room.GetType().BaseType?.GetField("_maxPlayers", BindingFlags.NonPublic | BindingFlags.Instance);
-                    maxPlayersField?.SetValue(room, MaxPlayers);
-                    ModLog.Debug(
-                        Feature,
-                        $"Room {room.GetType().Name} _maxPlayers set to {MaxPlayers}.");
-                }
+                UpdateRoomMaxPlayers(__instance);
             }
             catch (Exception ex)
             {
@@ -388,6 +445,9 @@ public static class MorePlayersPatches
 
         static bool Prefix(bool isOpenForRandomMatch)
         {
+            if (!ModConfig.EnableMorePlayers.Value)
+                return true;
+
             try
             {
                 var steamMatchmakingType = Type.GetType("Steamworks.SteamMatchmaking, com.rlabrecque.steamworks.net");

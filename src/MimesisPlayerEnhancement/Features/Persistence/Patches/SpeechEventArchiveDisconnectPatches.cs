@@ -12,6 +12,9 @@ namespace MimesisPlayerEnhancement.Features.Persistence.Patches
         [HarmonyPrefix]
         public static void Prefix(SpeechEventArchive __instance)
         {
+            if (!ModConfig.EnablePersistence.Value)
+                return;
+
             try
             {
                 if (!MimesisSaveManager.IsHost())

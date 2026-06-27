@@ -18,6 +18,9 @@ namespace MimesisPlayerEnhancement.Features.Persistence.Patches
         [HarmonyPostfix]
         public static void Postfix(ref SpeechEventArchive __result)
         {
+            if (!ModConfig.EnablePersistence.Value)
+                return;
+
             try
             {
                 // Only intervene if the original method found nothing

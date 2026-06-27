@@ -20,6 +20,9 @@ namespace MimesisPlayerEnhancement.Features.Persistence.Patches
         [HarmonyPostfix]
         public static void Postfix(SpeechEventArchive __instance)
         {
+            if (!ModConfig.EnablePersistence.Value)
+                return;
+
             try
             {
                 if (!MimesisSaveManager.IsHost())
