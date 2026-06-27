@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Reflection;
 using HarmonyLib;
 using Mimic.Voice.SpeechSystem;
@@ -27,8 +28,25 @@ public static class MoreVoicesPatches
         if (MaxEventsField == null || MaxDeathMatchEventsField == null || MaxOutDoorEventsField == null)
             ModLog.Warn(Feature, "One or more SpeechEventArchive limit fields not found — voice cap patches may not apply");
 
-        var results = harmony.CreateClassProcessor(typeof(MoreVoicesPatches)).Patch();
-        if (results == null || results.Count == 0)
+        var patchTypes = typeof(MoreVoicesPatches).GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic)
+            .Where(t => t.GetCustomAttributes(typeof(HarmonyPatch), false).Length > 0);
+
+        int applied = 0;
+        foreach (var patchType in patchTypes)
+        {
+            try
+            {
+                var results = harmony.CreateClassProcessor(patchType).Patch();
+                if (results != null)
+                    applied += results.Count;
+            }
+            catch (Exception ex)
+            {
+                ModLog.Warn(Feature, $"Patch class {patchType.Name} failed: {ex.Message}");
+            }
+        }
+
+        if (applied == 0)
             ModLog.Warn(Feature, "SpeechEventArchive.OnStartClient patch not applied");
         else
             ModLog.Info(Feature, "Patches applied.");

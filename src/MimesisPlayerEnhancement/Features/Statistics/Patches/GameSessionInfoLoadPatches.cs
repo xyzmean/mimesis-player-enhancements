@@ -9,7 +9,7 @@ namespace MimesisPlayerEnhancement.Features.Statistics.Patches;
 public static class GameSessionInfoLoadPatches
 {
     [HarmonyPostfix]
-    public static void Postfix(MMSaveGameData data)
+    public static void Postfix()
     {
         if (!ModConfig.EnableStatistics.Value)
             return;
