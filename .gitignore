@@ -1,0 +1,25 @@
+# Local game path — copy from PathConfig.props.example
+PathConfig.props
+
+# Build output
+dist/
+src/**/bin/
+src/**/obj/
+deps/MimicAPI/
+deps/nuget/
+deps/reference/Managed/
+deps/reference/MelonLoader/
+deps/mimesis-reference-libs*.zip
+
+# IDE / OS
+.vs/
+.idea/
+*.user
+*.suo
+Directory.Build.user.props
+
+# Archives
+*.zip
+
+# custom
+references/

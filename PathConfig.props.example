@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Optional: only needed for COPY_TO_MODS deploy to your local game. Not required to compile. -->
+<Project>
+  <PropertyGroup>
+    <GamePath>/path/to/steam/steamapps/common/MIMESIS</GamePath>
+  </PropertyGroup>
+</Project>

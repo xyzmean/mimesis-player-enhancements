@@ -1,0 +1,220 @@
+using System;
+using System.Collections.Generic;
+using HarmonyLib;
+using Mimic.Voice.SpeechSystem;
+using ReluProtocol;
+
+namespace MimesisPlayerEnhancement.Features.Persistence.Patches
+{
+    /// <summary>
+    /// Runs for ALL SpeechEventArchive instances (not just local).
+    /// Uses SpeechEventPoolManager for 3-state event distribution.
+    /// </summary>
+    [HarmonyPatch(typeof(SpeechEventArchive), "OnStartClient")]
+    public static class SpeechEventArchivePatches
+    {
+        private const string Feature = "Persistence";
+
+        private static int _poolLoadedForSlot = -999;
+
+        [HarmonyPostfix]
+        public static void Postfix(SpeechEventArchive __instance)
+        {
+            try
+            {
+                if (!MimesisSaveManager.IsHost())
+                {
+                    ModLog.Debug(Feature, $"Archive started (non-host) — {VoiceEventStats.DescribePlayer(__instance)}");
+                    return;
+                }
+
+                int slotId = MimesisSaveManager.GetCurrentSaveSlotId();
+                if (!MMSaveGameData.CheckSaveSlotID(slotId, true))
+                {
+                    ModLog.Debug(Feature, $"Archive started outside save slot — {VoiceEventStats.DescribePlayer(__instance)}");
+                    return;
+                }
+
+                if (slotId != _poolLoadedForSlot)
+                {
+                    _poolLoadedForSlot = slotId;
+                    SpeechEventPoolManager.Reset();
+
+                    if (MimesisSaveManager.HasMimesisData(slotId))
+                    {
+                        SpeechEventPoolManager.LoadForSlot(slotId);
+                        ModLog.Info(Feature, $"Loaded persisted voice pool for save slot {slotId} ({SpeechEventPoolManager.TotalCount} events).");
+                    }
+                    else
+                    {
+                        ModLog.Debug(Feature, $"No persisted voice data for save slot {slotId}.");
+                    }
+                }
+
+                if (__instance.IsLocal)
+                    SpeechEventPoolManager.SetLocalArchive(__instance);
+
+                string? playerId = null;
+                long playerUID = 0;
+                bool isLocal = false;
+
+                try
+                {
+                    playerId = __instance.PlayerId;
+                    playerUID = __instance.PlayerUID;
+                    isLocal = __instance.IsLocal;
+                }
+                catch
+                {
+                    /* Player component may not be ready yet */
+                }
+
+                int eventsBefore = VoiceEventStats.GetEventCount(__instance);
+
+                if (!isLocal && string.IsNullOrEmpty(playerId) && playerUID == 0)
+                {
+                    bool hasDataToInject = SpeechEventPoolManager.HasPending()
+                                           || SpeechEventPoolManager.DisconnectedCacheCount > 0;
+                    if (hasDataToInject)
+                    {
+                        SpeechEventPoolManager.RegisterDeferredInjection(__instance);
+                        ModLog.Info(
+                            Feature,
+                            $"Player connecting — voice injection deferred (SyncVars pending). " +
+                            $"pendingPool={SpeechEventPoolManager.GetCounts().pending}, " +
+                            $"disconnectedCache={SpeechEventPoolManager.DisconnectedCacheCount}");
+                    }
+                    else
+                    {
+                        ModLog.Info(
+                            Feature,
+                            $"Player connecting — {VoiceEventStats.DescribePlayer(__instance)} (awaiting identity sync).");
+                    }
+
+                    return;
+                }
+
+                var eventsList = __instance.events;
+                if (eventsList == null)
+                {
+                    ModLog.Warn(Feature, $"Player archive has no event list — {VoiceEventStats.DescribePlayer(__instance)}");
+                    return;
+                }
+
+                float currentTime = SpeechEventPoolManager.GetCurrentSessionTime();
+                var seenIds = new HashSet<long>();
+                for (int i = 0; i < eventsList.Count; i++)
+                    seenIds.Add(eventsList[i].Id);
+
+                int fromPool = 0;
+                int fromReconnect = 0;
+
+                if (SpeechEventPoolManager.HasPending())
+                {
+                    List<SpeechEvent> claimed = SpeechEventPoolManager.ClaimEventsForArchive(
+                        playerId, playerUID, isLocal, __instance);
+                    if (claimed != null && claimed.Count > 0)
+                    {
+                        foreach (SpeechEvent ev in claimed)
+                        {
+                            if (ev == null || seenIds.Contains(ev.Id))
+                                continue;
+                            SpeechEventPoolManager.FixEventTiming(ev, currentTime);
+                            eventsList.Add(ev);
+                            seenIds.Add(ev.Id);
+                            fromPool++;
+                        }
+                    }
+                }
+
+                if (SpeechEventPoolManager.DisconnectedCacheCount > 0)
+                {
+                    List<SpeechEvent> reclaimed = SpeechEventPoolManager.ClaimDisconnectedEventsForArchive(
+                        playerId, playerUID, isLocal);
+                    if (reclaimed != null && reclaimed.Count > 0)
+                    {
+                        foreach (SpeechEvent ev in reclaimed)
+                        {
+                            if (ev == null || seenIds.Contains(ev.Id))
+                                continue;
+                            SpeechEventPoolManager.FixEventTiming(ev, currentTime);
+                            eventsList.Add(ev);
+                            seenIds.Add(ev.Id);
+                            fromReconnect++;
+                        }
+                    }
+                }
+
+                int totalAdded = fromPool + fromReconnect;
+                int eventsAfter = VoiceEventStats.GetEventCount(__instance);
+                var counts = SpeechEventPoolManager.GetCounts();
+
+                if (totalAdded > 0)
+                {
+                    ModLog.Info(
+                        Feature,
+                        $"Player connected — voice restore OK. {VoiceEventStats.DescribePlayer(__instance)} | " +
+                        $"injected={totalAdded} (pool={fromPool}, reconnect={fromReconnect}), " +
+                        $"before={eventsBefore} after={eventsAfter} | " +
+                        $"poolState={counts.pending}P/{counts.injected}I/{counts.fallback}F");
+                }
+                else if (SpeechEventPoolManager.HasPending() || SpeechEventPoolManager.DisconnectedCacheCount > 0)
+                {
+                    ModLog.Info(
+                        Feature,
+                        $"Player connected — no matching saved voices. {VoiceEventStats.DescribePlayer(__instance)} | " +
+                        $"voiceEvents={eventsAfter} | poolState={counts.pending}P/{counts.injected}I/{counts.fallback}F");
+                }
+                else
+                {
+                    ModLog.Info(
+                        Feature,
+                        $"Player connected — {VoiceEventStats.DescribePlayer(__instance)} (no persistence data to apply).");
+                }
+
+                ModLog.Debug(
+                    Feature,
+                    $"Archive detail slot={slotId} time={currentTime:F1} disconnectedCache={SpeechEventPoolManager.DisconnectedCacheCount}");
+            }
+            catch (Exception ex)
+            {
+                ModLog.Warn(Feature, $"SpeechEventArchive inject failed: {ex.Message}");
+            }
+        }
+
+        public static int InjectEventsIntoArchive(SpeechEventArchive archive, List<SpeechEvent> events)
+        {
+            if (archive == null || events == null || events.Count == 0)
+                return 0;
+
+            var eventsList = archive.events;
+            if (eventsList == null)
+                return 0;
+
+            float currentTime = SpeechEventPoolManager.GetCurrentSessionTime();
+            var seenIds = new HashSet<long>();
+            for (int i = 0; i < eventsList.Count; i++)
+                seenIds.Add(eventsList[i].Id);
+
+            int added = 0;
+            foreach (SpeechEvent ev in events)
+            {
+                if (ev == null || seenIds.Contains(ev.Id))
+                    continue;
+
+                SpeechEventPoolManager.FixEventTiming(ev, currentTime);
+                eventsList.Add(ev);
+                seenIds.Add(ev.Id);
+                added++;
+            }
+
+            return added;
+        }
+
+        public static void ResetInjectedSlot()
+        {
+            _poolLoadedForSlot = -999;
+            SpeechEventPoolManager.Reset();
+        }
+    }
+}

@@ -1,0 +1,10 @@
+<Project>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- Pinned external package versions — bump manually after running scripts/check-nuget-updates.sh -->
+    <!-- HarmonyX tracks MelonLoader's bundled 0Harmony.dll (upstream: https://github.com/pardeike/Harmony) -->
+    <PackageVersion Include="HarmonyX" Version="2.10.2" />
+  </ItemGroup>
+</Project>

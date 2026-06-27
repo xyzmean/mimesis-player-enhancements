@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <!-- Optional local game install (enables CopyToMods). Not required to compile. -->
+  <Import Project="$(MSBuildThisFileDirectory)..\PathConfig.props" Condition="Exists('$(MSBuildThisFileDirectory)..\PathConfig.props')" />
+  <Import Project="$(MSBuildThisFileDirectory)Directory.Build.user.props" Condition="Exists('$(MSBuildThisFileDirectory)Directory.Build.user.props')" />
+
+  <PropertyGroup>
+    <RepoRoot>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\'))</RepoRoot>
+    <DepsPath Condition="'$(DepsPath)' == ''">$(RepoRoot)deps</DepsPath>
+    <ReferenceRoot>$(DepsPath)/reference</ReferenceRoot>
+
+    <!-- Output: dist/debug (Debug) or dist/prod (Release) -->
+    <DistFolder Condition="'$(Configuration)' == 'Debug'">debug</DistFolder>
+    <DistFolder Condition="'$(Configuration)' == 'Release'">prod</DistFolder>
+    <BaseOutputPath>$(RepoRoot)dist\$(DistFolder)\</BaseOutputPath>
+    <OutputPath>$(BaseOutputPath)</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!-- Default: compile against bootstrapped reference DLLs in deps/reference/ -->
+    <GameAssemblyPath Condition="'$(GameAssemblyPath)' == ''">$(ReferenceRoot)/Managed</GameAssemblyPath>
+    <MelonLoaderPath Condition="'$(MelonLoaderPath)' == ''">$(ReferenceRoot)/MelonLoader/net35</MelonLoaderPath>
+    <!-- Optional game install overrides (local dev / deploy to Mods/) -->
+    <GamePath Condition="'$(GamePath)' == ''">$(MIMESIS_PATH)</GamePath>
+    <UseGameReferences Condition="'$(UseGameReferences)' == '' and '$(GamePath)' != '' and Exists('$(GamePath)/MIMESIS_Data/Managed/Assembly-CSharp.dll')">true</UseGameReferences>
+    <GameAssemblyPath Condition="'$(UseGameReferences)' == 'true'">$(GamePath)/MIMESIS_Data/Managed</GameAssemblyPath>
+    <MelonLoaderPath Condition="'$(UseGameReferences)' == 'true'">$(GamePath)/MelonLoader/net35</MelonLoaderPath>
+    <PluginsPath Condition="'$(PluginsPath)' == '' and '$(UseGameReferences)' == 'true'">$(GamePath)/Mods</PluginsPath>
+  </PropertyGroup>
+
+  <Target Name="ValidateReferenceAssemblies" BeforeTargets="ResolveReferences">
+    <Error Condition="!Exists('$(GameAssemblyPath)/Assembly-CSharp.dll')"
+           Text="Assembly-CSharp.dll not found at $(GameAssemblyPath). Run: ./scripts/bootstrap-deps.sh" />
+    <Error Condition="!Exists('$(MelonLoaderPath)/MelonLoader.dll')"
+           Text="MelonLoader.dll not found at $(MelonLoaderPath). Run: ./scripts/bootstrap-deps.sh" />
+  </Target>
+</Project>

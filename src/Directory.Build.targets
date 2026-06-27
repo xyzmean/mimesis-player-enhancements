@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <!-- Copy to game Mods/ only when explicitly requested (local dev). -->
+  <Target Name="CopyToMods" AfterTargets="Build"
+          Condition="'$(CopyToMods)' == 'true' and '$(PluginsPath)' != '' and Exists('$(PluginsPath)')">
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(PluginsPath)" SkipUnchangedFiles="true" />
+    <Message Importance="high" Text="Copied $(TargetFileName) to $(PluginsPath)" />
+  </Target>
+</Project>

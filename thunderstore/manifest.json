@@ -1,0 +1,9 @@
+{
+  "name": "MimesisPlayerEnhancement",
+  "version_number": "1.0.0",
+  "website_url": "https://github.com/kalle/mimesis-player-enhancement",
+  "description": "Unified MorePlayers, MoreVoices, and voice persistence for MIMESIS 0.3.0+.",
+  "dependencies": [
+    "LavaGang-MelonLoader-0.7.3"
+  ]
+}

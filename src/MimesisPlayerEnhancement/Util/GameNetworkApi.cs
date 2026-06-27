@@ -1,0 +1,129 @@
+using System;
+using System.Collections;
+using System.Linq;
+using System.Reflection;
+
+namespace MimesisPlayerEnhancement.Util;
+
+/// <summary>
+/// Local subset of <a href="https://github.com/NeoMimicry/MimicAPI">MimicAPI</a> used by MorePlayers.
+/// We intentionally do <b>not</b> take a runtime dependency on MimicAPI.dll so this mod ships as a single DLL.
+/// When MIMESIS or MimicAPI changes, compare against upstream and update this file.
+/// </summary>
+/// <remarks>
+/// Last synced with MimicAPI <b>0.3.0</b> (Thunderstore: NeoMimicry/MimicAPI).
+/// <list type="bullet">
+///   <item><see cref="GameNetworkApi"/> — <c>MimicAPI/GameAPI/ServerNetworkAPI.cs</c></item>
+///   <item><see cref="ReflectionHelper"/> — <c>MimicAPI/GameAPI/ReflectionHelper.cs</c></item>
+///   <item><see cref="GameNetworkApi.GetHub"/> / <see cref="GameNetworkApi.GetVWorld"/> — <c>MimicAPI/GameAPI/CoreAPI.cs</c></item>
+/// </list>
+/// Upstream tree: https://github.com/NeoMimicry/MimicAPI/tree/main/MimicAPI/GameAPI
+/// </remarks>
+internal static class GameNetworkApi
+{
+    // MimicAPI: ServerNetworkAPI.cs — GetGameAssembly()
+    // https://github.com/NeoMimicry/MimicAPI/blob/main/MimicAPI/GameAPI/ServerNetworkAPI.cs
+    private const BindingFlags StaticFlags =
+        BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
+
+    public static Assembly? GetGameAssembly()
+    {
+        try
+        {
+            return AppDomain.CurrentDomain.GetAssemblies()
+                .FirstOrDefault(a => a.GetName().Name == "Assembly-CSharp");
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    // MimicAPI: ServerNetworkAPI.GetIVroomType()
+    public static Type? GetIVroomType() => GetGameAssembly()?.GetType("IVroom");
+
+    // MimicAPI: ServerNetworkAPI.GetGameSessionInfoType()
+    public static Type? GetGameSessionInfoType() => GetGameAssembly()?.GetType("GameSessionInfo");
+
+    // MimicAPI: ServerNetworkAPI.GetServerSocket() → GetSdrServer() ?? GetRudpServer()
+    public static object? GetServerSocket()
+    {
+        var vworld = GetVWorld();
+        if (vworld == null)
+            return null;
+
+        return ReflectionHelper.GetFieldValue(vworld, "_sdrServer")
+               ?? ReflectionHelper.GetFieldValue(vworld, "_rudpServer");
+    }
+
+    // MimicAPI: ServerNetworkAPI.SetMaximumClients()
+    public static void SetMaximumClients(object serverSocket, int value) =>
+        ReflectionHelper.SetFieldValue(serverSocket, "_maximumClients", value);
+
+    // MimicAPI: ServerNetworkAPI.GetRoomPlayerCount()
+    public static int GetRoomPlayerCount(object? room)
+    {
+        if (room == null)
+            return 0;
+
+        var dict = ReflectionHelper.GetFieldValue(room, "_vPlayerDict") as IDictionary;
+        return dict?.Count ?? 0;
+    }
+
+    // MimicAPI: CoreAPI.GetVWorld() via ServerNetworkAPI.GetVWorld()
+    // https://github.com/NeoMimicry/MimicAPI/blob/main/MimicAPI/GameAPI/CoreAPI.cs
+    private static object? GetVWorld()
+    {
+        var hub = GetHub();
+        if (hub == null)
+            return null;
+
+        return ReflectionHelper.GetFieldValue(hub, "<VWorld>k__BackingField");
+    }
+
+    // MimicAPI: CoreAPI.GetHub() — upstream uses typed Hub.s; we resolve via reflection.
+    private static object? GetHub()
+    {
+        var hubType = GetGameAssembly()?.GetType("Hub");
+        return hubType?.GetProperty("s", StaticFlags)?.GetValue(null);
+    }
+}
+
+/// <summary>
+/// Local subset of MimicAPI.ReflectionHelper (only methods used by MorePlayers).
+/// </summary>
+/// <remarks>
+/// Upstream: https://github.com/NeoMimicry/MimicAPI/blob/main/MimicAPI/GameAPI/ReflectionHelper.cs
+/// </remarks>
+internal static class ReflectionHelper
+{
+    private const BindingFlags DefaultFlags =
+        BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Public | BindingFlags.Static;
+
+    public static object? GetFieldValue(object target, string fieldName)
+    {
+        if (target == null)
+            return null;
+
+        var field = target.GetType().GetField(fieldName, DefaultFlags);
+        return field?.GetValue(target);
+    }
+
+    public static T GetFieldValue<T>(object target, string fieldName)
+    {
+        var value = GetFieldValue(target, fieldName);
+        if (value == null)
+            return default!;
+
+        return (T)value;
+    }
+
+    public static void SetFieldValue(object target, string fieldName, object value)
+    {
+        if (target == null)
+            return;
+
+        var field = target.GetType().GetField(fieldName, DefaultFlags);
+        field?.SetValue(target, value);
+    }
+}
