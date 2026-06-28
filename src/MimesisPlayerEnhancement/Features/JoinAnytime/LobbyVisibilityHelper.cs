@@ -1,79 +1,94 @@
 using System;
 
-namespace MimesisPlayerEnhancement.Features.JoinAnytime;
-
-internal static class LobbyVisibilityHelper
+namespace MimesisPlayerEnhancement.Features.JoinAnytime
 {
-    private const string Feature = "JoinAnytime";
-
-    private static bool? _lastLoggedHostPublic;
-
-    internal static void SyncHostPreference(bool wantsPublic, string source)
+    internal static class LobbyVisibilityHelper
     {
-        if (_lastLoggedHostPublic == wantsPublic)
-            return;
+        private const string Feature = "JoinAnytime";
 
-        _lastLoggedHostPublic = wantsPublic;
-        ModLog.Debug(
-            Feature,
-            $"Host lobby visibility -> {(wantsPublic ? "public" : "private")} ({source})");
-    }
+        private static bool? _lastLoggedHostPublic;
 
-    internal static void OnLobbyCreated(SteamInviteDispatcher dispatcher, bool isOpenForRandomMatch)
-    {
-        if (!ModConfig.EnableJoinAnytime.Value)
-            return;
+        internal static void SyncHostPreference(bool wantsPublic, string source)
+        {
+            if (_lastLoggedHostPublic == wantsPublic)
+            {
+                return;
+            }
 
-        SyncHostPreference(isOpenForRandomMatch, "CreateLobby");
-        SyncHostPreference(JoinAnytimeHub.IsHostLobbyPublic(dispatcher), "CreateLobby state");
-    }
+            _lastLoggedHostPublic = wantsPublic;
+            ModLog.Debug(
+                Feature,
+                $"Host lobby visibility -> {(wantsPublic ? "public" : "private")} ({source})");
+        }
 
-    internal static void OnSetLobbyPublicCompleted(SteamInviteDispatcher dispatcher, bool requestedPublic)
-    {
-        if (!ModConfig.EnableJoinAnytime.Value)
-            return;
+        internal static void OnLobbyCreated(SteamInviteDispatcher dispatcher, bool isOpenForRandomMatch)
+        {
+            if (!ModConfig.EnableJoinAnytime.Value)
+            {
+                return;
+            }
 
-        bool hostWantsPublic = JoinAnytimeHub.IsHostLobbyPublic(dispatcher);
-        SyncHostPreference(hostWantsPublic, "SetLobbyPublic");
-        ApplyPresence(dispatcher, hostWantsPublic, requestedPublic);
-    }
+            SyncHostPreference(isOpenForRandomMatch, "CreateLobby");
+            SyncHostPreference(JoinAnytimeHub.IsHostLobbyPublic(dispatcher), "CreateLobby state");
+        }
 
-    internal static void RefreshAfterLobbyDataUpdate()
-    {
-        if (!ModConfig.EnableJoinAnytime.Value)
-            return;
+        internal static void OnSetLobbyPublicCompleted(SteamInviteDispatcher dispatcher, bool requestedPublic)
+        {
+            if (!ModConfig.EnableJoinAnytime.Value)
+            {
+                return;
+            }
 
-        SteamInviteDispatcher? dispatcher = JoinAnytimeHub.GetSteamInviteDispatcher();
-        if (dispatcher == null)
-            return;
+            bool hostWantsPublic = JoinAnytimeHub.IsHostLobbyPublic(dispatcher);
+            SyncHostPreference(hostWantsPublic, "SetLobbyPublic");
+            ApplyPresence(dispatcher, hostWantsPublic, requestedPublic);
+        }
 
-        bool hostWantsPublic = JoinAnytimeHub.IsHostLobbyPublic(dispatcher);
-        SyncHostPreference(hostWantsPublic, "lobby data refresh");
+        internal static void RefreshAfterLobbyDataUpdate()
+        {
+            if (!ModConfig.EnableJoinAnytime.Value)
+            {
+                return;
+            }
 
-        try
+            SteamInviteDispatcher? dispatcher = JoinAnytimeHub.GetSteamInviteDispatcher();
+            if (dispatcher == null)
+            {
+                return;
+            }
+
+            bool hostWantsPublic = JoinAnytimeHub.IsHostLobbyPublic(dispatcher);
+            SyncHostPreference(hostWantsPublic, "lobby data refresh");
+
+            try
+            {
+                if (hostWantsPublic)
+                {
+                    dispatcher.SetLobbyPublic(true);
+                    ModLog.Debug(Feature, "Lobby refresh — keeping lobby public for join-anytime.");
+                }
+                else
+                {
+                    dispatcher.SetLobbyPublic(false);
+                    ModLog.Debug(Feature, "Lobby refresh — keeping lobby private.");
+                }
+            }
+            catch (Exception ex)
+            {
+                ModLog.Debug(Feature, $"Lobby visibility refresh failed — {ex.Message}");
+            }
+        }
+
+        private static void ApplyPresence(SteamInviteDispatcher dispatcher, bool hostWantsPublic, bool requestedPublic)
         {
             if (hostWantsPublic)
             {
-                dispatcher.SetLobbyPublic(true);
-                ModLog.Debug(Feature, "Lobby refresh — keeping lobby public for join-anytime.");
+                dispatcher.SetPresenceInLobbyPublic();
             }
-            else
+            else if (!requestedPublic)
             {
-                dispatcher.SetLobbyPublic(false);
-                ModLog.Debug(Feature, "Lobby refresh — keeping lobby private.");
+                dispatcher.SetPresenceInLobby();
             }
         }
-        catch (Exception ex)
-        {
-            ModLog.Debug(Feature, $"Lobby visibility refresh failed — {ex.Message}");
-        }
-    }
-
-    private static void ApplyPresence(SteamInviteDispatcher dispatcher, bool hostWantsPublic, bool requestedPublic)
-    {
-        if (hostWantsPublic)
-            dispatcher.SetPresenceInLobbyPublic();
-        else if (!requestedPublic)
-            dispatcher.SetPresenceInLobby();
     }
 }

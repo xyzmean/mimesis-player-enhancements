@@ -2,50 +2,59 @@ using System;
 using ReluProtocol;
 using ReluProtocol.C2S;
 
-namespace MimesisPlayerEnhancement.Features.JoinAnytime;
-
-internal static class JoinAnytimeNetworkTools
+namespace MimesisPlayerEnhancement.Features.JoinAnytime
 {
-    internal static void SendOnPlayingStateToClient(VPlayer player) =>
-        SendOnPlayingState(player.UID, msg => player.SendToMe(msg));
-
-    internal static void SendOnPlayingStateToClient(SessionContext context) =>
-        SendOnPlayingState(context.GetPlayerUID(), msg => context.Send(msg));
-
-    private static void SendOnPlayingState(long uid, Action<IMsg> send)
+    internal static class JoinAnytimeNetworkTools
     {
-        if (!LateJoinManager.TryMarkPlayingStateSent(uid))
-            return;
-
-        Hub.PersistentData? pdata = JoinAnytimeHub.GetPdata();
-        if (pdata?.main is not GamePlayScene gps)
-            return;
-
-        IVroom? dungeonRoom = JoinAnytimeRoomTools.GetActiveDungeonRoom();
-        if (dungeonRoom == null)
+        internal static void SendOnPlayingStateToClient(VPlayer player)
         {
-            ModLog.Warn("JoinAnytime", $"SendOnPlayingState failed — no active DungeonRoom for uid={uid}");
-            return;
+            SendOnPlayingState(player.UID, msg => player.SendToMe(msg));
         }
 
-        ModLog.Info(
-            "JoinAnytime",
-            $"Sending in-game state to uid={uid} — dungeon={gps.DungeonMasterID}, seed={gps.RandDungeonSeed}, roomUID={dungeonRoom.RoomID}");
-
-        send(new MoveToDungeonSig
+        internal static void SendOnPlayingStateToClient(SessionContext context)
         {
-            selectedDungeonMasterID = gps.DungeonMasterID,
-            randDungeonSeed = gps.RandDungeonSeed,
-        });
+            SendOnPlayingState(context.GetPlayerUID(), msg => context.Send(msg));
+        }
 
-        send(new MakeRoomCompleteSig
+        private static void SendOnPlayingState(long uid, Action<IMsg> send)
         {
-            nextRoomInfo = new RoomInfo
+            if (!LateJoinManager.TryMarkPlayingStateSent(uid))
             {
-                roomType = VRoomType.Game,
-                roomMasterID = gps.DungeonMasterID,
-                roomUID = dungeonRoom.RoomID,
-            },
-        });
+                return;
+            }
+
+            Hub.PersistentData? pdata = JoinAnytimeHub.GetPdata();
+            if (pdata?.main is not GamePlayScene gps)
+            {
+                return;
+            }
+
+            IVroom? dungeonRoom = JoinAnytimeRoomTools.GetActiveDungeonRoom();
+            if (dungeonRoom == null)
+            {
+                ModLog.Warn("JoinAnytime", $"SendOnPlayingState failed — no active DungeonRoom for uid={uid}");
+                return;
+            }
+
+            ModLog.Info(
+                "JoinAnytime",
+                $"Sending in-game state to uid={uid} — dungeon={gps.DungeonMasterID}, seed={gps.RandDungeonSeed}, roomUID={dungeonRoom.RoomID}");
+
+            send(new MoveToDungeonSig
+            {
+                selectedDungeonMasterID = gps.DungeonMasterID,
+                randDungeonSeed = gps.RandDungeonSeed,
+            });
+
+            send(new MakeRoomCompleteSig
+            {
+                nextRoomInfo = new RoomInfo
+                {
+                    roomType = VRoomType.Game,
+                    roomMasterID = gps.DungeonMasterID,
+                    roomUID = dungeonRoom.RoomID,
+                },
+            });
+        }
     }
 }

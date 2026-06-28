@@ -10,7 +10,7 @@ internal static class CommandLine
         string? melonLoaderPath = null;
         string? gamePath = null;
         string? assemblyName = null;
-        var commandArgs = new List<string>();
+        List<string> commandArgs = [];
 
         for (int i = 0; i < args.Length; i++)
         {
@@ -47,7 +47,7 @@ internal static class CommandLine
             Console.WriteLine($"Using MelonLoader assemblies: {melonLoader}");
             Console.WriteLine();
 
-            var context = new MelonLoaderReflectionContext(melonLoader);
+            MelonLoaderReflectionContext context = new(melonLoader);
             Assembly assembly = string.IsNullOrWhiteSpace(assemblyName)
                 ? context.MelonLoader
                 : context.LoadAssemblyByName(assemblyName);
@@ -109,7 +109,9 @@ internal static class CommandLine
     private static int RunType(MelonLoaderReflectionContext context, Assembly assembly, List<string> args)
     {
         if (args.Count < 2)
+        {
             throw new InvalidOperationException("Usage: type <TypeName>");
+        }
 
         ReflectionPrinter.PrintTypeSummary(context.RequireType(assembly, args[1]));
         return 0;
@@ -118,7 +120,9 @@ internal static class CommandLine
     private static int RunProperties(MelonLoaderReflectionContext context, Assembly assembly, List<string> args)
     {
         if (args.Count < 2)
+        {
             throw new InvalidOperationException("Usage: properties <TypeName> [nameFilter]");
+        }
 
         string? filter = args.Count > 2 ? args[2] : null;
         ReflectionPrinter.PrintProperties(context.RequireType(assembly, args[1]), filter);
@@ -128,7 +132,9 @@ internal static class CommandLine
     private static int RunMethods(MelonLoaderReflectionContext context, Assembly assembly, List<string> args)
     {
         if (args.Count < 2)
+        {
             throw new InvalidOperationException("Usage: methods <TypeName> [nameFilter]");
+        }
 
         string? filter = args.Count > 2 ? args[2] : null;
         ReflectionPrinter.PrintMethods(context.RequireType(assembly, args[1]), filter);
@@ -138,7 +144,9 @@ internal static class CommandLine
     private static int RunFields(MelonLoaderReflectionContext context, Assembly assembly, List<string> args)
     {
         if (args.Count < 2)
+        {
             throw new InvalidOperationException("Usage: fields <TypeName> [nameFilter]");
+        }
 
         string? filter = args.Count > 2 ? args[2] : null;
         ReflectionPrinter.PrintFields(context.RequireType(assembly, args[1]), filter);
@@ -148,7 +156,9 @@ internal static class CommandLine
     private static int RunConstants(MelonLoaderReflectionContext context, Assembly assembly, List<string> args)
     {
         if (args.Count < 2)
+        {
             throw new InvalidOperationException("Usage: constants <TypeName>");
+        }
 
         ReflectionPrinter.PrintConstants(context.RequireType(assembly, args[1]));
         return 0;
@@ -157,7 +167,9 @@ internal static class CommandLine
     private static int RunMember(MelonLoaderReflectionContext context, Assembly assembly, List<string> args)
     {
         if (args.Count < 3)
+        {
             throw new InvalidOperationException("Usage: member <TypeName> <MemberName>");
+        }
 
         ReflectionPrinter.PrintMember(context.RequireType(assembly, args[1]), args[2]);
         return 0;
@@ -178,7 +190,9 @@ internal static class CommandLine
     private static string RequireValue(string[] args, ref int index, string option)
     {
         if (index + 1 >= args.Length)
+        {
             throw new InvalidOperationException($"Missing value for {option}.");
+        }
 
         index++;
         return args[index];

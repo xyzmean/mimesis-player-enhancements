@@ -1,67 +1,67 @@
 using System;
-using System.Reflection;
 using DunGen;
 using HarmonyLib;
 using MimesisPlayerEnhancement.Util;
 
-namespace MimesisPlayerEnhancement.Features.DungeonSizeScaling;
-
-public static class DungeonSizeScalingPatches
+namespace MimesisPlayerEnhancement.Features.DungeonSizeScaling
 {
-    private const string Feature = "DungeonSizeScaling";
-
-    public static void Apply(HarmonyLib.Harmony harmony)
+    public static class DungeonSizeScalingPatches
     {
-        _ = GameNetworkApi.GetGameAssembly();
+        private const string Feature = "DungeonSizeScaling";
 
-        var result = HarmonyPatchHelper.ApplyPatchTypes(
-            harmony,
-            Feature,
-            HarmonyPatchHelper.GetNestedPatchTypes(typeof(DungeonSizeScalingPatches)));
-
-        LogPatchAudit(harmony);
-        HarmonyPatchHelper.LogPatchSummary(Feature, result);
-    }
-
-    private static void LogPatchAudit(HarmonyLib.Harmony harmony)
-    {
-        HarmonyPatchHelper.LogPatchAudit(Feature, harmony, new (string, MethodBase?)[]
+        public static void Apply(HarmonyLib.Harmony harmony)
         {
-            ("Generate/DungeonGenerator", AccessTools.Method(typeof(DungeonGenerator), nameof(DungeonGenerator.Generate))),
-            ("Clear/DungeonGenerator", AccessTools.Method(typeof(DungeonGenerator), nameof(DungeonGenerator.Clear))),
-        });
-    }
+            _ = GameNetworkApi.GetGameAssembly();
 
-    [HarmonyPatch(typeof(DungeonGenerator), nameof(DungeonGenerator.Generate))]
-    public static class DungeonGeneratorGeneratePatch
-    {
-        [HarmonyPrefix]
-        public static void Prefix(DungeonGenerator __instance)
+            HarmonyPatchHelper.PatchApplyResult result = HarmonyPatchHelper.ApplyPatchTypes(
+                harmony,
+                Feature,
+                HarmonyPatchHelper.GetNestedPatchTypes(typeof(DungeonSizeScalingPatches)));
+
+            LogPatchAudit(harmony);
+            HarmonyPatchHelper.LogPatchSummary(Feature, result);
+        }
+
+        private static void LogPatchAudit(HarmonyLib.Harmony harmony)
         {
-            try
+            HarmonyPatchHelper.LogPatchAudit(Feature, harmony,
+            [
+                ("Generate/DungeonGenerator", AccessTools.Method(typeof(DungeonGenerator), nameof(DungeonGenerator.Generate))),
+                ("Clear/DungeonGenerator", AccessTools.Method(typeof(DungeonGenerator), nameof(DungeonGenerator.Clear))),
+            ]);
+        }
+
+        [HarmonyPatch(typeof(DungeonGenerator), nameof(DungeonGenerator.Generate))]
+        public static class DungeonGeneratorGeneratePatch
+        {
+            [HarmonyPrefix]
+            public static void Prefix(DungeonGenerator __instance)
             {
-                DungeonSizeScalingApplier.ApplyBeforeGenerate(__instance);
-            }
-            catch (Exception ex)
-            {
-                ModLog.Warn(Feature, $"Generate prefix failed — {ex.Message}");
+                try
+                {
+                    DungeonSizeScalingApplier.ApplyBeforeGenerate(__instance);
+                }
+                catch (Exception ex)
+                {
+                    ModLog.Warn(Feature, $"Generate prefix failed — {ex.Message}");
+                }
             }
         }
-    }
 
-    [HarmonyPatch(typeof(DungeonGenerator), nameof(DungeonGenerator.Clear))]
-    public static class DungeonGeneratorClearPatch
-    {
-        [HarmonyPostfix]
-        public static void Postfix(DungeonGenerator __instance)
+        [HarmonyPatch(typeof(DungeonGenerator), nameof(DungeonGenerator.Clear))]
+        public static class DungeonGeneratorClearPatch
         {
-            try
+            [HarmonyPostfix]
+            public static void Postfix(DungeonGenerator __instance)
             {
-                DungeonSizeScalingApplier.OnGeneratorCleared(__instance);
-            }
-            catch (Exception ex)
-            {
-                ModLog.Warn(Feature, $"Clear postfix failed — {ex.Message}");
+                try
+                {
+                    DungeonSizeScalingApplier.OnGeneratorCleared(__instance);
+                }
+                catch (Exception ex)
+                {
+                    ModLog.Warn(Feature, $"Clear postfix failed — {ex.Message}");
+                }
             }
         }
     }

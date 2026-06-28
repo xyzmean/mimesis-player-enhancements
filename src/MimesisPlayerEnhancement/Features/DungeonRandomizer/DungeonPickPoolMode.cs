@@ -1,7 +1,8 @@
-namespace MimesisPlayerEnhancement.Features.DungeonRandomizer;
-
-internal enum DungeonPickPoolMode
+namespace MimesisPlayerEnhancement.Features.DungeonRandomizer
 {
-    WidenVanilla,
-    AllActiveUniform,
+    internal enum DungeonPickPoolMode
+    {
+        WidenVanilla,
+        AllActiveUniform,
+    }
 }

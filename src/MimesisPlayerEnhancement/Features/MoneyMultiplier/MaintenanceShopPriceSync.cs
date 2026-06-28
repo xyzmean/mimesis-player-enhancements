@@ -5,35 +5,44 @@ using System.Reflection;
 using HarmonyLib;
 using ReluProtocol;
 
-namespace MimesisPlayerEnhancement.Features.MoneyMultiplier;
-
-internal static class MaintenanceShopPriceSync
+namespace MimesisPlayerEnhancement.Features.MoneyMultiplier
 {
-    private static readonly FieldInfo LevelObjectsField =
-        AccessTools.Field(typeof(IVroom), "_levelObjects")
-        ?? throw new InvalidOperationException("IVroom._levelObjects not found");
-
-    internal static void SyncVendingMachineLevelObjects(
-        MaintenanceRoom room,
-        Dictionary<int, ShopItemPriceInfo> priceForItems)
+    internal static class MaintenanceShopPriceSync
     {
-        if (LevelObjectsField.GetValue(room) is not IDictionary levelObjects)
-            return;
+        private static readonly FieldInfo LevelObjectsField =
+            AccessTools.Field(typeof(IVroom), "_levelObjects")
+            ?? throw new InvalidOperationException("IVroom._levelObjects not found");
 
-        foreach (DictionaryEntry entry in levelObjects)
+        internal static void SyncVendingMachineLevelObjects(
+            MaintenanceRoom room,
+            Dictionary<int, ShopItemPriceInfo> priceForItems)
         {
-            if (entry.Value is not InsertLevelObjectInfo insertLevelObjectInfo)
-                continue;
+            if (LevelObjectsField.GetValue(room) is not IDictionary levelObjects)
+            {
+                return;
+            }
 
-            if (insertLevelObjectInfo.InsertLevelObjectType != InsertLevelObjectType.VendingMachine)
-                continue;
+            foreach (DictionaryEntry entry in levelObjects)
+            {
+                if (entry.Value is not InsertLevelObjectInfo insertLevelObjectInfo)
+                {
+                    continue;
+                }
 
-            if (!priceForItems.TryGetValue(insertLevelObjectInfo.OutputItemMasterID, out ShopItemPriceInfo? shopInfo)
-                || shopInfo == null)
-                continue;
+                if (insertLevelObjectInfo.InsertLevelObjectType != InsertLevelObjectType.VendingMachine)
+                {
+                    continue;
+                }
 
-            insertLevelObjectInfo.InputAmount = shopInfo.Price;
-            insertLevelObjectInfo.DiscountRate = shopInfo.DiscountRate;
+                if (!priceForItems.TryGetValue(insertLevelObjectInfo.OutputItemMasterID, out ShopItemPriceInfo? shopInfo)
+                    || shopInfo == null)
+                {
+                    continue;
+                }
+
+                insertLevelObjectInfo.InputAmount = shopInfo.Price;
+                insertLevelObjectInfo.DiscountRate = shopInfo.DiscountRate;
+            }
         }
     }
 }

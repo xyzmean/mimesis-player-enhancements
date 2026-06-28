@@ -1,13 +1,20 @@
-namespace MimesisPlayerEnhancement.Features.MoneyMultiplier;
-
-internal static class MoneyPlayerCountHelper
+namespace MimesisPlayerEnhancement.Features.MoneyMultiplier
 {
-    internal static int ResolveFromRoom(MaintenanceRoom? room) =>
-        Util.SessionPlayerCountHelper.ResolveFromRoom(room);
+    internal static class MoneyPlayerCountHelper
+    {
+        internal static int ResolveFromRoom(MaintenanceRoom? room)
+        {
+            return Util.SessionPlayerCountHelper.ResolveFromRoom(room);
+        }
 
-    internal static int ResolveFromSession(GameSessionInfo? info) =>
-        Util.SessionPlayerCountHelper.ResolveFromSession(info);
+        internal static int ResolveFromSession(GameSessionInfo? info)
+        {
+            return Util.SessionPlayerCountHelper.ResolveFromSession(info);
+        }
 
-    internal static int ResolveForItemPrices() =>
-        Util.SessionPlayerCountHelper.ResolveFromSession();
+        internal static int ResolveForItemPrices()
+        {
+            return Util.SessionPlayerCountHelper.ResolveFromSession();
+        }
+    }
 }

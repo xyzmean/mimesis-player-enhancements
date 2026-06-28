@@ -1,30 +1,35 @@
-using MimesisPlayerEnhancement.Features.Statistics;
-
-namespace MimesisPlayerEnhancement.Features.PlayerAnnouncements;
-
-internal static class PlayerAnnouncements
+namespace MimesisPlayerEnhancement.Features.PlayerAnnouncements
 {
-    private const string Feature = "Announcements";
-
-    internal static void OnAllMembersEnteredDungeon(DungeonRoom room)
+    internal static class PlayerAnnouncements
     {
-        if (!ModConfig.ShowPlayerAnnouncements.Value)
-            return;
+        private const string Feature = "Announcements";
 
-        MapRunStatsTracker.ResetForDungeonEntry();
-        BossSpawnAnnouncer.BeginDungeonRun();
+        internal static void OnAllMembersEnteredDungeon(DungeonRoom room)
+        {
+            if (!ModConfig.ShowPlayerAnnouncements.Value)
+            {
+                return;
+            }
 
-        string? settings = DungeonSettingsFormatter.FormatForDungeonEntry(room);
-        if (!string.IsNullOrWhiteSpace(settings))
-            ShowToast(settings);
-    }
+            MapRunStatsTracker.ResetForDungeonEntry();
+            BossSpawnAnnouncer.BeginDungeonRun();
 
-    internal static void ShowToast(string message, bool isEntering = true, bool localOnly = false)
-    {
-        if (!ModConfig.ShowPlayerAnnouncements.Value)
-            return;
+            string? settings = DungeonSettingsFormatter.FormatForDungeonEntry(room);
+            if (!string.IsNullOrWhiteSpace(settings))
+            {
+                ShowToast(settings);
+            }
+        }
 
-        InGameMessageHelper.ShowModMessage(message, isEntering, localOnly);
-        ModLog.Debug(Feature, localOnly ? $"Local toast: {message}" : $"Toast: {message}");
+        internal static void ShowToast(string message, bool isEntering = true, bool localOnly = false)
+        {
+            if (!ModConfig.ShowPlayerAnnouncements.Value)
+            {
+                return;
+            }
+
+            InGameMessageHelper.ShowModMessage(message, isEntering, localOnly);
+            ModLog.Debug(Feature, localOnly ? $"Local toast: {message}" : $"Toast: {message}");
+        }
     }
 }

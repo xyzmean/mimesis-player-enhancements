@@ -15,7 +15,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Compile-only: runtime Harmony comes from MelonLoader's 0Harmony.dll -->
+    <Content Include="Features\WebDashboard\Assets\**\*">
+      <Link>MimesisPlayerEnhancement\assets\%(RecursiveDir)%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="HarmonyX">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>compile;build</IncludeAssets>
@@ -37,10 +43,6 @@
     </Reference>
     <Reference Include="FishNet.Runtime">
       <HintPath>$(GameAssemblyPath)/FishNet.Runtime.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="UniTask">
-      <HintPath>$(GameAssemblyPath)/UniTask.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine">

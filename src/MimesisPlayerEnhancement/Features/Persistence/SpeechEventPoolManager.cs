@@ -1,10 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Reflection;
+using FishNet.Object.Synchronizing;
 using Mimic.Voice.SpeechSystem;
-using UnityEngine;
 
 namespace MimesisPlayerEnhancement.Features.Persistence
 {
@@ -22,16 +21,16 @@ namespace MimesisPlayerEnhancement.Features.Persistence
         public enum EventState { Pending, Injected }
 
         private static readonly Dictionary<long, (SpeechEvent ev, EventState state, string originalPlayerName)> _pool
-            = new Dictionary<long, (SpeechEvent, EventState, string)>();
+            = [];
 
         // Index: old PlayerName (DissonanceID) -> list of event IDs for fast lookup
         private static readonly Dictionary<string, List<long>> _byPlayerName
-            = new Dictionary<string, List<long>>();
+            = [];
 
         // Saved mapping from previous session: SteamID -> old DissonanceID
         // Allows cross-session matching even when DissonanceID changes
         private static readonly Dictionary<ulong, string> _steamToDissonance
-            = new Dictionary<ulong, string>();
+            = [];
 
         private static int _loadedSlotId = -1;
 
@@ -41,13 +40,13 @@ namespace MimesisPlayerEnhancement.Features.Persistence
         // Deferred PlayerName updates: events injected before PlayerId was available
         // Key = archive reference, Value = list of events needing PlayerName update
         private static readonly List<(SpeechEventArchive archive, List<SpeechEvent> events)> _deferredNameUpdates
-            = new List<(SpeechEventArchive, List<SpeechEvent>)>();
+            = [];
 
         // Deferred injection: archives whose PlayerId/PlayerUID weren't available at OnStartClient.
         // Happens for remote players because FishNet SyncVars haven't synced yet.
         // ProcessDeferredUpdates will retry when the data becomes available.
         private static readonly List<SpeechEventArchive> _deferredInjectionArchives
-            = new List<SpeechEventArchive>();
+            = [];
 
         // ===================== Disconnected Player Cache =====================
         // Caches SpeechEvents from players who disconnect mid-session (before save).
@@ -55,12 +54,12 @@ namespace MimesisPlayerEnhancement.Features.Persistence
         // and all their voice events from the current session are lost.
         // Keyed by event ID to avoid duplicates.
         private static readonly Dictionary<long, SpeechEvent> _disconnectedCache
-            = new Dictionary<long, SpeechEvent>();
+            = [];
 
         // Cached SteamID -> DissonanceID for disconnected players.
         // SavePlayerMapping uses FindObjectsOfType which misses destroyed archives.
         private static readonly Dictionary<ulong, string> _disconnectedPlayerMappings
-            = new Dictionary<ulong, string>();
+            = [];
 
         // RecordedTime and LastPlayedTime are readonly fields, need reflection
         private static readonly FieldInfo RecordedTimeField =
@@ -75,7 +74,10 @@ namespace MimesisPlayerEnhancement.Features.Persistence
         /// </summary>
         public static void LoadForSlot(int slotId)
         {
-            if (slotId == _loadedSlotId && _pool.Count > 0) return;
+            if (slotId == _loadedSlotId && _pool.Count > 0)
+            {
+                return;
+            }
 
             Reset();
             _loadedSlotId = slotId;
@@ -89,16 +91,19 @@ namespace MimesisPlayerEnhancement.Features.Persistence
             }
 
             // Populate pool
-            foreach (var ev in events)
+            foreach (SpeechEvent ev in events)
             {
-                if (ev == null || _pool.ContainsKey(ev.Id)) continue;
+                if (ev == null || _pool.ContainsKey(ev.Id))
+                {
+                    continue;
+                }
 
                 string playerName = ev.PlayerName ?? "";
                 _pool[ev.Id] = (ev, EventState.Pending, playerName);
 
-                if (!_byPlayerName.TryGetValue(playerName, out var list))
+                if (!_byPlayerName.TryGetValue(playerName, out List<long>? list))
                 {
-                    list = new List<long>();
+                    list = [];
                     _byPlayerName[playerName] = list;
                 }
                 list.Add(ev.Id);
@@ -120,19 +125,22 @@ namespace MimesisPlayerEnhancement.Features.Persistence
         /// </summary>
         public static List<SpeechEvent> ClaimEventsForArchive(string? playerId, long playerUID, bool isLocal = false, SpeechEventArchive? archive = null)
         {
-            var claimed = new List<SpeechEvent>();
-            if (_pool.Count == 0) return claimed;
+            List<SpeechEvent> claimed = [];
+            if (_pool.Count == 0)
+            {
+                return claimed;
+            }
 
             ModLog.Debug("Persistence", $"ClaimEventsForArchive: PlayerId='{playerId}', " +
                             $"PlayerUID={playerUID}, isLocal={isLocal}, " +
                             $"pool has {_pool.Count} events, playerNames in pool: [{string.Join(", ", _byPlayerName.Keys)}]");
 
-            var matchedPlayerNames = new HashSet<string>();
+            HashSet<string> matchedPlayerNames = [];
 
             // Level 1: Direct DissonanceID match (fast path, same ID across sessions)
             if (!string.IsNullOrEmpty(playerId) && _byPlayerName.ContainsKey(playerId))
             {
-                matchedPlayerNames.Add(playerId);
+                _ = matchedPlayerNames.Add(playerId);
                 ModLog.Debug("Persistence", $"Level 1 match: DissonanceID '{playerId}' found directly");
             }
 
@@ -146,7 +154,7 @@ namespace MimesisPlayerEnhancement.Features.Persistence
                 {
                     if (_byPlayerName.ContainsKey(oldDissonanceId))
                     {
-                        matchedPlayerNames.Add(oldDissonanceId);
+                        _ = matchedPlayerNames.Add(oldDissonanceId);
                         ModLog.Debug("Persistence", $"Level 2 match: SteamID {archiveSteamId} " +
                                         $"-> old DissonanceID '{oldDissonanceId}' (new: '{playerId}')");
                     }
@@ -166,12 +174,22 @@ namespace MimesisPlayerEnhancement.Features.Persistence
             // Claim all PENDING events for matched player names
             foreach (var playerName in matchedPlayerNames)
             {
-                if (!_byPlayerName.TryGetValue(playerName, out var eventIds)) continue;
+                if (!_byPlayerName.TryGetValue(playerName, out List<long>? eventIds))
+                {
+                    continue;
+                }
 
                 foreach (long id in eventIds)
                 {
-                    if (!_pool.TryGetValue(id, out var entry)) continue;
-                    if (entry.state != EventState.Pending) continue;
+                    if (!_pool.TryGetValue(id, out (SpeechEvent ev, EventState state, string originalPlayerName) entry))
+                    {
+                        continue;
+                    }
+
+                    if (entry.state != EventState.Pending)
+                    {
+                        continue;
+                    }
 
                     _pool[id] = (entry.ev, EventState.Injected, entry.originalPlayerName);
                     claimed.Add(entry.ev);
@@ -184,8 +202,10 @@ namespace MimesisPlayerEnhancement.Features.Persistence
             {
                 if (!string.IsNullOrEmpty(playerId))
                 {
-                    foreach (var ev in claimed)
+                    foreach (SpeechEvent ev in claimed)
+                    {
                         ev.PlayerName = playerId;
+                    }
 
                     ModLog.Debug("Persistence", $"Claimed {claimed.Count} events, " +
                                     $"PlayerName updated to '{playerId}'");
@@ -201,7 +221,7 @@ namespace MimesisPlayerEnhancement.Features.Persistence
             }
             else
             {
-                var (p, i, f) = GetCounts();
+                (int p, int i, int f) = GetCounts();
                 ModLog.Debug("Persistence", $"No events claimed for PlayerId='{playerId}' " +
                                 $"(matched names: [{string.Join(", ", matchedPlayerNames)}], " +
                                 $"pool: {p}P/{i}I/{f}F)");
@@ -225,12 +245,11 @@ namespace MimesisPlayerEnhancement.Features.Persistence
                     object? pdata = MimesisSaveManager.GetHubMember("pdata");
                     if (pdata != null)
                     {
-                        var field = pdata.GetType().GetField("actorUIDToSteamID",
+                        FieldInfo field = pdata.GetType().GetField("actorUIDToSteamID",
                             BindingFlags.Public | BindingFlags.Instance);
                         if (field != null)
                         {
-                            var dict = field.GetValue(pdata) as Dictionary<long, ulong>;
-                            if (dict != null && dict.TryGetValue(playerUID, out ulong steamId))
+                            if (field.GetValue(pdata) is Dictionary<long, ulong> dict && dict.TryGetValue(playerUID, out ulong steamId))
                             {
                                 ModLog.Debug("Persistence", $"Resolved PlayerUID {playerUID} -> SteamID {steamId} (from actorUIDToSteamID)");
                                 return steamId;
@@ -268,16 +287,24 @@ namespace MimesisPlayerEnhancement.Features.Persistence
         {
             try
             {
-                var platformMgr = MonoSingleton<PlatformMgr>.Instance;
-                if (platformMgr == null) return 0;
+                PlatformMgr platformMgr = MonoSingleton<PlatformMgr>.Instance;
+                if (platformMgr == null)
+                {
+                    return 0;
+                }
 
-                var field = typeof(PlatformMgr).GetField("_uniqueUserPath",
+                FieldInfo field = typeof(PlatformMgr).GetField("_uniqueUserPath",
                     BindingFlags.NonPublic | BindingFlags.Instance);
-                if (field == null) return 0;
+                if (field == null)
+                {
+                    return 0;
+                }
 
                 string? userPath = field.GetValue(platformMgr) as string;
                 if (!string.IsNullOrEmpty(userPath) && ulong.TryParse(userPath, out ulong steamId))
+                {
                     return steamId;
+                }
             }
             catch (Exception ex)
             {
@@ -293,10 +320,18 @@ namespace MimesisPlayerEnhancement.Features.Persistence
         /// </summary>
         public static void RegisterDeferredInjection(SpeechEventArchive archive)
         {
-            if (archive == null) return;
+            if (archive == null)
+            {
+                return;
+            }
             // Avoid duplicates
-            foreach (var existing in _deferredInjectionArchives)
-                if (existing == archive) return;
+            foreach (SpeechEventArchive existing in _deferredInjectionArchives)
+            {
+                if (existing == archive)
+                {
+                    return;
+                }
+            }
 
             _deferredInjectionArchives.Add(archive);
             ModLog.Debug("Persistence", $"Registered archive for deferred injection " +
@@ -308,14 +343,21 @@ namespace MimesisPlayerEnhancement.Features.Persistence
         /// 1. Deferred injections: archives waiting for PlayerId/PlayerUID to sync
         /// 2. Deferred name updates: events injected before PlayerId was set
         /// </summary>
+        private static readonly HashSet<long> DeferredInjectionSeenIds = [];
+
         public static void ProcessDeferredUpdates()
         {
+            if (_deferredInjectionArchives.Count == 0 && _deferredNameUpdates.Count == 0)
+            {
+                return;
+            }
+
             // === Deferred injections (remote players whose SyncVars weren't ready) ===
             if (_deferredInjectionArchives.Count > 0)
             {
                 for (int i = _deferredInjectionArchives.Count - 1; i >= 0; i--)
                 {
-                    var archive = _deferredInjectionArchives[i];
+                    SpeechEventArchive archive = _deferredInjectionArchives[i];
 
                     // Archive destroyed?
                     if (archive == null)
@@ -337,35 +379,46 @@ namespace MimesisPlayerEnhancement.Features.Persistence
                     catch { continue; } // Player not ready yet
 
                     if (string.IsNullOrEmpty(playerId) && playerUID == 0)
+                    {
                         continue; // Still not synced, try next frame
+                    }
 
                     // SyncVars are ready! Do the full claim+inject
                     _deferredInjectionArchives.RemoveAt(i);
                     ModLog.Debug("Persistence", $"Deferred injection: SyncVars ready for " +
                                     $"PlayerId='{playerId}', PlayerUID={playerUID}");
 
-                    var eventsList = archive.events;
-                    if (eventsList == null) continue;
+                    SyncList<SpeechEvent> eventsList = archive.events;
+                    if (eventsList == null)
+                    {
+                        continue;
+                    }
 
                     float currentTime = GetCurrentSessionTime();
-                    var seenIds = new HashSet<long>();
+                    DeferredInjectionSeenIds.Clear();
                     for (int j = 0; j < eventsList.Count; j++)
-                        seenIds.Add(eventsList[j].Id);
+                    {
+                        _ = DeferredInjectionSeenIds.Add(eventsList[j].Id);
+                    }
 
                     int totalAdded = 0;
 
                     // Source 1: Pool from disk
                     if (HasPending())
                     {
-                        var claimed = ClaimEventsForArchive(playerId, playerUID, isLocal, archive);
+                        List<SpeechEvent> claimed = ClaimEventsForArchive(playerId, playerUID, isLocal, archive);
                         if (claimed != null)
                         {
-                            foreach (var ev in claimed)
+                            foreach (SpeechEvent ev in claimed)
                             {
-                                if (ev == null || seenIds.Contains(ev.Id)) continue;
+                                if (ev == null || DeferredInjectionSeenIds.Contains(ev.Id))
+                                {
+                                    continue;
+                                }
+
                                 FixEventTiming(ev, currentTime);
                                 eventsList.Add(ev);
-                                seenIds.Add(ev.Id);
+                                _ = DeferredInjectionSeenIds.Add(ev.Id);
                                 totalAdded++;
                             }
                         }
@@ -374,15 +427,19 @@ namespace MimesisPlayerEnhancement.Features.Persistence
                     // Source 2: Disconnected cache
                     if (_disconnectedCache.Count > 0)
                     {
-                        var reclaimed = ClaimDisconnectedEventsForArchive(playerId, playerUID, isLocal);
+                        List<SpeechEvent> reclaimed = ClaimDisconnectedEventsForArchive(playerId, playerUID, isLocal);
                         if (reclaimed != null)
                         {
-                            foreach (var ev in reclaimed)
+                            foreach (SpeechEvent ev in reclaimed)
                             {
-                                if (ev == null || seenIds.Contains(ev.Id)) continue;
+                                if (ev == null || DeferredInjectionSeenIds.Contains(ev.Id))
+                                {
+                                    continue;
+                                }
+
                                 FixEventTiming(ev, currentTime);
                                 eventsList.Add(ev);
-                                seenIds.Add(ev.Id);
+                                _ = DeferredInjectionSeenIds.Add(ev.Id);
                                 totalAdded++;
                             }
                         }
@@ -405,11 +462,14 @@ namespace MimesisPlayerEnhancement.Features.Persistence
             }
 
             // === Deferred PlayerName updates (events claimed before PlayerId was set) ===
-            if (_deferredNameUpdates.Count == 0) return;
+            if (_deferredNameUpdates.Count == 0)
+            {
+                return;
+            }
 
             for (int i = _deferredNameUpdates.Count - 1; i >= 0; i--)
             {
-                var (archive, events) = _deferredNameUpdates[i];
+                (SpeechEventArchive? archive, List<SpeechEvent>? events) = _deferredNameUpdates[i];
 
                 // Archive destroyed?
                 if (archive == null)
@@ -423,13 +483,17 @@ namespace MimesisPlayerEnhancement.Features.Persistence
                 catch { continue; } // Player not ready yet
 
                 if (string.IsNullOrEmpty(newPlayerId))
+                {
                     continue; // Still not available, try next frame
+                }
 
                 // PlayerId is now available! Update all events
-                foreach (var ev in events)
+                foreach (SpeechEvent ev in events)
                 {
                     if (ev != null)
+                    {
                         ev.PlayerName = newPlayerId;
+                    }
                 }
 
                 ModLog.Debug("Persistence", $"Deferred update: {events.Count} events " +
@@ -460,7 +524,7 @@ namespace MimesisPlayerEnhancement.Features.Persistence
         public static (int pending, int injected, int fallback) GetCounts()
         {
             int pending = 0, injected = 0;
-            foreach (var entry in _pool.Values)
+            foreach ((SpeechEvent ev, EventState state, string originalPlayerName) entry in _pool.Values)
             {
                 switch (entry.state)
                 {
@@ -477,11 +541,13 @@ namespace MimesisPlayerEnhancement.Features.Persistence
         /// </summary>
         public static List<SpeechEvent> GetPendingEvents()
         {
-            var pending = new List<SpeechEvent>();
-            foreach (var entry in _pool.Values)
+            List<SpeechEvent> pending = [];
+            foreach ((SpeechEvent ev, EventState state, string originalPlayerName) entry in _pool.Values)
             {
                 if (entry.state == EventState.Pending)
+                {
                     pending.Add(entry.ev);
+                }
             }
             return pending;
         }
@@ -491,8 +557,14 @@ namespace MimesisPlayerEnhancement.Features.Persistence
         /// </summary>
         public static bool HasPending()
         {
-            foreach (var entry in _pool.Values)
-                if (entry.state == EventState.Pending) return true;
+            foreach ((SpeechEvent ev, EventState state, string originalPlayerName) entry in _pool.Values)
+            {
+                if (entry.state == EventState.Pending)
+                {
+                    return true;
+                }
+            }
+
             return false;
         }
 
@@ -512,9 +584,14 @@ namespace MimesisPlayerEnhancement.Features.Persistence
         public static void FixEventTiming(SpeechEvent ev, float currentTime)
         {
             if (RecordedTimeField != null)
+            {
                 RecordedTimeField.SetValue(ev, currentTime);
+            }
+
             if (LastPlayedTimeField != null)
+            {
                 LastPlayedTimeField.SetValue(ev, currentTime);
+            }
         }
 
         /// <summary>
@@ -527,10 +604,12 @@ namespace MimesisPlayerEnhancement.Features.Persistence
                 object? timeutil = MimesisSaveManager.GetHubMember("timeutil");
                 if (timeutil != null)
                 {
-                    var getTickMethod = timeutil.GetType().GetMethod("GetCurrentTickSec",
+                    MethodInfo getTickMethod = timeutil.GetType().GetMethod("GetCurrentTickSec",
                         BindingFlags.Public | BindingFlags.Instance);
                     if (getTickMethod != null)
+                    {
                         return (float)(int)getTickMethod.Invoke(timeutil, null);
+                    }
                 }
             }
             catch { }
@@ -546,7 +625,10 @@ namespace MimesisPlayerEnhancement.Features.Persistence
         /// </summary>
         public static int CacheEventsFromArchive(SpeechEventArchive archive)
         {
-            if (archive == null) return 0;
+            if (archive == null)
+            {
+                return 0;
+            }
 
             try
             {
@@ -563,30 +645,24 @@ namespace MimesisPlayerEnhancement.Features.Persistence
                 catch { /* Player may already be partially destroyed */ }
 
                 // Don't cache the host's own archive (host doesn't "disconnect")
-                if (isLocal) return 0;
-
-                // Extract events from the SyncList via reflection
-                var eventsField = typeof(SpeechEventArchive).GetField("events", BindingFlags.Public | BindingFlags.Instance);
-                if (eventsField == null) return 0;
-
-                var syncList = eventsField.GetValue(archive);
-                if (syncList == null) return 0;
-
-                var countProp = syncList.GetType().GetProperty("Count", BindingFlags.Public | BindingFlags.Instance);
-                var indexer = syncList.GetType().GetProperty("Item", new[] { typeof(int) });
-                if (countProp == null || indexer == null) return 0;
-
-                int count = (int)countProp.GetValue(syncList);
-                int cached = 0;
-
-                for (int i = 0; i < count; i++)
+                if (isLocal)
                 {
-                    var ev = indexer.GetValue(syncList, new object[] { i }) as SpeechEvent;
-                    if (ev != null && !_disconnectedCache.ContainsKey(ev.Id))
+                    return 0;
+                }
+
+                List<SpeechEvent> collectedEvents = [];
+                HashSet<long> seenIds = [];
+                _ = SpeechEventSyncListHelper.CollectFromArchive(archive, seenIds, collectedEvents);
+                int cached = 0;
+                foreach (SpeechEvent ev in collectedEvents)
+                {
+                    if (_disconnectedCache.ContainsKey(ev.Id))
                     {
-                        _disconnectedCache[ev.Id] = ev;
-                        cached++;
+                        continue;
                     }
+
+                    _disconnectedCache[ev.Id] = ev;
+                    cached++;
                 }
 
                 // Cache player mapping (SteamID -> DissonanceID)
@@ -615,36 +691,46 @@ namespace MimesisPlayerEnhancement.Features.Persistence
         /// </summary>
         public static List<SpeechEvent> ClaimDisconnectedEventsForArchive(string? playerId, long playerUID, bool isLocal)
         {
-            var claimed = new List<SpeechEvent>();
-            if (_disconnectedCache.Count == 0) return claimed;
+            List<SpeechEvent> claimed = [];
+            if (_disconnectedCache.Count == 0)
+            {
+                return claimed;
+            }
 
             // Collect all DissonanceIDs that belong to this player
-            var matchedPlayerNames = new HashSet<string>();
+            HashSet<string> matchedPlayerNames = [];
 
             // Direct match: same DissonanceID as before
             if (!string.IsNullOrEmpty(playerId))
-                matchedPlayerNames.Add(playerId);
+            {
+                _ = matchedPlayerNames.Add(playerId);
+            }
 
             // SteamID match: resolve SteamID -> look up old DissonanceID in disconnected mappings
             ulong steamId = GetSteamIdForPlayerUID(playerUID, isLocal);
             if (steamId != 0 && _disconnectedPlayerMappings.TryGetValue(steamId, out string oldDissonanceId))
             {
-                matchedPlayerNames.Add(oldDissonanceId);
+                _ = matchedPlayerNames.Add(oldDissonanceId);
                 ModLog.Debug("Persistence", $"Disconnected cache match: SteamID {steamId} -> old DissonanceID '{oldDissonanceId}'");
             }
 
-            if (matchedPlayerNames.Count == 0) return claimed;
+            if (matchedPlayerNames.Count == 0)
+            {
+                return claimed;
+            }
 
             // Find all cached events whose PlayerName matches
-            var idsToRemove = new List<long>();
-            foreach (var kvp in _disconnectedCache)
+            List<long> idsToRemove = [];
+            foreach (KeyValuePair<long, SpeechEvent> kvp in _disconnectedCache)
             {
                 string evPlayerName = kvp.Value.PlayerName ?? "";
                 if (matchedPlayerNames.Contains(evPlayerName))
                 {
                     // Update PlayerName to the current DissonanceID
                     if (!string.IsNullOrEmpty(playerId))
+                    {
                         kvp.Value.PlayerName = playerId;
+                    }
 
                     claimed.Add(kvp.Value);
                     idsToRemove.Add(kvp.Key);
@@ -653,11 +739,15 @@ namespace MimesisPlayerEnhancement.Features.Persistence
 
             // Remove claimed events from cache
             foreach (long id in idsToRemove)
-                _disconnectedCache.Remove(id);
+            {
+                _ = _disconnectedCache.Remove(id);
+            }
 
             // Clean up the player mapping if all events for this player were claimed
             if (steamId != 0 && claimed.Count > 0)
-                _disconnectedPlayerMappings.Remove(steamId);
+            {
+                _ = _disconnectedPlayerMappings.Remove(steamId);
+            }
 
             if (claimed.Count > 0)
             {
@@ -673,7 +763,7 @@ namespace MimesisPlayerEnhancement.Features.Persistence
         /// </summary>
         public static List<SpeechEvent> GetDisconnectedEvents()
         {
-            return new List<SpeechEvent>(_disconnectedCache.Values);
+            return [.. _disconnectedCache.Values];
         }
 
         /// <summary>
@@ -723,13 +813,11 @@ namespace MimesisPlayerEnhancement.Features.Persistence
 
             try
             {
-                var archives = UnityEngine.Object.FindObjectsByType<SpeechEventArchive>(FindObjectsSortMode.None) ?? Array.Empty<SpeechEventArchive>();
-
-                ModLog.Debug("Persistence", $"SavePlayerMapping: found {archives.Length} live archives");
-
-                var mapping = new Dictionary<ulong, string>();
-                foreach (var archive in archives)
+                Dictionary<ulong, string> mapping = [];
+                int liveArchiveCount = 0;
+                foreach (SpeechEventArchive archive in SpeechEventArchiveRegistry.EnumerateActive())
                 {
+                    liveArchiveCount++;
                     try
                     {
                         string pid = archive.PlayerId;
@@ -761,11 +849,13 @@ namespace MimesisPlayerEnhancement.Features.Persistence
                     }
                 }
 
+                ModLog.Debug("Persistence", $"SavePlayerMapping: found {liveArchiveCount} live archives");
+
                 // Merge with cached mappings from disconnected players
                 // (disconnected mappings are added first, live ones overwrite if duplicate)
-                var disconnectedMappings = GetDisconnectedPlayerMappings();
+                Dictionary<ulong, string> disconnectedMappings = GetDisconnectedPlayerMappings();
                 int disconnectedCount = 0;
-                foreach (var kvp in disconnectedMappings)
+                foreach (KeyValuePair<ulong, string> kvp in disconnectedMappings)
                 {
                     if (!mapping.ContainsKey(kvp.Key))
                     {
@@ -774,19 +864,21 @@ namespace MimesisPlayerEnhancement.Features.Persistence
                     }
                 }
                 if (disconnectedCount > 0)
+                {
                     ModLog.Debug("Persistence", $"Added {disconnectedCount} disconnected player mappings");
+                }
 
                 // Always create the file, even if empty (so we know save was attempted)
                 // JSON: {"steamId":"dissonanceId", ...}
-                var entries = new List<string>();
-                foreach (var kvp in mapping)
+                List<string> entries = [];
+                foreach (KeyValuePair<ulong, string> kvp in mapping)
                 {
                     string val = EscapeJsonString(kvp.Value);
                     entries.Add($"\"{kvp.Key}\":\"{val}\"");
                 }
                 string json = "{" + string.Join(",", entries) + "}";
 
-                Directory.CreateDirectory(slotPath);
+                _ = Directory.CreateDirectory(slotPath);
                 string filePath = Path.Combine(slotPath, PlayerMappingFile);
                 MimesisSaveManager.SafeWritePlayerMapping(filePath, json);
                 ModLog.Debug("Persistence", $"Saved player mapping: {mapping.Count} entries ({disconnectedCount} from cache) -> {filePath}");
@@ -805,7 +897,10 @@ namespace MimesisPlayerEnhancement.Features.Persistence
             _steamToDissonance.Clear();
 
             string? slotPath = MimesisSaveManager.GetMimesisSlotPath(slotId);
-            if (string.IsNullOrEmpty(slotPath)) return;
+            if (string.IsNullOrEmpty(slotPath))
+            {
+                return;
+            }
 
             string filePath = Path.Combine(slotPath, PlayerMappingFile);
             string? json = MimesisSaveManager.SafeReadPlayerMapping(filePath);
@@ -818,16 +913,18 @@ namespace MimesisPlayerEnhancement.Features.Persistence
             try
             {
                 // Parse {"steamId":"dissonanceId", ...}
-                var mapping = ParseSteamToDissonanceJson(json);
+                Dictionary<ulong, string> mapping = ParseSteamToDissonanceJson(json);
 
-                foreach (var kvp in mapping)
+                foreach (KeyValuePair<ulong, string> kvp in mapping)
                 {
                     _steamToDissonance[kvp.Key] = kvp.Value;
                 }
 
                 ModLog.Debug("Persistence", $"Loaded player mapping: {_steamToDissonance.Count} entries");
-                foreach (var kvp in _steamToDissonance)
+                foreach (KeyValuePair<ulong, string> kvp in _steamToDissonance)
+                {
                     ModLog.Debug("Persistence", $"  SteamID {kvp.Key} -> DissonanceID '{kvp.Value}'");
+                }
             }
             catch (Exception ex)
             {
@@ -840,15 +937,29 @@ namespace MimesisPlayerEnhancement.Features.Persistence
         /// </summary>
         private static Dictionary<ulong, string> ParseSteamToDissonanceJson(string json)
         {
-            var result = new Dictionary<ulong, string>();
-            if (string.IsNullOrEmpty(json)) return result;
+            Dictionary<ulong, string> result = [];
+            if (string.IsNullOrEmpty(json))
+            {
+                return result;
+            }
 
             // Strip outer braces
             json = json.Trim();
-            if (json.StartsWith("{")) json = json.Substring(1);
-            if (json.EndsWith("}")) json = json.Substring(0, json.Length - 1);
+            if (json.StartsWith("{"))
+            {
+                json = json[1..];
+            }
+
+            if (json.EndsWith("}"))
+            {
+                json = json[..^1];
+            }
+
             json = json.Trim();
-            if (string.IsNullOrEmpty(json)) return result;
+            if (string.IsNullOrEmpty(json))
+            {
+                return result;
+            }
 
             // Parse "key":"value" pairs
             int pos = 0;
@@ -856,24 +967,45 @@ namespace MimesisPlayerEnhancement.Features.Persistence
             {
                 // Find key (quoted ulong)
                 int keyStart = json.IndexOf('"', pos);
-                if (keyStart < 0) break;
+                if (keyStart < 0)
+                {
+                    break;
+                }
+
                 int keyEnd = json.IndexOf('"', keyStart + 1);
-                if (keyEnd < 0) break;
+                if (keyEnd < 0)
+                {
+                    break;
+                }
+
                 string keyStr = json.Substring(keyStart + 1, keyEnd - keyStart - 1);
 
                 // Find colon
                 int colon = json.IndexOf(':', keyEnd + 1);
-                if (colon < 0) break;
+                if (colon < 0)
+                {
+                    break;
+                }
 
                 // Find value (quoted string)
                 int valStart = json.IndexOf('"', colon + 1);
-                if (valStart < 0) break;
+                if (valStart < 0)
+                {
+                    break;
+                }
+
                 int valEnd = json.IndexOf('"', valStart + 1);
-                if (valEnd < 0) break;
+                if (valEnd < 0)
+                {
+                    break;
+                }
+
                 string valStr = json.Substring(valStart + 1, valEnd - valStart - 1);
 
                 if (ulong.TryParse(keyStr, out ulong steamId))
+                {
                     result[steamId] = valStr;
+                }
 
                 // Move past the value, look for comma or end
                 pos = valEnd + 1;
@@ -886,8 +1018,7 @@ namespace MimesisPlayerEnhancement.Features.Persistence
 
         private static string EscapeJsonString(string s)
         {
-            if (s == null) return "";
-            return s.Replace("\\", "\\\\").Replace("\"", "\\\"");
+            return s == null ? "" : s.Replace("\\", "\\\\").Replace("\"", "\\\"");
         }
     }
 }

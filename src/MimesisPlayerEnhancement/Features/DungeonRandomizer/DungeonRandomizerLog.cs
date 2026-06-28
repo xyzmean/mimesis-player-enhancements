@@ -1,14 +1,20 @@
-namespace MimesisPlayerEnhancement.Features.DungeonRandomizer;
-
-internal static class DungeonRandomizerLog
+namespace MimesisPlayerEnhancement.Features.DungeonRandomizer
 {
-    private const string Feature = "DungeonRandomizer";
-
-    internal static void Debug(string message)
+    internal static class DungeonRandomizerLog
     {
-        if (ModConfig.EnableDebugLogging.Value)
-            ModLog.Debug(Feature, message);
-    }
+        private const string Feature = "DungeonRandomizer";
 
-    internal static void Warn(string message) => ModLog.Warn(Feature, message);
+        internal static void Debug(string message)
+        {
+            if (ModConfig.EnableDebugLogging.Value)
+            {
+                ModLog.Debug(Feature, message);
+            }
+        }
+
+        internal static void Warn(string message)
+        {
+            ModLog.Warn(Feature, message);
+        }
+    }
 }

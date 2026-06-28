@@ -1,34 +1,34 @@
-using System.Reflection;
 using HarmonyLib;
 using Mimic.Voice.SpeechSystem;
 using MimesisPlayerEnhancement.Util;
 
-namespace MimesisPlayerEnhancement.Features.Persistence;
-
-public static class PersistencePatches
+namespace MimesisPlayerEnhancement.Features.Persistence
 {
-    private const string Feature = "Persistence";
-
-    public static void Apply(HarmonyLib.Harmony harmony)
+    public static class PersistencePatches
     {
-        var result = HarmonyPatchHelper.ApplyPatchTypes(
-            harmony,
-            Feature,
-            HarmonyPatchHelper.GetNamespacePatchTypes(typeof(PersistencePatches)));
+        private const string Feature = "Persistence";
 
-        LogPatchAudit(harmony);
-        HarmonyPatchHelper.LogPatchSummary(Feature, result);
-    }
-
-    private static void LogPatchAudit(HarmonyLib.Harmony harmony)
-    {
-        HarmonyPatchHelper.LogPatchAudit(Feature, harmony, new (string, MethodBase?)[]
+        public static void Apply(HarmonyLib.Harmony harmony)
         {
-            ("Delete/PlatformMgr", AccessTools.Method(typeof(PlatformMgr), nameof(PlatformMgr.Delete))),
-            ("SaveGameData/MaintenanceRoom", AccessTools.Method(typeof(MaintenanceRoom), nameof(MaintenanceRoom.SaveGameData))),
-            ("OnStartClient/SpeechEventArchive", AccessTools.Method(typeof(SpeechEventArchive), "OnStartClient")),
-            ("OnStopClient/SpeechEventArchive", AccessTools.Method(typeof(SpeechEventArchive), nameof(SpeechEventArchive.OnStopClient))),
-            ("GetRandomOtherSpeechEventArchive/VoiceManager", AccessTools.Method(typeof(VoiceManager), "GetRandomOtherSpeechEventArchive")),
-        });
+            HarmonyPatchHelper.PatchApplyResult result = HarmonyPatchHelper.ApplyPatchTypes(
+                harmony,
+                Feature,
+                HarmonyPatchHelper.GetNamespacePatchTypes(typeof(PersistencePatches)));
+
+            LogPatchAudit(harmony);
+            HarmonyPatchHelper.LogPatchSummary(Feature, result);
+        }
+
+        private static void LogPatchAudit(HarmonyLib.Harmony harmony)
+        {
+            HarmonyPatchHelper.LogPatchAudit(Feature, harmony,
+            [
+                ("Delete/PlatformMgr", AccessTools.Method(typeof(PlatformMgr), nameof(PlatformMgr.Delete))),
+                ("SaveGameData/MaintenanceRoom", AccessTools.Method(typeof(MaintenanceRoom), nameof(MaintenanceRoom.SaveGameData))),
+                ("OnStartClient/SpeechEventArchive", AccessTools.Method(typeof(SpeechEventArchive), "OnStartClient")),
+                ("OnStopClient/SpeechEventArchive", AccessTools.Method(typeof(SpeechEventArchive), nameof(SpeechEventArchive.OnStopClient))),
+                ("GetRandomOtherSpeechEventArchive/VoiceManager", AccessTools.Method(typeof(VoiceManager), "GetRandomOtherSpeechEventArchive")),
+            ]);
+        }
     }
 }

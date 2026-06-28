@@ -1,16 +1,19 @@
 using HarmonyLib;
 
-namespace MimesisPlayerEnhancement.Features.Statistics.Patches;
-
-[HarmonyPatch(typeof(PlayReportManager), nameof(PlayReportManager.IncreaseCycleCount))]
-public static class PlayReportCyclePatches
+namespace MimesisPlayerEnhancement.Features.Statistics.Patches
 {
-    [HarmonyPostfix]
-    public static void Postfix(PlayReportManager __instance)
+    [HarmonyPatch(typeof(PlayReportManager), nameof(PlayReportManager.IncreaseCycleCount))]
+    public static class PlayReportCyclePatches
     {
-        if (!ModConfig.EnableStatistics.Value)
-            return;
+        [HarmonyPostfix]
+        public static void Postfix(PlayReportManager __instance)
+        {
+            if (!ModConfig.EnableStatistics.Value)
+            {
+                return;
+            }
 
-        StatisticsTracker.OnCycleCompleted(__instance);
+            StatisticsTracker.OnCycleCompleted(__instance);
+        }
     }
 }

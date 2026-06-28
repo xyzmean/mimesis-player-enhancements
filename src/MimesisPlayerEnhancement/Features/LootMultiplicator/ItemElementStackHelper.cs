@@ -3,57 +3,62 @@ using Bifrost.ConstEnum;
 using HarmonyLib;
 using ReluProtocol;
 
-namespace MimesisPlayerEnhancement.Features.LootMultiplicator;
-
-internal static class ItemElementStackHelper
+namespace MimesisPlayerEnhancement.Features.LootMultiplicator
 {
-    private const BindingFlags InstanceFlags =
-        BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
-
-    private static readonly MethodInfo? SetConsumableRemainCountMethod =
-        AccessTools.PropertySetter(typeof(ConsumableItemElement), "RemainCount");
-
-    internal static int GetStackCount(ItemElement element)
+    internal static class ItemElementStackHelper
     {
-        if (element == null)
-            return 1;
+        private const BindingFlags InstanceFlags =
+            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
 
-        if (element is ConsumableItemElement consumable)
-            return consumable.RemainCount > 0 ? consumable.RemainCount : 1;
+        private static readonly MethodInfo? SetConsumableRemainCountMethod =
+            AccessTools.PropertySetter(typeof(ConsumableItemElement), "RemainCount");
 
-        try
+        internal static int GetStackCount(ItemElement element)
         {
-            ItemInfo info = element.toItemInfo();
-            return info.stackCount > 0 ? info.stackCount : 1;
-        }
-        catch
-        {
-            return 1;
-        }
-    }
+            if (element == null)
+            {
+                return 1;
+            }
 
-    internal static void SetStackCount(ItemElement element, int stackCount)
-    {
-        if (element == null || stackCount <= 0)
-            return;
+            if (element is ConsumableItemElement consumable)
+            {
+                return consumable.RemainCount > 0 ? consumable.RemainCount : 1;
+            }
 
-        if (element is ConsumableItemElement consumable && SetConsumableRemainCountMethod != null)
-        {
-            SetConsumableRemainCountMethod.Invoke(consumable, new object[] { stackCount });
-            return;
+            try
+            {
+                ItemInfo info = element.toItemInfo();
+                return info.stackCount > 0 ? info.stackCount : 1;
+            }
+            catch
+            {
+                return 1;
+            }
         }
 
-        // Equipment and miscellany do not support stack counts on map loot.
-    }
+        internal static void SetStackCount(ItemElement element, int stackCount)
+        {
+            if (element == null || stackCount <= 0)
+            {
+                return;
+            }
 
-    internal static ItemType GetItemType(ItemElement element)
-    {
-        if (element == null)
-            return ItemType.Miscellany;
+            if (element is ConsumableItemElement consumable && SetConsumableRemainCountMethod != null)
+            {
+                _ = SetConsumableRemainCountMethod.Invoke(consumable, [stackCount]);
+                return;
+            }
 
-        if (element.ItemMasterID > 0)
-            return ItemTypeLookup.GetItemType(element.ItemMasterID);
+            // Equipment and miscellany do not support stack counts on map loot.
+        }
 
-        return ItemTypeLookup.NormalizeItemType(element.ItemType);
+        internal static ItemType GetItemType(ItemElement element)
+        {
+            return element == null
+                ? ItemType.Miscellany
+                : element.ItemMasterID > 0
+                ? ItemTypeLookup.GetItemType(element.ItemMasterID)
+                : ItemTypeLookup.NormalizeItemType(element.ItemType);
+        }
     }
 }

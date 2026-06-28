@@ -1,35 +1,34 @@
 using System;
 
-namespace MimesisPlayerEnhancement.Features.SpectatorTransition;
-
-internal static class SpectatorTransitionApplier
+namespace MimesisPlayerEnhancement.Features.SpectatorTransition
 {
-    private const long MinDyingWaitTimeMs = 1;
-    private const float MinDeadCameraSeconds = 0.01f;
-
-    internal static bool IsEnabled => ModConfig.EnableSpectatorTransition.Value;
-
-    internal static long ScaleDyingWaitTime(long vanillaMs)
+    internal static class SpectatorTransitionApplier
     {
-        if (!IsEnabled)
-            return vanillaMs;
+        private const long MinDyingWaitTimeMs = 1;
+        private const float MinDeadCameraSeconds = 0.01f;
 
-        var scaled = (long)Math.Round(vanillaMs * ModConfig.DyingWaitTimeMultiplier.Value);
-        if (scaled < MinDyingWaitTimeMs && vanillaMs > 0)
-            return MinDyingWaitTimeMs;
+        internal static bool IsEnabled => ModConfig.EnableSpectatorTransition.Value;
 
-        return scaled;
-    }
+        internal static long ScaleDyingWaitTime(long vanillaMs)
+        {
+            if (!IsEnabled)
+            {
+                return vanillaMs;
+            }
 
-    internal static float ScaleDeadCameraDuration(float vanillaSeconds)
-    {
-        if (!IsEnabled)
-            return vanillaSeconds;
+            var scaled = (long)Math.Round(vanillaMs * ModConfig.DyingWaitTimeMultiplier.Value);
+            return scaled < MinDyingWaitTimeMs && vanillaMs > 0 ? MinDyingWaitTimeMs : scaled;
+        }
 
-        var scaled = vanillaSeconds * ModConfig.DeadCameraDurationMultiplier.Value;
-        if (scaled < MinDeadCameraSeconds && vanillaSeconds > 0f)
-            return MinDeadCameraSeconds;
+        internal static float ScaleDeadCameraDuration(float vanillaSeconds)
+        {
+            if (!IsEnabled)
+            {
+                return vanillaSeconds;
+            }
 
-        return scaled;
+            var scaled = vanillaSeconds * ModConfig.DeadCameraDurationMultiplier.Value;
+            return scaled < MinDeadCameraSeconds && vanillaSeconds > 0f ? MinDeadCameraSeconds : scaled;
+        }
     }
 }

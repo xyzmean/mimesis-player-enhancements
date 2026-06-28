@@ -1,48 +1,48 @@
 using System;
-using System.Reflection;
 using HarmonyLib;
 using MimesisPlayerEnhancement.Util;
 
-namespace MimesisPlayerEnhancement.Features.DungeonTime;
-
-public static class DungeonTimePatches
+namespace MimesisPlayerEnhancement.Features.DungeonTime
 {
-    private const string Feature = "DungeonTime";
-
-    public static void Apply(HarmonyLib.Harmony harmony)
+    public static class DungeonTimePatches
     {
-        _ = GameNetworkApi.GetGameAssembly();
+        private const string Feature = "DungeonTime";
 
-        var result = HarmonyPatchHelper.ApplyPatchTypes(
-            harmony,
-            Feature,
-            HarmonyPatchHelper.GetNestedPatchTypes(typeof(DungeonTimePatches)));
-
-        LogPatchAudit(harmony);
-        HarmonyPatchHelper.LogPatchSummary(Feature, result);
-    }
-
-    private static void LogPatchAudit(HarmonyLib.Harmony harmony)
-    {
-        HarmonyPatchHelper.LogPatchAudit(Feature, harmony, new (string, MethodBase?)[]
+        public static void Apply(HarmonyLib.Harmony harmony)
         {
-            ("OnAllMemberEntered/DungeonRoom", AccessTools.Method(typeof(DungeonRoom), "OnAllMemberEntered")),
-        });
-    }
+            _ = GameNetworkApi.GetGameAssembly();
 
-    [HarmonyPatch(typeof(DungeonRoom), "OnAllMemberEntered")]
-    public static class DungeonRoomOnAllMemberEnteredPatch
-    {
-        [HarmonyPostfix]
-        public static void Postfix(DungeonRoom __instance)
+            HarmonyPatchHelper.PatchApplyResult result = HarmonyPatchHelper.ApplyPatchTypes(
+                harmony,
+                Feature,
+                HarmonyPatchHelper.GetNestedPatchTypes(typeof(DungeonTimePatches)));
+
+            LogPatchAudit(harmony);
+            HarmonyPatchHelper.LogPatchSummary(Feature, result);
+        }
+
+        private static void LogPatchAudit(HarmonyLib.Harmony harmony)
         {
-            try
+            HarmonyPatchHelper.LogPatchAudit(Feature, harmony,
+            [
+                ("OnAllMemberEntered/DungeonRoom", AccessTools.Method(typeof(DungeonRoom), "OnAllMemberEntered")),
+            ]);
+        }
+
+        [HarmonyPatch(typeof(DungeonRoom), "OnAllMemberEntered")]
+        public static class DungeonRoomOnAllMemberEnteredPatch
+        {
+            [HarmonyPostfix]
+            public static void Postfix(DungeonRoom __instance)
             {
-                DungeonTimeApplier.EnsureApplied(__instance);
-            }
-            catch (Exception ex)
-            {
-                ModLog.Warn(Feature, $"OnAllMemberEntered postfix failed — {ex.Message}");
+                try
+                {
+                    DungeonTimeApplier.EnsureApplied(__instance);
+                }
+                catch (Exception ex)
+                {
+                    ModLog.Warn(Feature, $"OnAllMemberEntered postfix failed — {ex.Message}");
+                }
             }
         }
     }

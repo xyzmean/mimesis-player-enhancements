@@ -1,40 +1,40 @@
-using System.Reflection;
 using HarmonyLib;
 using MimesisPlayerEnhancement.Util;
 
-namespace MimesisPlayerEnhancement.Features.Statistics;
-
-public static class StatisticsPatches
+namespace MimesisPlayerEnhancement.Features.Statistics
 {
-    private const string Feature = "Statistics";
-
-    public static void Apply(HarmonyLib.Harmony harmony)
+    public static class StatisticsPatches
     {
-        var result = HarmonyPatchHelper.ApplyPatchTypes(
-            harmony,
-            Feature,
-            HarmonyPatchHelper.GetNamespacePatchTypes(typeof(StatisticsPatches)));
+        private const string Feature = "Statistics";
 
-        LogPatchAudit(harmony);
-        HarmonyPatchHelper.LogPatchSummary(Feature, result);
-    }
-
-    private static void LogPatchAudit(HarmonyLib.Harmony harmony)
-    {
-        HarmonyPatchHelper.LogPatchAudit(Feature, harmony, new (string, MethodBase?)[]
+        public static void Apply(HarmonyLib.Harmony harmony)
         {
-            ("IncreaseCycleCount/PlayReportManager", AccessTools.Method(typeof(PlayReportManager), nameof(PlayReportManager.IncreaseCycleCount))),
-            ("OnRegistPlayer/VRoomManager", AccessTools.Method(typeof(VRoomManager), nameof(VRoomManager.OnRegistPlayer))),
-            ("ApplyLoadedGameData/GameSessionInfo", AccessTools.Method(typeof(GameSessionInfo), nameof(GameSessionInfo.ApplyLoadedGameData))),
-            ("OnPlayerDeath/GameMainBase", AccessTools.Method(typeof(GameMainBase), nameof(GameMainBase.OnPlayerDeath))),
-            ("OnPlayerRevive/GameMainBase", AccessTools.Method(typeof(GameMainBase), nameof(GameMainBase.OnPlayerRevive))),
-            ("OnKillCountChanged/GameMainBase", AccessTools.Method(typeof(GameMainBase), nameof(GameMainBase.OnKillCountChanged))),
-            ("Delete/PlatformMgr", AccessTools.Method(typeof(PlatformMgr), nameof(PlatformMgr.Delete))),
-            ("SaveGameData/MaintenanceRoom", AccessTools.Method(typeof(MaintenanceRoom), nameof(MaintenanceRoom.SaveGameData))),
-            ("OnUnregistPlayer/VWorld", AccessTools.Method(typeof(VWorld), nameof(VWorld.OnUnregistPlayer))),
-            ("OnStartClient/SpeechEventArchive", AccessTools.Method(typeof(Mimic.Voice.SpeechSystem.SpeechEventArchive), "OnStartClient")),
-            ("AddPlayerInfo/UIPrefab_PlayerEnterInfo", AccessTools.Method(typeof(UIPrefab_PlayerEnterInfo), nameof(UIPrefab_PlayerEnterInfo.AddPlayerInfo))),
-            ("UpdatePlayerInfos/UIPrefab_PlayerEnterInfo", AccessTools.Method(typeof(UIPrefab_PlayerEnterInfo), "UpdatePlayerInfos")),
-        });
+            HarmonyPatchHelper.PatchApplyResult result = HarmonyPatchHelper.ApplyPatchTypes(
+                harmony,
+                Feature,
+                HarmonyPatchHelper.GetNamespacePatchTypes(typeof(StatisticsPatches)));
+
+            LogPatchAudit(harmony);
+            HarmonyPatchHelper.LogPatchSummary(Feature, result);
+        }
+
+        private static void LogPatchAudit(HarmonyLib.Harmony harmony)
+        {
+            HarmonyPatchHelper.LogPatchAudit(Feature, harmony,
+            [
+                ("IncreaseCycleCount/PlayReportManager", AccessTools.Method(typeof(PlayReportManager), nameof(PlayReportManager.IncreaseCycleCount))),
+                ("OnRegistPlayer/VRoomManager", AccessTools.Method(typeof(VRoomManager), nameof(VRoomManager.OnRegistPlayer))),
+                ("ApplyLoadedGameData/GameSessionInfo", AccessTools.Method(typeof(GameSessionInfo), nameof(GameSessionInfo.ApplyLoadedGameData))),
+                ("OnPlayerDeath/GameMainBase", AccessTools.Method(typeof(GameMainBase), nameof(GameMainBase.OnPlayerDeath))),
+                ("OnPlayerRevive/GameMainBase", AccessTools.Method(typeof(GameMainBase), nameof(GameMainBase.OnPlayerRevive))),
+                ("OnKillCountChanged/GameMainBase", AccessTools.Method(typeof(GameMainBase), nameof(GameMainBase.OnKillCountChanged))),
+                ("Delete/PlatformMgr", AccessTools.Method(typeof(PlatformMgr), nameof(PlatformMgr.Delete))),
+                ("SaveGameData/MaintenanceRoom", AccessTools.Method(typeof(MaintenanceRoom), nameof(MaintenanceRoom.SaveGameData))),
+                ("OnUnregistPlayer/VWorld", AccessTools.Method(typeof(VWorld), nameof(VWorld.OnUnregistPlayer))),
+                ("OnStartClient/SpeechEventArchive", AccessTools.Method(typeof(Mimic.Voice.SpeechSystem.SpeechEventArchive), "OnStartClient")),
+                ("AddPlayerInfo/UIPrefab_PlayerEnterInfo", AccessTools.Method(typeof(UIPrefab_PlayerEnterInfo), nameof(UIPrefab_PlayerEnterInfo.AddPlayerInfo))),
+                ("UpdatePlayerInfos/UIPrefab_PlayerEnterInfo", AccessTools.Method(typeof(UIPrefab_PlayerEnterInfo), "UpdatePlayerInfos")),
+            ]);
+        }
     }
 }

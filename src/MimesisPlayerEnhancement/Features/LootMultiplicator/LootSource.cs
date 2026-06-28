@@ -1,8 +1,9 @@
-namespace MimesisPlayerEnhancement.Features.LootMultiplicator;
-
-internal enum LootSource
+namespace MimesisPlayerEnhancement.Features.LootMultiplicator
 {
-    Map,
-    Drop,
-    Trigger,
+    internal enum LootSource
+    {
+        Map,
+        Drop,
+        Trigger,
+    }
 }

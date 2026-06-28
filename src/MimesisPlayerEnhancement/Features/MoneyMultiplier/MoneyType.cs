@@ -1,11 +1,12 @@
-namespace MimesisPlayerEnhancement.Features.MoneyMultiplier;
-
-internal enum MoneyType
+namespace MimesisPlayerEnhancement.Features.MoneyMultiplier
 {
-    Startup,
-    RoundGoal,
-    ScrapSellValue,
-    ShopBuyPrice,
-    ShopItems,
-    ReinforcePrice,
+    internal enum MoneyType
+    {
+        Startup,
+        RoundGoal,
+        ScrapSellValue,
+        ShopBuyPrice,
+        ShopItems,
+        ReinforcePrice,
+    }
 }

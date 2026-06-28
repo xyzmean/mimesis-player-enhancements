@@ -6,166 +6,179 @@ using ReluProtocol;
 using ReluProtocol.Enum;
 using UnityEngine;
 
-namespace MimesisPlayerEnhancement.Features.SpawnScaling;
-
-public static class SpawnScalingPatches
+namespace MimesisPlayerEnhancement.Features.SpawnScaling
 {
-    private const string Feature = "SpawnScaling";
-
-    private const BindingFlags InstanceFlags =
-        BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
-
-    private static readonly Type[] SpawnMonsterParameterTypes =
+    public static class SpawnScalingPatches
     {
-        typeof(int),
-        typeof(SpawnedActorData),
-        typeof(bool),
-        typeof(string),
-        typeof(string),
-        typeof(ReasonOfSpawn),
-    };
+        private const string Feature = "SpawnScaling";
 
-    public static void Apply(HarmonyLib.Harmony harmony)
-    {
-        _ = GameNetworkApi.GetGameAssembly();
+        private const BindingFlags InstanceFlags =
+            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
 
-        var result = HarmonyPatchHelper.ApplyPatchTypes(
-            harmony,
-            Feature,
-            HarmonyPatchHelper.GetNestedPatchTypes(typeof(SpawnScalingPatches)));
+        private static readonly Type[] SpawnMonsterParameterTypes =
+        [
+            typeof(int),
+            typeof(SpawnedActorData),
+            typeof(bool),
+            typeof(string),
+            typeof(string),
+            typeof(ReasonOfSpawn),
+        ];
 
-        LogPatchAudit(harmony);
-        HarmonyPatchHelper.LogPatchSummary(Feature, result);
-    }
-
-    private static MethodBase? ResolveSpawnMonsterMethod() =>
-        AccessTools.Method(typeof(IVroom), "SpawnMonster", SpawnMonsterParameterTypes);
-
-    private static void LogPatchAudit(HarmonyLib.Harmony harmony)
-    {
-        HarmonyPatchHelper.LogPatchAudit(Feature, harmony, new (string, MethodBase?)[]
+        public static void Apply(HarmonyLib.Harmony harmony)
         {
-            ("InitSpawn/DungeonRoom", AccessTools.Method(typeof(DungeonRoom), "InitSpawn")),
-            ("OnActorDead/SpawnedActorData", AccessTools.Method(typeof(SpawnedActorData), "OnActorDead")),
-            ("SpawnMonster/IVroom", ResolveSpawnMonsterMethod()),
-        });
-    }
+            _ = GameNetworkApi.GetGameAssembly();
 
-    [HarmonyPatch(typeof(DungeonRoom), "InitSpawn")]
-    public static class DungeonRoomInitSpawnPatch
-    {
-        [HarmonyPostfix]
-        public static void Postfix(DungeonRoom __instance)
+            HarmonyPatchHelper.PatchApplyResult result = HarmonyPatchHelper.ApplyPatchTypes(
+                harmony,
+                Feature,
+                HarmonyPatchHelper.GetNestedPatchTypes(typeof(SpawnScalingPatches)));
+
+            LogPatchAudit(harmony);
+            HarmonyPatchHelper.LogPatchSummary(Feature, result);
+        }
+
+        private static MethodBase? ResolveSpawnMonsterMethod()
         {
-            try
+            return AccessTools.Method(typeof(IVroom), "SpawnMonster", SpawnMonsterParameterTypes);
+        }
+
+        private static void LogPatchAudit(HarmonyLib.Harmony harmony)
+        {
+            HarmonyPatchHelper.LogPatchAudit(Feature, harmony,
+            [
+                ("InitSpawn/DungeonRoom", AccessTools.Method(typeof(DungeonRoom), "InitSpawn")),
+                ("OnActorDead/SpawnedActorData", AccessTools.Method(typeof(SpawnedActorData), "OnActorDead")),
+                ("SpawnMonster/IVroom", ResolveSpawnMonsterMethod()),
+            ]);
+        }
+
+        [HarmonyPatch(typeof(DungeonRoom), "InitSpawn")]
+        public static class DungeonRoomInitSpawnPatch
+        {
+            [HarmonyPostfix]
+            public static void Postfix(DungeonRoom __instance)
             {
-                SpawnScalingApplier.EnsureApplied(__instance);
-                FixedSpawnCoordinator.ApplyAfterInit(__instance);
-            }
-            catch (Exception ex)
-            {
-                ModLog.Warn(Feature, $"InitSpawn postfix failed — {ex.Message}");
+                try
+                {
+                    SpawnScalingApplier.EnsureApplied(__instance);
+                    FixedSpawnCoordinator.ApplyAfterInit(__instance);
+                }
+                catch (Exception ex)
+                {
+                    ModLog.Warn(Feature, $"InitSpawn postfix failed — {ex.Message}");
+                }
             }
         }
-    }
 
-    [HarmonyPatch(typeof(SpawnedActorData), "OnActorDead")]
-    public static class SpawnedActorDataOnActorDeadPatch
-    {
-        [HarmonyPostfix]
-        public static void Postfix(SpawnedActorData __instance)
+        [HarmonyPatch(typeof(SpawnedActorData), "OnActorDead")]
+        public static class SpawnedActorDataOnActorDeadPatch
         {
-            try
+            [HarmonyPostfix]
+            public static void Postfix(SpawnedActorData __instance)
             {
-                FixedSpawnCoordinator.OnActorDead(__instance);
-            }
-            catch (Exception ex)
-            {
-                ModLog.Warn(Feature, $"OnActorDead fixed spawn scaling failed — {ex.Message}");
+                try
+                {
+                    FixedSpawnCoordinator.OnActorDead(__instance);
+                }
+                catch (Exception ex)
+                {
+                    ModLog.Warn(Feature, $"OnActorDead fixed spawn scaling failed — {ex.Message}");
+                }
             }
         }
-    }
 
-    [HarmonyPatch]
-    public static class IVroomSpawnMonsterPatch
-    {
-        public static MethodBase? TargetMethod() => ResolveSpawnMonsterMethod();
-
-        [HarmonyPrefix]
-        public static bool Prefix(
-            IVroom __instance,
-            SpawnedActorData spawnData,
-            ref bool __result)
+        [HarmonyPatch]
+        public static class IVroomSpawnMonsterPatch
         {
-            if (!ModConfig.EnableSpawnScaling.Value || __instance is not DungeonRoom dungeonRoom)
+            public static MethodBase? TargetMethod()
+            {
+                return ResolveSpawnMonsterMethod();
+            }
+
+            [HarmonyPrefix]
+            public static bool Prefix(
+                IVroom __instance,
+                SpawnedActorData spawnData,
+                ref bool __result)
+            {
+                if (!ModConfig.EnableSpawnScaling.Value || __instance is not DungeonRoom dungeonRoom)
+                {
+                    return true;
+                }
+
+                if (FixedSpawnProximity.ShouldBlockFixedCreatureRespawn(dungeonRoom, spawnData))
+                {
+                    __result = false;
+                    return false;
+                }
+
                 return true;
-
-            if (FixedSpawnProximity.ShouldBlockFixedCreatureRespawn(dungeonRoom, spawnData))
-            {
-                __result = false;
-                return false;
             }
 
-            return true;
-        }
-
-        [HarmonyPostfix]
-        public static void Postfix(
-            IVroom __instance,
-            int masterID,
-            SpawnedActorData spawnData,
-            bool isIndoor,
-            string aiName,
-            string btName,
-            ReasonOfSpawn reasonOfSpawn,
-            bool __result)
-        {
-            if (!ModConfig.EnableDebugLogging.Value || !ModConfig.EnableSpawnScaling.Value)
-                return;
-
-            if (__instance is not DungeonRoom dungeonRoom)
-                return;
-
-            int playerCount = dungeonRoom.GetMemberCount();
-            SpawnCategory category = SpawnCategoryLookup.GetCategory(masterID);
-            float multiplier = SpawnMultiplierResolver.GetEffectiveMultiplier(category, playerCount);
-            string entityName = MonsterTypeLookup.GetDisplayName(masterID);
-            bool scalingApplied = SpawnScalingApplier.IsApplied(dungeonRoom);
-
-            if (__result)
+            [HarmonyPostfix]
+            public static void Postfix(
+                IVroom __instance,
+                int masterID,
+                SpawnedActorData spawnData,
+                bool isIndoor,
+                string aiName,
+                string btName,
+                ReasonOfSpawn reasonOfSpawn,
+                bool __result)
             {
-                SpawnScalingLog.DebugEntitySpawned(
-                    dungeonRoom,
-                    masterID,
-                    entityName,
-                    category,
-                    multiplier,
-                    scalingApplied,
-                    ExtractSpawnPosition(spawnData),
-                    isIndoor,
-                    reasonOfSpawn,
-                    "SpawnMonster");
+                if (!ModConfig.EnableDebugLogging.Value || !ModConfig.EnableSpawnScaling.Value)
+                {
+                    return;
+                }
+
+                if (__instance is not DungeonRoom dungeonRoom)
+                {
+                    return;
+                }
+
+                int playerCount = dungeonRoom.GetMemberCount();
+                SpawnCategory category = SpawnCategoryLookup.GetCategory(masterID);
+                float multiplier = SpawnMultiplierResolver.GetEffectiveMultiplier(category, playerCount);
+                string entityName = MonsterTypeLookup.GetDisplayName(masterID);
+                bool scalingApplied = SpawnScalingApplier.IsApplied(dungeonRoom);
+
+                if (__result)
+                {
+                    SpawnScalingLog.DebugEntitySpawned(
+                        dungeonRoom,
+                        masterID,
+                        entityName,
+                        category,
+                        multiplier,
+                        scalingApplied,
+                        ExtractSpawnPosition(spawnData),
+                        isIndoor,
+                        reasonOfSpawn,
+                        "SpawnMonster");
+                }
+                else
+                {
+                    SpawnScalingLog.DebugSpawnFailed(masterID, entityName, category, scalingApplied, "SpawnMonster");
+                }
             }
-            else
+
+            private static Vector3 ExtractSpawnPosition(SpawnedActorData spawnData)
             {
-                SpawnScalingLog.DebugSpawnFailed(masterID, entityName, category, scalingApplied, "SpawnMonster");
+                if (spawnData == null)
+                {
+                    return Vector3.zero;
+                }
+
+                FieldInfo posVectorField = spawnData.GetType().GetField("PosVector", InstanceFlags);
+                if (posVectorField?.GetValue(spawnData) is Vector3 posVector)
+                {
+                    return posVector;
+                }
+
+                FieldInfo posField = spawnData.GetType().GetField("Pos", InstanceFlags);
+                return posField?.GetValue(spawnData) is PosWithRot posWithRot ? posWithRot.pos : Vector3.zero;
             }
-        }
-
-        private static Vector3 ExtractSpawnPosition(SpawnedActorData spawnData)
-        {
-            if (spawnData == null)
-                return Vector3.zero;
-
-            var posVectorField = spawnData.GetType().GetField("PosVector", InstanceFlags);
-            if (posVectorField?.GetValue(spawnData) is Vector3 posVector)
-                return posVector;
-
-            var posField = spawnData.GetType().GetField("Pos", InstanceFlags);
-            if (posField?.GetValue(spawnData) is PosWithRot posWithRot)
-                return posWithRot.pos;
-
-            return Vector3.zero;
         }
     }
 }

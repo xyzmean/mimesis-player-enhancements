@@ -1,31 +1,23 @@
-namespace MimesisPlayerEnhancement.Util;
-
-internal static class ScalingMath
+namespace MimesisPlayerEnhancement.Util
 {
-    internal const int VanillaPlayerBaseline = 4;
-
-    internal static float GetPlayerScale(int playerCount, bool autoScaleEnabled)
+    internal static class ScalingMath
     {
-        if (!autoScaleEnabled || playerCount <= VanillaPlayerBaseline)
-            return 1f;
+        internal const int VanillaPlayerBaseline = 4;
 
-        return playerCount / (float)VanillaPlayerBaseline;
-    }
+        internal static float GetPlayerScale(int playerCount, bool autoScaleEnabled)
+        {
+            return !autoScaleEnabled || playerCount <= VanillaPlayerBaseline ? 1f : playerCount / (float)VanillaPlayerBaseline;
+        }
 
-    internal static int ScaleCount(int vanilla, float multiplier)
-    {
-        if (vanilla == 0)
-            return 0;
+        internal static int ScaleCount(int vanilla, float multiplier)
+        {
+            return vanilla == 0 ? 0 : multiplier <= 0f ? 0 : System.Math.Max(1, (int)System.Math.Round(vanilla * multiplier));
+        }
 
-        if (multiplier <= 0f)
-            return 0;
-
-        return System.Math.Max(1, (int)System.Math.Round(vanilla * multiplier));
-    }
-
-    internal static int ScaleCountWithImplicitBase(int vanilla, float multiplier, int implicitWhenZero)
-    {
-        int baseCount = vanilla > 0 ? vanilla : implicitWhenZero;
-        return ScaleCount(baseCount, multiplier);
+        internal static int ScaleCountWithImplicitBase(int vanilla, float multiplier, int implicitWhenZero)
+        {
+            int baseCount = vanilla > 0 ? vanilla : implicitWhenZero;
+            return ScaleCount(baseCount, multiplier);
+        }
     }
 }

@@ -1,34 +1,39 @@
 using System;
 using System.IO;
 using HarmonyLib;
-using MimesisPlayerEnhancement.Features.Persistence;
-using ReluProtocol;
 
-namespace MimesisPlayerEnhancement.Features.Statistics.Patches;
-
-[HarmonyPatch(typeof(PlatformMgr), nameof(PlatformMgr.Delete))]
-public static class StatisticsPlatformMgrDeletePatches
+namespace MimesisPlayerEnhancement.Features.Statistics.Patches
 {
-    private const string Feature = "Statistics";
-
-    [HarmonyPostfix]
-    public static void Postfix(string fileName)
+    [HarmonyPatch(typeof(PlatformMgr), nameof(PlatformMgr.Delete))]
+    public static class StatisticsPlatformMgrDeletePatches
     {
-        if (!ModConfig.EnableStatistics.Value)
-            return;
+        private const string Feature = "Statistics";
 
-        try
+        [HarmonyPostfix]
+        public static void Postfix(string fileName)
         {
-            if (string.IsNullOrEmpty(fileName) || !fileName.StartsWith("MMGameData", StringComparison.OrdinalIgnoreCase))
+            if (!ModConfig.EnableStatistics.Value)
+            {
                 return;
+            }
 
-            string slotStr = Path.GetFileNameWithoutExtension(fileName).Replace("MMGameData", "");
-            if (int.TryParse(slotStr, out int slotId) && MimesisSaveManager.IsValidSaveSlotId(slotId))
-                StatisticsStore.DeleteStatisticsData(slotId);
-        }
-        catch (Exception ex)
-        {
-            ModLog.Warn(Feature, $"PlatformMgr.Delete: {ex.Message}");
+            try
+            {
+                if (string.IsNullOrEmpty(fileName) || !fileName.StartsWith("MMGameData", StringComparison.OrdinalIgnoreCase))
+                {
+                    return;
+                }
+
+                string slotStr = Path.GetFileNameWithoutExtension(fileName).Replace("MMGameData", "");
+                if (int.TryParse(slotStr, out int slotId) && MimesisSaveManager.IsValidSaveSlotId(slotId))
+                {
+                    StatisticsStore.DeleteStatisticsData(slotId);
+                }
+            }
+            catch (Exception ex)
+            {
+                ModLog.Warn(Feature, $"PlatformMgr.Delete: {ex.Message}");
+            }
         }
     }
 }

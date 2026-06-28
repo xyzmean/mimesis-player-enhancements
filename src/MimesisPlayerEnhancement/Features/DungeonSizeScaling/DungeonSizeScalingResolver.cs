@@ -1,29 +1,33 @@
-namespace MimesisPlayerEnhancement.Features.DungeonSizeScaling;
-
-internal static class DungeonSizeScalingResolver
+namespace MimesisPlayerEnhancement.Features.DungeonSizeScaling
 {
-    internal static float GetLengthMultiplier(int playerCount)
+    internal static class DungeonSizeScalingResolver
     {
-        if (!ModConfig.EnableDungeonSizeScaling.Value)
-            return 1f;
+        internal static float GetLengthMultiplier(int playerCount)
+        {
+            if (!ModConfig.EnableDungeonSizeScaling.Value)
+            {
+                return 1f;
+            }
 
-        float baseMultiplier = ModConfig.DungeonSizeMultiplier.Value;
-        if (baseMultiplier < 0f)
-            baseMultiplier = 0f;
+            float baseMultiplier = ModConfig.DungeonSizeMultiplier.Value;
+            if (baseMultiplier < 0f)
+            {
+                baseMultiplier = 0f;
+            }
 
-        float playerScale = GetPlayerScale(playerCount);
-        return baseMultiplier * playerScale;
-    }
+            float playerScale = GetPlayerScale(playerCount);
+            return baseMultiplier * playerScale;
+        }
 
-    internal static float GetPlayerScale(int playerCount)
-    {
-        if (!ModConfig.AutoScaleDungeonSizeByPlayerCount.Value)
-            return 1f;
+        internal static float GetPlayerScale(int playerCount)
+        {
+            if (!ModConfig.AutoScaleDungeonSizeByPlayerCount.Value)
+            {
+                return 1f;
+            }
 
-        int baseline = ModConfig.DungeonSizeBaselinePlayerCount.Value;
-        if (playerCount <= baseline)
-            return 1f;
-
-        return playerCount / (float)baseline;
+            int baseline = ModConfig.DungeonSizeBaselinePlayerCount.Value;
+            return playerCount <= baseline ? 1f : playerCount / (float)baseline;
+        }
     }
 }

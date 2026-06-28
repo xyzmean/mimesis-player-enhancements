@@ -1,93 +1,96 @@
 using System;
-using System.Reflection;
 using HarmonyLib;
 using Mimic.Actors;
 using MimesisPlayerEnhancement.Util;
-using ReluProtocol;
 using ReluProtocol.Enum;
 
-namespace MimesisPlayerEnhancement.Features.PlayerAnnouncements;
-
-public static class PlayerAnnouncementPatches
+namespace MimesisPlayerEnhancement.Features.PlayerAnnouncements
 {
-    private const string Feature = "Announcements";
-
-    public static void Apply(HarmonyLib.Harmony harmony)
+    public static class PlayerAnnouncementPatches
     {
-        _ = GameNetworkApi.GetGameAssembly();
+        private const string Feature = "Announcements";
 
-        var result = HarmonyPatchHelper.ApplyPatchTypes(
-            harmony,
-            Feature,
-            HarmonyPatchHelper.GetNestedPatchTypes(typeof(PlayerAnnouncementPatches)));
-
-        LogPatchAudit(harmony);
-        HarmonyPatchHelper.LogPatchSummary(Feature, result);
-    }
-
-    private static void LogPatchAudit(HarmonyLib.Harmony harmony)
-    {
-        HarmonyPatchHelper.LogPatchAudit(Feature, harmony, new (string, MethodBase?)[]
+        public static void Apply(HarmonyLib.Harmony harmony)
         {
-            ("OnAllMemberEntered/DungeonRoom", AccessTools.Method(typeof(DungeonRoom), "OnAllMemberEntered")),
-            ("OnPlayerDeath/GameMainBase", AccessTools.Method(typeof(GameMainBase), nameof(GameMainBase.OnPlayerDeath))),
-            ("OnActorEnter/DungeonRoom", AccessTools.Method(typeof(DungeonRoom), "OnActorEnter")),
-        });
-    }
+            _ = GameNetworkApi.GetGameAssembly();
 
-    [HarmonyPatch(typeof(DungeonRoom), "OnAllMemberEntered")]
-    public static class DungeonRoomOnAllMemberEnteredAnnouncementPatch
-    {
-        [HarmonyPostfix]
-        public static void Postfix(DungeonRoom __instance)
+            HarmonyPatchHelper.PatchApplyResult result = HarmonyPatchHelper.ApplyPatchTypes(
+                harmony,
+                Feature,
+                HarmonyPatchHelper.GetNestedPatchTypes(typeof(PlayerAnnouncementPatches)));
+
+            LogPatchAudit(harmony);
+            HarmonyPatchHelper.LogPatchSummary(Feature, result);
+        }
+
+        private static void LogPatchAudit(HarmonyLib.Harmony harmony)
         {
-            try
+            HarmonyPatchHelper.LogPatchAudit(Feature, harmony,
+            [
+                ("OnAllMemberEntered/DungeonRoom", AccessTools.Method(typeof(DungeonRoom), "OnAllMemberEntered")),
+                ("OnPlayerDeath/GameMainBase", AccessTools.Method(typeof(GameMainBase), nameof(GameMainBase.OnPlayerDeath))),
+                ("OnActorEnter/DungeonRoom", AccessTools.Method(typeof(DungeonRoom), "OnActorEnter")),
+            ]);
+        }
+
+        [HarmonyPatch(typeof(DungeonRoom), "OnAllMemberEntered")]
+        public static class DungeonRoomOnAllMemberEnteredAnnouncementPatch
+        {
+            [HarmonyPostfix]
+            public static void Postfix(DungeonRoom __instance)
             {
-                PlayerAnnouncements.OnAllMembersEnteredDungeon(__instance);
-            }
-            catch (Exception ex)
-            {
-                ModLog.Warn(Feature, $"OnAllMemberEntered announcement failed — {ex.Message}");
+                try
+                {
+                    PlayerAnnouncements.OnAllMembersEnteredDungeon(__instance);
+                }
+                catch (Exception ex)
+                {
+                    ModLog.Warn(Feature, $"OnAllMemberEntered announcement failed — {ex.Message}");
+                }
             }
         }
-    }
 
-    [HarmonyPatch(typeof(GameMainBase), nameof(GameMainBase.OnPlayerDeath))]
-    public static class GameMainDeathAnnouncementPatch
-    {
-        [HarmonyPostfix]
-        public static void Postfix(ProtoActor actor)
+        [HarmonyPatch(typeof(GameMainBase), nameof(GameMainBase.OnPlayerDeath))]
+        public static class GameMainDeathAnnouncementPatch
         {
-            try
+            [HarmonyPostfix]
+            public static void Postfix(ProtoActor actor)
             {
-                MapRunStatsTracker.OnLocalPlayerDeath(actor);
-            }
-            catch (Exception ex)
-            {
-                ModLog.Warn(Feature, $"Death announcement failed — {ex.Message}");
+                try
+                {
+                    MapRunStatsTracker.OnLocalPlayerDeath(actor);
+                }
+                catch (Exception ex)
+                {
+                    ModLog.Warn(Feature, $"Death announcement failed — {ex.Message}");
+                }
             }
         }
-    }
 
-    [HarmonyPatch(typeof(DungeonRoom), "OnActorEnter")]
-    public static class DungeonRoomOnActorEnterAnnouncementPatch
-    {
-        [HarmonyPostfix]
-        public static void Postfix(VActor actor)
+        [HarmonyPatch(typeof(DungeonRoom), "OnActorEnter")]
+        public static class DungeonRoomOnActorEnterAnnouncementPatch
         {
-            try
+            [HarmonyPostfix]
+            public static void Postfix(VActor actor)
             {
-                if (actor is not VMonster monster)
-                    return;
+                try
+                {
+                    if (actor is not VMonster monster)
+                    {
+                        return;
+                    }
 
-                if (!monster.ActorType.Equals(ActorType.Monster))
-                    return;
+                    if (!monster.ActorType.Equals(ActorType.Monster))
+                    {
+                        return;
+                    }
 
-                BossSpawnAnnouncer.RecordSpawn(monster.MasterID);
-            }
-            catch (Exception ex)
-            {
-                ModLog.Warn(Feature, $"OnActorEnter announcement failed — {ex.Message}");
+                    BossSpawnAnnouncer.RecordSpawn(monster.MasterID);
+                }
+                catch (Exception ex)
+                {
+                    ModLog.Warn(Feature, $"OnActorEnter announcement failed — {ex.Message}");
+                }
             }
         }
     }

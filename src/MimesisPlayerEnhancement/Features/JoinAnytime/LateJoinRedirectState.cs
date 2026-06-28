@@ -1,9 +1,10 @@
-namespace MimesisPlayerEnhancement.Features.JoinAnytime;
-
-internal enum LateJoinRedirectState
+namespace MimesisPlayerEnhancement.Features.JoinAnytime
 {
-    None,
-    PendingWaitingRoomRedirect,
-    PendingDungeonRedirect,
-    EnteringDungeon,
+    internal enum LateJoinRedirectState
+    {
+        None,
+        PendingWaitingRoomRedirect,
+        PendingDungeonRedirect,
+        EnteringDungeon,
+    }
 }

@@ -1,6 +1,7 @@
-namespace MimesisPlayerEnhancement.Util;
-
-internal static class FixedRespawnTiming
+namespace MimesisPlayerEnhancement.Util
 {
-    internal const float RetryIntervalSeconds = 1f;
+    internal static class FixedRespawnTiming
+    {
+        internal const float RetryIntervalSeconds = 1f;
+    }
 }

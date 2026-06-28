@@ -8,7 +8,7 @@ internal static class CommandLine
     {
         string? managedPath = null;
         string? gamePath = null;
-        var commandArgs = new List<string>();
+        List<string> commandArgs = [];
 
         for (int i = 0; i < args.Length; i++)
         {
@@ -42,7 +42,7 @@ internal static class CommandLine
             Console.WriteLine($"Using managed assemblies: {managed}");
             Console.WriteLine();
 
-            using var context = new MimesisMetadataContext(managed);
+            using MimesisMetadataContext context = new(managed);
             return Execute(context, commandArgs);
         }
         catch (Exception ex)
@@ -95,7 +95,9 @@ internal static class CommandLine
     private static int RunType(MimesisMetadataContext context, List<string> args)
     {
         if (args.Count < 2)
+        {
             throw new InvalidOperationException("Usage: type <TypeName>");
+        }
 
         InspectionPrinter.PrintTypeSummary(context.RequireType(args[1]));
         return 0;
@@ -104,7 +106,9 @@ internal static class CommandLine
     private static int RunMethods(MimesisMetadataContext context, List<string> args)
     {
         if (args.Count < 2)
+        {
             throw new InvalidOperationException("Usage: methods <TypeName> [nameFilter]");
+        }
 
         string? filter = args.Count > 2 ? args[2] : null;
         InspectionPrinter.PrintMethods(context.RequireType(args[1]), filter);
@@ -114,7 +118,9 @@ internal static class CommandLine
     private static int RunFields(MimesisMetadataContext context, List<string> args)
     {
         if (args.Count < 2)
+        {
             throw new InvalidOperationException("Usage: fields <TypeName> [nameFilter]");
+        }
 
         string? filter = args.Count > 2 ? args[2] : null;
         InspectionPrinter.PrintFields(context.RequireType(args[1]), filter);
@@ -124,7 +130,9 @@ internal static class CommandLine
     private static int RunConstants(MimesisMetadataContext context, List<string> args)
     {
         if (args.Count < 2)
+        {
             throw new InvalidOperationException("Usage: constants <TypeName>");
+        }
 
         InspectionPrinter.PrintConstants(context.RequireType(args[1]));
         return 0;
@@ -133,7 +141,9 @@ internal static class CommandLine
     private static int RunMember(MimesisMetadataContext context, List<string> args)
     {
         if (args.Count < 3)
+        {
             throw new InvalidOperationException("Usage: member <TypeName> <MemberName>");
+        }
 
         InspectionPrinter.PrintMember(context.RequireType(args[1]), args[2]);
         return 0;
@@ -142,7 +152,9 @@ internal static class CommandLine
     private static string RequireValue(string[] args, ref int index, string option)
     {
         if (index + 1 >= args.Length)
+        {
             throw new InvalidOperationException($"Missing value for {option}.");
+        }
 
         index++;
         return args[index];

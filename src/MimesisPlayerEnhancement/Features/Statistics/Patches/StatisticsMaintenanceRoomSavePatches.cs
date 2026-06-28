@@ -1,24 +1,32 @@
 using System.Collections.Generic;
 using HarmonyLib;
-using MimesisPlayerEnhancement.Features.Persistence;
 using ReluProtocol.Enum;
 
-namespace MimesisPlayerEnhancement.Features.Statistics.Patches;
-
-[HarmonyPatch(typeof(MaintenanceRoom), nameof(MaintenanceRoom.SaveGameData))]
-public static class StatisticsMaintenanceRoomSavePatches
+namespace MimesisPlayerEnhancement.Features.Statistics.Patches
 {
-    [HarmonyPostfix]
-    public static void Postfix(int saveSlotID, List<string> playerNames, bool isAutoSave, MsgErrorCode __result)
+    [HarmonyPatch(typeof(MaintenanceRoom), nameof(MaintenanceRoom.SaveGameData))]
+    public static class StatisticsMaintenanceRoomSavePatches
     {
-        if (!ModConfig.EnableStatistics.Value)
-            return;
-        if (__result != MsgErrorCode.Success)
-            return;
-        if (!MimesisSaveManager.IsHost())
-            return;
+        [HarmonyPostfix]
+        public static void Postfix(int saveSlotID, List<string> playerNames, bool isAutoSave, MsgErrorCode __result)
+        {
+            if (!ModConfig.EnableStatistics.Value)
+            {
+                return;
+            }
 
-        int slotId = isAutoSave ? 0 : saveSlotID;
-        StatisticsTracker.OnGameSaved(slotId);
+            if (__result != MsgErrorCode.Success)
+            {
+                return;
+            }
+
+            if (!MimesisSaveManager.IsHost())
+            {
+                return;
+            }
+
+            int slotId = isAutoSave ? 0 : saveSlotID;
+            StatisticsTracker.OnGameSaved(slotId);
+        }
     }
 }

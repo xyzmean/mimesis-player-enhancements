@@ -1,16 +1,19 @@
 using HarmonyLib;
 
-namespace MimesisPlayerEnhancement.Features.Statistics.Patches;
-
-[HarmonyPatch(typeof(VWorld), nameof(VWorld.OnUnregistPlayer))]
-public static class VWorldUnregisterPatches
+namespace MimesisPlayerEnhancement.Features.Statistics.Patches
 {
-    [HarmonyPostfix]
-    public static void Postfix(ulong steamID)
+    [HarmonyPatch(typeof(VWorld), nameof(VWorld.OnUnregistPlayer))]
+    public static class VWorldUnregisterPatches
     {
-        if (!ModConfig.EnableStatistics.Value)
-            return;
+        [HarmonyPostfix]
+        public static void Postfix(ulong steamID)
+        {
+            if (!ModConfig.EnableStatistics.Value)
+            {
+                return;
+            }
 
-        StatisticsTracker.OnPlayerUnregistered(steamID);
+            StatisticsTracker.OnPlayerUnregistered(steamID);
+        }
     }
 }

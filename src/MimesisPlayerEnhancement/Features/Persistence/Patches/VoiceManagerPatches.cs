@@ -19,16 +19,24 @@ namespace MimesisPlayerEnhancement.Features.Persistence.Patches
         public static void Postfix(ref SpeechEventArchive __result)
         {
             if (!ModConfig.EnablePersistence.Value)
+            {
                 return;
+            }
 
             try
             {
                 // Only intervene if the original method found nothing
-                if (__result != null) return;
+                if (__result != null)
+                {
+                    return;
+                }
 
                 // Get the local archive (stored by the injection patch)
                 SpeechEventArchive? local = SpeechEventPoolManager.GetLocalArchive();
-                if (local == null) return;
+                if (local == null)
+                {
+                    return;
+                }
 
                 // Only use it if it has events in the warmed-up pool
                 if (local.WarmedUpCount > 0)

@@ -2,46 +2,49 @@ using System.Reflection;
 using Bifrost.ConstEnum;
 using Bifrost.Cooked;
 
-namespace MimesisPlayerEnhancement.Features.SpawnScaling;
-
-internal static class MonsterTypeLookup
+namespace MimesisPlayerEnhancement.Features.SpawnScaling
 {
-    private const BindingFlags InstanceFlags =
-        BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
-
-    private static readonly PropertyInfo? HubDatamanProperty =
-        typeof(Hub).GetProperty("dataman", InstanceFlags);
-
-    internal static bool TryGetMonster(int masterId, out MonsterInfo info)
+    internal static class MonsterTypeLookup
     {
-        info = null!;
-        if (masterId <= 0 || Hub.s == null)
-            return false;
+        private const BindingFlags InstanceFlags =
+            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
 
-        if (HubDatamanProperty?.GetValue(Hub.s) is not DataManager dataman)
-            return false;
+        private static readonly PropertyInfo? HubDatamanProperty =
+            typeof(Hub).GetProperty("dataman", InstanceFlags);
 
-        MonsterInfo? found = dataman.ExcelDataManager.GetMonsterInfo(masterId);
-        if (found == null)
-            return false;
+        internal static bool TryGetMonster(int masterId, out MonsterInfo info)
+        {
+            info = null!;
+            if (masterId <= 0 || Hub.s == null)
+            {
+                return false;
+            }
 
-        info = found;
-        return true;
-    }
+            if (HubDatamanProperty?.GetValue(Hub.s) is not DataManager dataman)
+            {
+                return false;
+            }
 
-    internal static MonsterType GetMonsterType(int masterId)
-    {
-        if (!TryGetMonster(masterId, out MonsterInfo info))
-            return default;
+            MonsterInfo? found = dataman.ExcelDataManager.GetMonsterInfo(masterId);
+            if (found == null)
+            {
+                return false;
+            }
 
-        return info.MonsterType;
-    }
+            info = found;
+            return true;
+        }
 
-    internal static string GetDisplayName(int masterId, MonsterInfo? info = null)
-    {
-        if (info == null && !TryGetMonster(masterId, out info))
-            return masterId.ToString();
+        internal static MonsterType GetMonsterType(int masterId)
+        {
+            return !TryGetMonster(masterId, out MonsterInfo info) ? default : info.MonsterType;
+        }
 
-        return string.IsNullOrWhiteSpace(info!.Name) ? masterId.ToString() : info.Name;
+        internal static string GetDisplayName(int masterId, MonsterInfo? info = null)
+        {
+            return info == null && !TryGetMonster(masterId, out info)
+                ? masterId.ToString()
+                : string.IsNullOrWhiteSpace(info.Name) ? masterId.ToString() : info.Name;
+        }
     }
 }

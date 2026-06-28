@@ -13,12 +13,19 @@ namespace MimesisPlayerEnhancement.Features.Persistence.Patches
         public static void Postfix(int saveSlotID, List<string> playerNames, bool isAutoSave, MsgErrorCode __result)
         {
             if (!ModConfig.EnablePersistence.Value)
+            {
                 return;
+            }
 
             if (__result != MsgErrorCode.Success)
+            {
                 return;
+            }
+
             if (!MimesisSaveManager.IsHost())
+            {
                 return;
+            }
 
             int slotId = isAutoSave ? 0 : saveSlotID;
             ModLog.Info(Feature, $"Game save triggered — persisting mimic voices for slot {slotId}.");

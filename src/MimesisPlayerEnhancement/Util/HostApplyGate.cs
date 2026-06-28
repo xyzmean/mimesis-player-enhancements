@@ -1,30 +1,29 @@
 using System;
-using MimesisPlayerEnhancement.Features.JoinAnytime;
-using MimesisPlayerEnhancement.Features.Persistence;
 using ReluNetwork.ConstEnum;
 
-namespace MimesisPlayerEnhancement.Util;
-
-internal static class HostApplyGate
+namespace MimesisPlayerEnhancement.Util
 {
-    internal static bool IsParticipantClient() =>
-        JoinAnytimeHub.GetPdata()?.ClientMode == NetworkClientMode.Participant;
-
-    internal static bool ShouldApplyHostOnlyFeature(Func<bool>? isFeatureEnabled = null)
+    internal static class HostApplyGate
     {
-        if (isFeatureEnabled != null && !isFeatureEnabled())
-            return false;
+        internal static bool IsParticipantClient()
+        {
+            return JoinAnytimeHub.GetPdata()?.ClientMode == NetworkClientMode.Participant;
+        }
 
-        if (IsParticipantClient())
-            return false;
+        internal static bool ShouldApplyHostOnlyFeature(Func<bool>? isFeatureEnabled = null)
+        {
+            if (isFeatureEnabled != null && !isFeatureEnabled())
+            {
+                return false;
+            }
 
-        // Solo/local play often has no network host flags yet; pdata may also be null early on.
-        if (JoinAnytimeHub.GetPdata() == null)
-            return true;
+            if (IsParticipantClient())
+            {
+                return false;
+            }
 
-        if (JoinAnytimeHub.GetPdata()?.ClientMode == NetworkClientMode.Host)
-            return true;
-
-        return MimesisSaveManager.IsHost();
+            // Solo/local play often has no network host flags yet; pdata may also be null early on.
+            return JoinAnytimeHub.GetPdata() == null || JoinAnytimeHub.GetPdata()?.ClientMode == NetworkClientMode.Host || MimesisSaveManager.IsHost();
+        }
     }
 }

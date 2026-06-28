@@ -1,67 +1,71 @@
 using System.Reflection;
 
-namespace MimesisPlayerEnhancement.Features.JoinAnytime;
-
-internal static class JoinAnytimeHub
+namespace MimesisPlayerEnhancement.Features.JoinAnytime
 {
-    private const string Feature = "JoinAnytime";
-
-    private const BindingFlags InstanceFlags =
-        BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
-
-    private static readonly FieldInfo? PdataField =
-        typeof(Hub).GetField("pdata", InstanceFlags);
-
-    private static readonly FieldInfo? SteamInviteField =
-        typeof(Hub).GetField("steamInviteDispatcher", InstanceFlags);
-
-    private static readonly FieldInfo? IsPublicRoomField =
-        typeof(SteamInviteDispatcher).GetField("isPublicRoom", InstanceFlags);
-
-    private static bool _warnedMissingFields;
-
-    internal static Hub.PersistentData? GetPdata()
+    internal static class JoinAnytimeHub
     {
-        if (Hub.s == null)
-            return null;
+        private const string Feature = "JoinAnytime";
 
-        if (PdataField == null)
+        private const BindingFlags InstanceFlags =
+            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+
+        private static readonly FieldInfo? PdataField =
+            typeof(Hub).GetField("pdata", InstanceFlags);
+
+        private static readonly FieldInfo? SteamInviteField =
+            typeof(Hub).GetField("steamInviteDispatcher", InstanceFlags);
+
+        private static readonly FieldInfo? IsPublicRoomField =
+            typeof(SteamInviteDispatcher).GetField("isPublicRoom", InstanceFlags);
+
+        private static bool _warnedMissingFields;
+
+        internal static Hub.PersistentData? GetPdata()
         {
-            WarnMissingFieldsOnce();
-            return null;
+            if (Hub.s == null)
+            {
+                return null;
+            }
+
+            if (PdataField == null)
+            {
+                WarnMissingFieldsOnce();
+                return null;
+            }
+
+            return PdataField.GetValue(Hub.s) as Hub.PersistentData;
         }
 
-        return PdataField.GetValue(Hub.s) as Hub.PersistentData;
-    }
-
-    internal static SteamInviteDispatcher? GetSteamInviteDispatcher()
-    {
-        if (Hub.s == null)
-            return null;
-
-        if (SteamInviteField == null)
+        internal static SteamInviteDispatcher? GetSteamInviteDispatcher()
         {
-            WarnMissingFieldsOnce();
-            return null;
+            if (Hub.s == null)
+            {
+                return null;
+            }
+
+            if (SteamInviteField == null)
+            {
+                WarnMissingFieldsOnce();
+                return null;
+            }
+
+            return SteamInviteField.GetValue(Hub.s) as SteamInviteDispatcher;
         }
 
-        return SteamInviteField.GetValue(Hub.s) as SteamInviteDispatcher;
-    }
+        internal static bool IsHostLobbyPublic(SteamInviteDispatcher? dispatcher)
+        {
+            return dispatcher != null && IsPublicRoomField != null && IsPublicRoomField.GetValue(dispatcher) is true;
+        }
 
-    internal static bool IsHostLobbyPublic(SteamInviteDispatcher? dispatcher)
-    {
-        if (dispatcher == null || IsPublicRoomField == null)
-            return false;
+        private static void WarnMissingFieldsOnce()
+        {
+            if (_warnedMissingFields)
+            {
+                return;
+            }
 
-        return IsPublicRoomField.GetValue(dispatcher) is true;
-    }
-
-    private static void WarnMissingFieldsOnce()
-    {
-        if (_warnedMissingFields)
-            return;
-
-        _warnedMissingFields = true;
-        ModLog.Warn(Feature, "Hub reflection fields missing — pdata or steamInviteDispatcher not found");
+            _warnedMissingFields = true;
+            ModLog.Warn(Feature, "Hub reflection fields missing — pdata or steamInviteDispatcher not found");
+        }
     }
 }

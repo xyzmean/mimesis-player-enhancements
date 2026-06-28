@@ -14,12 +14,17 @@ namespace MimesisPlayerEnhancement.Features.Persistence.Patches
         public static void Postfix(string fileName)
         {
             if (!ModConfig.EnablePersistence.Value)
+            {
                 return;
+            }
 
             try
             {
                 if (string.IsNullOrEmpty(fileName) || !fileName.StartsWith("MMGameData", StringComparison.OrdinalIgnoreCase))
+                {
                     return;
+                }
+
                 string slotStr = Path.GetFileNameWithoutExtension(fileName).Replace("MMGameData", "");
                 if (int.TryParse(slotStr, out int slotId) && MMSaveGameData.CheckSaveSlotID(slotId, true))
                 {

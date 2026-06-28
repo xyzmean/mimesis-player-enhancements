@@ -12,13 +12,19 @@ namespace MimesisPlayerEnhancement.Features.Persistence.Patches
         [HarmonyPrefix]
         public static void Prefix(SpeechEventArchive __instance)
         {
+            SpeechEventArchiveRegistry.Unregister(__instance);
+
             if (!ModConfig.EnablePersistence.Value)
+            {
                 return;
+            }
 
             try
             {
                 if (!MimesisSaveManager.IsHost())
+                {
                     return;
+                }
 
                 bool isLocal = false;
                 try
@@ -31,7 +37,9 @@ namespace MimesisPlayerEnhancement.Features.Persistence.Patches
                 }
 
                 if (isLocal)
+                {
                     return;
+                }
 
                 int cached = SpeechEventPoolManager.CacheEventsFromArchive(__instance);
                 ModLog.Info(

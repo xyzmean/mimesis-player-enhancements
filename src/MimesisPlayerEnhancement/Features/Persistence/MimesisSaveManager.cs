@@ -3,12 +3,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using UnityEngine;
 using ReluProtocol;
 using ReluReplay.Data;
-using ReluReplay;
 using ReluReplay.Serializer;
 using Mimic.Voice.SpeechSystem;
+using MimesisPlayerEnhancement.Util;
 
 namespace MimesisPlayerEnhancement.Features.Persistence
 {
@@ -26,9 +25,9 @@ namespace MimesisPlayerEnhancement.Features.Persistence
         private const int MetadataVersion = 2; // v2: includes CompressedAudioData
         private const string BackupSuffix = ".bak";
         private const string TempSuffix = ".tmp";
-        
+
         // Field info for setting CompressedAudioData via reflection (it's readonly)
-        private static readonly FieldInfo CompressedAudioDataField = 
+        private static readonly FieldInfo CompressedAudioDataField =
             typeof(SpeechEvent).GetField("CompressedAudioData", BindingFlags.Public | BindingFlags.Instance);
 
         // ===================== Safe File I/O =====================
@@ -58,7 +57,10 @@ namespace MimesisPlayerEnhancement.Features.Persistence
 
             // 3. Replace original with temp (atomic on most filesystems)
             if (File.Exists(filePath))
+            {
                 File.Delete(filePath);
+            }
+
             File.Move(tmpPath, filePath);
         }
 
@@ -74,7 +76,11 @@ namespace MimesisPlayerEnhancement.Features.Persistence
         {
             foreach (string path in new[] { filePath, filePath + BackupSuffix, filePath + TempSuffix })
             {
-                if (!File.Exists(path)) continue;
+                if (!File.Exists(path))
+                {
+                    continue;
+                }
+
                 try
                 {
                     File.Delete(path);
@@ -100,7 +106,9 @@ namespace MimesisPlayerEnhancement.Features.Persistence
                 {
                     byte[] data = File.ReadAllBytes(filePath);
                     if (data != null && data.Length > 0)
+                    {
                         return data;
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -150,7 +158,10 @@ namespace MimesisPlayerEnhancement.Features.Persistence
                 try
                 {
                     string text = File.ReadAllText(filePath);
-                    if (!string.IsNullOrEmpty(text)) return text;
+                    if (!string.IsNullOrEmpty(text))
+                    {
+                        return text;
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -182,93 +193,40 @@ namespace MimesisPlayerEnhancement.Features.Persistence
 
         public static string? GetMimesisSlotPath(int slotId)
         {
-            var platformMgr = MonoSingleton<PlatformMgr>.Instance;
-            if (platformMgr == null) return null;
+            PlatformMgr platformMgr = MonoSingleton<PlatformMgr>.Instance;
+            if (platformMgr == null)
+            {
+                return null;
+            }
+
             string baseFolder = platformMgr.GetSaveFileFolderPath();
-            if (string.IsNullOrEmpty(baseFolder)) return null;
-            return Path.Combine(baseFolder, MimesisDataFolder, SlotPrefix + slotId);
+            return string.IsNullOrEmpty(baseFolder) ? null : Path.Combine(baseFolder, MimesisDataFolder, SlotPrefix + slotId);
         }
 
         public static bool IsHost()
         {
-            return IsHostViaNetwork() || IsHostViaVWorld();
-        }
-
-        private static bool IsHostViaNetwork()
-        {
-            try
-            {
-                var t = Type.GetType("FishNet.Managing.NetworkManager, FishNet.Runtime");
-                if (t == null) return false;
-                var instanceProp = t.GetProperty("Instance", BindingFlags.Public | BindingFlags.Static);
-                if (instanceProp == null) return false;
-                object nm = instanceProp.GetValue(null);
-                if (nm == null) return false;
-                var isServerProp = t.GetProperty("IsServer", BindingFlags.Public | BindingFlags.Instance);
-                return isServerProp != null && (bool)isServerProp.GetValue(nm);
-            }
-            catch { return false; }
-        }
-
-        private static bool IsHostViaVWorld()
-        {
-            try
-            {
-                object? vworld = GetHubMember("vworld");
-                if (vworld == null) return false;
-                object? sessionMgr = vworld.GetType().GetField("_sessionManager", BindingFlags.NonPublic | BindingFlags.Instance)?.GetValue(vworld);
-                if (sessionMgr == null) return false;
-                var hostField = sessionMgr.GetType().GetField("_hostSessionContext", BindingFlags.NonPublic | BindingFlags.Instance);
-                if (hostField == null) return false;
-                object? hostCtx = hostField.GetValue(sessionMgr);
-                if (hostCtx == null) return false;
-                var vplayerField = hostCtx.GetType().GetField("_vPlayer", BindingFlags.NonPublic | BindingFlags.Instance);
-                object? vplayer = vplayerField?.GetValue(hostCtx);
-                if (vplayer == null) return false;
-                var isHostProp = vplayer.GetType().GetProperty("IsHost", BindingFlags.Public | BindingFlags.Instance);
-                return isHostProp != null && (bool)isHostProp.GetValue(vplayer);
-            }
-            catch { return false; }
+            return HostStatusCache.IsHostFast();
         }
 
         public static List<SpeechEvent> CollectAllSpeechEvents()
         {
-            var list = new List<SpeechEvent>();
+            List<SpeechEvent> list = [];
             try
             {
-                var seenIds = new HashSet<long>();
+                HashSet<long> seenIds = [];
 
                 // 1. Collect from live archives (players still connected)
-                var archives = UnityEngine.Object.FindObjectsByType<SpeechEventArchive>(FindObjectsSortMode.None);
-                if (archives != null)
+                foreach (SpeechEventArchive arch in SpeechEventArchiveRegistry.EnumerateActive())
                 {
-                    var eventsField = typeof(SpeechEventArchive).GetField("events", BindingFlags.Public | BindingFlags.Instance);
-                    if (eventsField != null)
-                    {
-                        foreach (var arch in archives)
-                        {
-                            var syncList = eventsField.GetValue(arch);
-                            if (syncList == null) continue;
-                            var countProp = syncList.GetType().GetProperty("Count", BindingFlags.Public | BindingFlags.Instance);
-                            var indexer = syncList.GetType().GetProperty("Item", new[] { typeof(int) });
-                            if (countProp == null || indexer == null) continue;
-                            int count = (int)countProp.GetValue(syncList);
-                            for (int i = 0; i < count; i++)
-                            {
-                                var ev = indexer.GetValue(syncList, new object[] { i }) as SpeechEvent;
-                                if (ev != null && seenIds.Add(ev.Id))
-                                    list.Add(ev);
-                            }
-                        }
-                    }
+                    _ = SpeechEventSyncListHelper.CollectFromArchive(arch, seenIds, list);
                 }
 
                 int liveCount = list.Count;
 
                 // 2. Include cached events from disconnected players
-                var disconnected = SpeechEventPoolManager.GetDisconnectedEvents();
+                List<SpeechEvent> disconnected = SpeechEventPoolManager.GetDisconnectedEvents();
                 int disconnectedAdded = 0;
-                foreach (var ev in disconnected)
+                foreach (SpeechEvent ev in disconnected)
                 {
                     if (ev != null && seenIds.Add(ev.Id))
                     {
@@ -280,9 +238,9 @@ namespace MimesisPlayerEnhancement.Features.Persistence
                 // 3. Include PENDING events from the pool (loaded from disk but never matched).
                 // These belong to players who didn't join this session.
                 // Without this, their voices would be lost after one session without them.
-                var pending = SpeechEventPoolManager.GetPendingEvents();
+                List<SpeechEvent> pending = SpeechEventPoolManager.GetPendingEvents();
                 int pendingAdded = 0;
-                foreach (var ev in pending)
+                foreach (SpeechEvent ev in pending)
                 {
                     if (ev != null && seenIds.Add(ev.Id))
                     {
@@ -309,16 +267,21 @@ namespace MimesisPlayerEnhancement.Features.Persistence
             try
             {
                 object? vworld = GetHubMember("vworld");
-                if (vworld == null) return -1;
-                var saveSlotProp = vworld.GetType().GetProperty("SaveSlotID", BindingFlags.Public | BindingFlags.Instance);
-                if (saveSlotProp == null) return -1;
-                return (int)saveSlotProp.GetValue(vworld);
+                if (vworld == null)
+                {
+                    return -1;
+                }
+
+                PropertyInfo saveSlotProp = vworld.GetType().GetProperty("SaveSlotID", BindingFlags.Public | BindingFlags.Instance);
+                return saveSlotProp == null ? -1 : (int)saveSlotProp.GetValue(vworld);
             }
             catch { return -1; }
         }
 
-        public static bool IsValidSaveSlotId(int slotId) =>
-            MMSaveGameData.CheckSaveSlotID(slotId, true);
+        public static bool IsValidSaveSlotId(int slotId)
+        {
+            return MMSaveGameData.CheckSaveSlotID(slotId, true);
+        }
 
         public static bool TryGetActiveSaveSlotId(out int slotId)
         {
@@ -328,17 +291,20 @@ namespace MimesisPlayerEnhancement.Features.Persistence
 
         public static object? GetHubMember(string name)
         {
-            if (Hub.s == null) return null;
-            var type = typeof(Hub);
-            var field = type.GetField(name, BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Public);
+            if (Hub.s == null)
+            {
+                return null;
+            }
+
+            Type type = typeof(Hub);
+            FieldInfo field = type.GetField(name, BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Public);
             if (field != null)
+            {
                 return field.GetValue(Hub.s);
+            }
 
-            var prop = type.GetProperty(name, BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Public);
-            if (prop != null && prop.CanRead)
-                return prop.GetValue(Hub.s);
-
-            return null;
+            PropertyInfo prop = type.GetProperty(name, BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Public);
+            return prop != null && prop.CanRead ? prop.GetValue(Hub.s) : null;
         }
 
 
@@ -357,23 +323,23 @@ namespace MimesisPlayerEnhancement.Features.Persistence
             }
             try
             {
-                Directory.CreateDirectory(slotPath);
+                _ = Directory.CreateDirectory(slotPath);
 
                 List<SpeechEvent> speechEvents = CollectAllSpeechEvents();
                 string speechPath = Path.Combine(slotPath, SpeechEventsFile);
                 int serializedCount = 0;
                 if (speechEvents != null && speechEvents.Count > 0)
                 {
-                    using (var ms = new MemoryStream())
-                    using (var bw = new BinaryWriter(ms))
+                    using (MemoryStream ms = new())
+                    using (BinaryWriter bw = new(ms))
                     {
-                        var serializedEvents = new List<(byte[] meta, byte[] audio)>();
-                        foreach (var ev in speechEvents)
+                        List<(byte[] meta, byte[] audio)> serializedEvents = [];
+                        foreach (SpeechEvent ev in speechEvents)
                         {
                             byte[] metaData = ReplayableSndEvent.GetDataFromSndEvent(ev);
                             if (metaData != null && metaData.Length > 0)
                             {
-                                byte[] audioData = ev.CompressedAudioData ?? Array.Empty<byte>();
+                                byte[] audioData = ev.CompressedAudioData ?? [];
                                 serializedEvents.Add((metaData, audioData));
                             }
                         }
@@ -382,7 +348,7 @@ namespace MimesisPlayerEnhancement.Features.Persistence
                         bw.Write(serializedCount);
 
                         long totalAudioBytes = 0;
-                        foreach (var (metaData, audioData) in serializedEvents)
+                        foreach ((byte[]? metaData, byte[]? audioData) in serializedEvents)
                         {
                             bw.Write(metaData.Length);
                             bw.Write(metaData);
@@ -417,35 +383,55 @@ namespace MimesisPlayerEnhancement.Features.Persistence
         public static List<SpeechEvent>? LoadSpeechEvents(int slotId)
         {
             string? slotPath = GetMimesisSlotPath(slotId);
-            if (string.IsNullOrEmpty(slotPath)) return null;
+            if (string.IsNullOrEmpty(slotPath))
+            {
+                return null;
+            }
+
             string filePath = Path.Combine(slotPath, SpeechEventsFile);
-            if (!File.Exists(filePath) && !File.Exists(filePath + BackupSuffix)) return null;
+            if (!File.Exists(filePath) && !File.Exists(filePath + BackupSuffix))
+            {
+                return null;
+            }
+
             try
             {
                 byte[]? data = SafeReadAllBytes(filePath);
-                if (data == null || data.Length < 4) return null;
+                if (data == null || data.Length < 4)
+                {
+                    return null;
+                }
 
-                var list = new List<SpeechEvent>();
+                List<SpeechEvent> list = [];
                 int count = 0;
-                using (var ms = new MemoryStream(data))
-                using (var br = new BinaryReader(ms))
+                using (MemoryStream ms = new(data))
+                using (BinaryReader br = new(ms))
                 {
                     count = br.ReadInt32();
                     if (count <= 0 || count > 100000)
+                    {
                         return LoadSpeechEventsOldFormat(data);
-                    
+                    }
+
                     // Try to detect format: v2 has audio after metadata, v1 only has metadata
                     // We'll try v2 first, fall back to v1 if it fails
                     long totalAudioBytes = 0;
                     for (int i = 0; i < count; i++)
                     {
-                        if (ms.Position >= data.Length) break;
-                        
+                        if (ms.Position >= data.Length)
+                        {
+                            break;
+                        }
+
                         // Read metadata
                         int metaLen = br.ReadInt32();
-                        if (metaLen <= 0 || ms.Position + metaLen > data.Length) continue;
+                        if (metaLen <= 0 || ms.Position + metaLen > data.Length)
+                        {
+                            continue;
+                        }
+
                         byte[] metaData = br.ReadBytes(metaLen);
-                        
+
                         // Try to read audio (v2 format)
                         byte[]? audioData = null;
                         if (ms.Position + 4 <= data.Length)
@@ -462,11 +448,14 @@ namespace MimesisPlayerEnhancement.Features.Persistence
                                 ms.Position -= 4;
                             }
                         }
-                        
-                        var ev = DeserializeSingleSpeechEvent(metaData, audioData);
-                        if (ev != null) list.Add(ev);
+
+                        SpeechEvent? ev = DeserializeSingleSpeechEvent(metaData, audioData);
+                        if (ev != null)
+                        {
+                            list.Add(ev);
+                        }
                     }
-                    
+
                     ModLog.Debug("Persistence", $"Loaded {list.Count}/{count} SpeechEvents from slot {slotId}, audio={totalAudioBytes / 1024}KB");
                 }
                 return list.Count > 0 ? list : null;
@@ -483,18 +472,28 @@ namespace MimesisPlayerEnhancement.Features.Persistence
             try
             {
                 Type? serializerType = FindMemoryPackSerializerType();
-                if (serializerType == null) return null;
+                if (serializerType == null)
+                {
+                    return null;
+                }
 
                 MethodInfo deserializeMethod = serializerType.GetMethods(BindingFlags.Public | BindingFlags.Static)
                     .FirstOrDefault(m =>
                     {
-                        if (m.Name != "Deserialize") return false;
-                        var p = m.GetParameters();
+                        if (m.Name != "Deserialize")
+                        {
+                            return false;
+                        }
+
+                        ParameterInfo[] p = m.GetParameters();
                         return p.Length >= 2 && p[0].ParameterType == typeof(Type) && p[1].ParameterType == typeof(byte[]);
                     });
-                if (deserializeMethod == null) return null;
+                if (deserializeMethod == null)
+                {
+                    return null;
+                }
 
-                var list = (List<SpeechEvent>?)deserializeMethod.Invoke(null, new object?[] { typeof(List<SpeechEvent>), data, null });
+                List<SpeechEvent>? list = (List<SpeechEvent>?)deserializeMethod.Invoke(null, [typeof(List<SpeechEvent>), data, null]);
                 if (list != null && list.Count > 0)
                 {
                     ModLog.Debug("Persistence", $"Loaded {list.Count} SpeechEvents (legacy format)");
@@ -507,19 +506,23 @@ namespace MimesisPlayerEnhancement.Features.Persistence
 
         private static SpeechEvent? DeserializeSingleSpeechEvent(byte[] metaData, byte[]? audioData = null)
         {
-            if (metaData == null || metaData.Length == 0) return null;
+            if (metaData == null || metaData.Length == 0)
+            {
+                return null;
+            }
+
             try
             {
                 // Deserialize the metadata (everything except CompressedAudioData)
-                var wrapper = new ReplayableSndEvent(SndEventType.PLAYER, 0, 0, 0, metaData, null);
-                var ev = wrapper.GetSndEvent(REPLAY_HEADER_VERSION.V_1_2);
-                
+                ReplayableSndEvent wrapper = new(SndEventType.PLAYER, 0, 0, 0, metaData, null);
+                SpeechEvent? ev = wrapper.GetSndEvent(REPLAY_HEADER_VERSION.V_1_2);
+
                 // Inject the audio data via reflection (field is readonly)
                 if (ev != null && audioData != null && audioData.Length > 0 && CompressedAudioDataField != null)
                 {
                     CompressedAudioDataField.SetValue(ev, audioData);
                 }
-                
+
                 return ev;
             }
             catch { return null; }
@@ -527,18 +530,33 @@ namespace MimesisPlayerEnhancement.Features.Persistence
 
         private static Type? FindMemoryPackSerializerType()
         {
-            var t = Type.GetType("MemoryPack.MemoryPackSerializer, MemoryPack");
-            if (t != null) return t;
+            Type t = Type.GetType("MemoryPack.MemoryPackSerializer, MemoryPack");
+            if (t != null)
+            {
+                return t;
+            }
+
             t = Type.GetType("MemoryPack.MemoryPackSerializer, MemoryPack.Core");
-            if (t != null) return t;
+            if (t != null)
+            {
+                return t;
+            }
+
             t = Type.GetType("MemoryPack.MemoryPackSerializer, MemoryPack.Runtime");
-            if (t != null) return t;
-            foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
+            if (t != null)
+            {
+                return t;
+            }
+
+            foreach (Assembly? asm in AppDomain.CurrentDomain.GetAssemblies())
             {
                 try
                 {
                     t = asm.GetType("MemoryPack.MemoryPackSerializer");
-                    if (t != null) return t;
+                    if (t != null)
+                    {
+                        return t;
+                    }
                 }
                 catch { }
             }
@@ -549,7 +567,10 @@ namespace MimesisPlayerEnhancement.Features.Persistence
         public static bool HasMimesisData(int slotId)
         {
             string? slotPath = GetMimesisSlotPath(slotId);
-            if (string.IsNullOrEmpty(slotPath)) return false;
+            if (string.IsNullOrEmpty(slotPath))
+            {
+                return false;
+            }
             // Check both main files and their backups
             return File.Exists(Path.Combine(slotPath, SpeechEventsFile)) ||
                    File.Exists(Path.Combine(slotPath, SpeechEventsFile + BackupSuffix));
@@ -558,7 +579,11 @@ namespace MimesisPlayerEnhancement.Features.Persistence
         public static void DeleteMimesisData(int slotId)
         {
             string? slotPath = GetMimesisSlotPath(slotId);
-            if (string.IsNullOrEmpty(slotPath) || !Directory.Exists(slotPath)) return;
+            if (string.IsNullOrEmpty(slotPath) || !Directory.Exists(slotPath))
+            {
+                return;
+            }
+
             try
             {
                 Directory.Delete(slotPath, true);
