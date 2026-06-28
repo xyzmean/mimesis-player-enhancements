@@ -37,20 +37,20 @@ public static class ModConfig
     public static MelonPreferences_Entry<bool> EnableJoinAnytime { get; private set; } = null!;
 
     public static MelonPreferences_Entry<bool> EnableSpawnScaling { get; private set; } = null!;
-    public static MelonPreferences_Entry<float> MimicSpawnMultiplier { get; private set; } = null!;
     public static MelonPreferences_Entry<bool> AutoScaleMimicSpawnsByPlayerCount { get; private set; } = null!;
-    public static MelonPreferences_Entry<float> BossSpawnMultiplier { get; private set; } = null!;
+    public static MelonPreferences_Entry<float> MimicSpawnMultiplier { get; private set; } = null!;
     public static MelonPreferences_Entry<bool> AutoScaleBossSpawnsByPlayerCount { get; private set; } = null!;
-    public static MelonPreferences_Entry<float> JakoSpawnMultiplier { get; private set; } = null!;
+    public static MelonPreferences_Entry<float> BossSpawnMultiplier { get; private set; } = null!;
     public static MelonPreferences_Entry<bool> AutoScaleJakoSpawnsByPlayerCount { get; private set; } = null!;
-    public static MelonPreferences_Entry<float> SpecialSpawnMultiplier { get; private set; } = null!;
+    public static MelonPreferences_Entry<float> JakoSpawnMultiplier { get; private set; } = null!;
     public static MelonPreferences_Entry<bool> AutoScaleSpecialSpawnsByPlayerCount { get; private set; } = null!;
-    public static MelonPreferences_Entry<float> TrapSpawnMultiplier { get; private set; } = null!;
+    public static MelonPreferences_Entry<float> SpecialSpawnMultiplier { get; private set; } = null!;
     public static MelonPreferences_Entry<bool> AutoScaleTrapSpawnsByPlayerCount { get; private set; } = null!;
+    public static MelonPreferences_Entry<float> TrapSpawnMultiplier { get; private set; } = null!;
     public static MelonPreferences_Entry<float> FixedSpawnRespawnDelayMinSeconds { get; private set; } = null!;
     public static MelonPreferences_Entry<float> FixedSpawnRespawnDelayMaxSeconds { get; private set; } = null!;
-    public static MelonPreferences_Entry<float> OtherSpawnMultiplier { get; private set; } = null!;
     public static MelonPreferences_Entry<bool> AutoScaleOtherSpawnsByPlayerCount { get; private set; } = null!;
+    public static MelonPreferences_Entry<float> OtherSpawnMultiplier { get; private set; } = null!;
 
     public static MelonPreferences_Entry<bool> EnableDebugLogging { get; private set; } = null!;
 
@@ -120,23 +120,17 @@ public static class ModConfig
             "Enable Spawn Scaling",
             "Scale dungeon monster spawn budgets by type. Host only.");
 
-        MimicSpawnMultiplier = Category.CreateEntry(
-            "MimicSpawnMultiplier",
-            1f,
-            "Mimic Spawn Multiplier",
-            "Mimic spawn budget multiplier (1 = vanilla, 2 = double).");
-
         AutoScaleMimicSpawnsByPlayerCount = Category.CreateEntry(
             "AutoScaleMimicSpawnsByPlayerCount",
             true,
             "Auto Scale Mimic Spawns By Player Count",
             "When enabled, multiply mimic spawn budgets by player count / 4 for sessions with more than 4 players (stacks with MimicSpawnMultiplier).");
 
-        BossSpawnMultiplier = Category.CreateEntry(
-            "BossSpawnMultiplier",
+        MimicSpawnMultiplier = Category.CreateEntry(
+            "MimicSpawnMultiplier",
             1f,
-            "Boss Spawn Multiplier",
-            "Boss spawn budget multiplier (1 = vanilla, 2 = double).");
+            "Mimic Spawn Multiplier",
+            "Mimic spawn budget multiplier (1 = vanilla, 2 = double).");
 
         AutoScaleBossSpawnsByPlayerCount = Category.CreateEntry(
             "AutoScaleBossSpawnsByPlayerCount",
@@ -144,11 +138,11 @@ public static class ModConfig
             "Auto Scale Boss Spawns By Player Count",
             "When enabled, multiply boss spawn budgets by player count / 4 for sessions with more than 4 players (stacks with BossSpawnMultiplier).");
 
-        JakoSpawnMultiplier = Category.CreateEntry(
-            "JakoSpawnMultiplier",
+        BossSpawnMultiplier = Category.CreateEntry(
+            "BossSpawnMultiplier",
             1f,
-            "Jako Spawn Multiplier",
-            "Jako (normal monster) spawn budget multiplier (1 = vanilla, 2 = double).");
+            "Boss Spawn Multiplier",
+            "Boss spawn budget multiplier (1 = vanilla, 2 = double).");
 
         AutoScaleJakoSpawnsByPlayerCount = Category.CreateEntry(
             "AutoScaleJakoSpawnsByPlayerCount",
@@ -156,11 +150,11 @@ public static class ModConfig
             "Auto Scale Jako Spawns By Player Count",
             "When enabled, multiply jako spawn budgets by player count / 4 for sessions with more than 4 players (stacks with JakoSpawnMultiplier).");
 
-        SpecialSpawnMultiplier = Category.CreateEntry(
-            "SpecialSpawnMultiplier",
+        JakoSpawnMultiplier = Category.CreateEntry(
+            "JakoSpawnMultiplier",
             1f,
-            "Special Spawn Multiplier",
-            "Special monster spawn budget multiplier (1 = vanilla, 2 = double).");
+            "Jako Spawn Multiplier",
+            "Jako (normal monster) spawn budget multiplier (1 = vanilla, 2 = double).");
 
         AutoScaleSpecialSpawnsByPlayerCount = Category.CreateEntry(
             "AutoScaleSpecialSpawnsByPlayerCount",
@@ -168,17 +162,23 @@ public static class ModConfig
             "Auto Scale Special Spawns By Player Count",
             "When enabled, multiply special spawn budgets by player count / 4 for sessions with more than 4 players (stacks with SpecialSpawnMultiplier).");
 
-        TrapSpawnMultiplier = Category.CreateEntry(
-            "TrapSpawnMultiplier",
+        SpecialSpawnMultiplier = Category.CreateEntry(
+            "SpecialSpawnMultiplier",
             1f,
-            "Trap Spawn Multiplier",
-            "Trap spawn multiplier (1 = vanilla, 2 = double). Map-placed traps use unused markers first, then respawn at the same marker when gone.");
+            "Special Spawn Multiplier",
+            "Special monster spawn budget multiplier (1 = vanilla, 2 = double).");
 
         AutoScaleTrapSpawnsByPlayerCount = Category.CreateEntry(
             "AutoScaleTrapSpawnsByPlayerCount",
             true,
             "Auto Scale Trap Spawns By Player Count",
             "When enabled, multiply trap spawn counts by player count / 4 for sessions with more than 4 players (stacks with TrapSpawnMultiplier).");
+
+        TrapSpawnMultiplier = Category.CreateEntry(
+            "TrapSpawnMultiplier",
+            1f,
+            "Trap Spawn Multiplier",
+            "Trap spawn multiplier (1 = vanilla, 2 = double). Map-placed traps use unused markers first, then respawn at the same marker when gone.");
 
         FixedSpawnRespawnDelayMinSeconds = Category.CreateEntry(
             "FixedSpawnRespawnDelayMinSeconds",
@@ -192,17 +192,17 @@ public static class ModConfig
             "Fixed Spawn Respawn Delay Max Seconds",
             "Maximum random delay before a map-placed monster or trap respawns at the same marker when no unused markers remain.");
 
-        OtherSpawnMultiplier = Category.CreateEntry(
-            "OtherSpawnMultiplier",
-            1f,
-            "Other Spawn Multiplier",
-            "Spawn multiplier for entities that are not mimics, bosses, jakos, specials, or traps.");
-
         AutoScaleOtherSpawnsByPlayerCount = Category.CreateEntry(
             "AutoScaleOtherSpawnsByPlayerCount",
             true,
             "Auto Scale Other Spawns By Player Count",
             "When enabled, multiply other spawn counts by player count / 4 for sessions with more than 4 players (stacks with OtherSpawnMultiplier).");
+
+        OtherSpawnMultiplier = Category.CreateEntry(
+            "OtherSpawnMultiplier",
+            1f,
+            "Other Spawn Multiplier",
+            "Spawn multiplier for entities that are not mimics, bosses, jakos, specials, or traps.");
 
         EnableDebugLogging = Category.CreateEntry(
             "EnableDebugLogging",

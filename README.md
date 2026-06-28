@@ -57,20 +57,20 @@ You can edit it anytime. The game reloads the file while running, but **most cha
 | `ShowStatisticsToasts` | bool | `true` | Show small join/leave/cycle messages in the bottom-left corner when statistics are enabled. |
 | `EnableJoinAnytime` | bool | `true` | Let players join after a round has already started. Every player in the lobby needs the mod for this. |
 | `EnableSpawnScaling` | bool | `true` | Scale dungeon monster spawn budgets by type. Host only. |
-| `MimicSpawnMultiplier` | float | `1.0` | Mimic spawn budget multiplier (`1` = vanilla, `2` = double). Map-placed mimics also use unused markers first, then respawn at the same marker. Minimum is `0`. |
 | `AutoScaleMimicSpawnsByPlayerCount` | bool | `true` | When on, multiply mimic spawns by player count ÷ 4 above 4 players (stacks with `MimicSpawnMultiplier`). |
-| `BossSpawnMultiplier` | float | `1.0` | Boss spawn budget multiplier (`1` = vanilla, `2` = double). Map-placed bosses also use unused markers first, then respawn at the same marker. Minimum is `0`. |
+| `MimicSpawnMultiplier` | float | `1.0` | Mimic spawn budget multiplier (`1` = vanilla, `2` = double). Map-placed mimics also use unused markers first, then respawn at the same marker. Minimum is `0`. |
 | `AutoScaleBossSpawnsByPlayerCount` | bool | `true` | When on, multiply boss spawns by player count ÷ 4 above 4 players (stacks with `BossSpawnMultiplier`). |
-| `JakoSpawnMultiplier` | float | `1.0` | Jako (normal monster) spawn budget multiplier (`1` = vanilla, `2` = double). Map-placed jakos also use unused markers first, then respawn at the same marker. Minimum is `0`. |
+| `BossSpawnMultiplier` | float | `1.0` | Boss spawn budget multiplier (`1` = vanilla, `2` = double). Map-placed bosses also use unused markers first, then respawn at the same marker. Minimum is `0`. |
 | `AutoScaleJakoSpawnsByPlayerCount` | bool | `true` | When on, multiply jako spawns by player count ÷ 4 above 4 players (stacks with `JakoSpawnMultiplier`). |
-| `SpecialSpawnMultiplier` | float | `1.0` | Special monster spawn budget multiplier (`1` = vanilla, `2` = double). Map-placed specials also use unused markers first, then respawn at the same marker. Minimum is `0`. |
+| `JakoSpawnMultiplier` | float | `1.0` | Jako (normal monster) spawn budget multiplier (`1` = vanilla, `2` = double). Map-placed jakos also use unused markers first, then respawn at the same marker. Minimum is `0`. |
 | `AutoScaleSpecialSpawnsByPlayerCount` | bool | `true` | When on, multiply special spawns by player count ÷ 4 above 4 players (stacks with `SpecialSpawnMultiplier`). |
-| `TrapSpawnMultiplier` | float | `1.0` | Trap/hazard spawn multiplier for map-placed spawns (`1` = vanilla, `2` = double). Uses unused map markers first, then respawns at the same marker when gone. Minimum is `0`. |
+| `SpecialSpawnMultiplier` | float | `1.0` | Special monster spawn budget multiplier (`1` = vanilla, `2` = double). Map-placed specials also use unused markers first, then respawn at the same marker. Minimum is `0`. |
 | `AutoScaleTrapSpawnsByPlayerCount` | bool | `true` | When on, multiply trap spawns by player count ÷ 4 above 4 players (stacks with `TrapSpawnMultiplier`). |
+| `TrapSpawnMultiplier` | float | `1.0` | Trap/hazard spawn multiplier for map-placed spawns (`1` = vanilla, `2` = double). Uses unused map markers first, then respawns at the same marker when gone. Minimum is `0`. |
 | `FixedSpawnRespawnDelayMinSeconds` | float | `5.0` | Minimum random delay (seconds) before a map-placed monster or trap respawns at the same marker when all markers are in use. |
 | `FixedSpawnRespawnDelayMaxSeconds` | float | `30.0` | Maximum random delay (seconds) before a map-placed monster or trap respawns at the same marker when all markers are in use. |
-| `OtherSpawnMultiplier` | float | `1.0` | Spawn multiplier for other entities (not mimic/boss/jako/special/trap). Minimum is `0`. |
 | `AutoScaleOtherSpawnsByPlayerCount` | bool | `true` | When on, multiply other spawns by player count ÷ 4 above 4 players (stacks with `OtherSpawnMultiplier`). |
+| `OtherSpawnMultiplier` | float | `1.0` | Spawn multiplier for other entities (not mimic/boss/jako/special/trap). Minimum is `0`. |
 | `EnableDebugLogging` | bool | `false` | Write extra detail to the MelonLoader console. Useful for troubleshooting; leave off for normal play. |
 
 Example:
@@ -87,20 +87,20 @@ SessionReconnectGraceMinutes = 5
 ShowStatisticsToasts = true
 EnableJoinAnytime = true
 EnableSpawnScaling = true
-MimicSpawnMultiplier = 1.0
 AutoScaleMimicSpawnsByPlayerCount = true
-BossSpawnMultiplier = 1.0
+MimicSpawnMultiplier = 1.0
 AutoScaleBossSpawnsByPlayerCount = true
-JakoSpawnMultiplier = 1.0
+BossSpawnMultiplier = 1.0
 AutoScaleJakoSpawnsByPlayerCount = true
-SpecialSpawnMultiplier = 1.0
+JakoSpawnMultiplier = 1.0
 AutoScaleSpecialSpawnsByPlayerCount = true
-TrapSpawnMultiplier = 1.0
+SpecialSpawnMultiplier = 1.0
 AutoScaleTrapSpawnsByPlayerCount = true
+TrapSpawnMultiplier = 1.0
 FixedSpawnRespawnDelayMinSeconds = 5.0
 FixedSpawnRespawnDelayMaxSeconds = 30.0
-OtherSpawnMultiplier = 1.0
 AutoScaleOtherSpawnsByPlayerCount = true
+OtherSpawnMultiplier = 1.0
 EnableDebugLogging = false
 ```
 
