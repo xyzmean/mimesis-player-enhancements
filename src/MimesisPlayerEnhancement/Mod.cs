@@ -106,8 +106,11 @@ public sealed class Mod : MelonMod
         ModLog.Debug(
             "Config",
             $"Synced — MorePlayers={ModConfig.EnableMorePlayers.Value} (session cap {sessionCap}), " +
-            $"MoreVoices={ModConfig.EnableMoreVoices.Value} (max {ModConfig.MaxVoiceEvents.Value}), " +
-            $"Persistence={ModConfig.EnablePersistence.Value}, " +
+            $"MoreVoices={ModConfig.EnableMoreVoices.Value}" +
+            (ModConfig.EnableMoreVoices.Value
+                ? $" (indoor {ModConfig.MaxIndoorVoiceEvents.Value}, deathmatch {ModConfig.MaxDeathMatchVoiceEvents.Value}, outdoor {ModConfig.MaxOutdoorVoiceEvents.Value})"
+                : "") +
+            $", Persistence={ModConfig.EnablePersistence.Value}, " +
             $"Statistics={ModConfig.EnableStatistics.Value}, " +
             $"JoinAnytime={ModConfig.EnableJoinAnytime.Value}, " +
             $"SpawnScaling={ModConfig.EnableSpawnScaling.Value}, " +
@@ -124,7 +127,9 @@ public sealed class Mod : MelonMod
             $"MorePlayers={ModConfig.EnableMorePlayers.Value}" +
             (ModConfig.EnableMorePlayers.Value ? $" (session cap {ModConfig.MaxPlayers.Value})" : "") +
             $", MoreVoices={ModConfig.EnableMoreVoices.Value}" +
-            (ModConfig.EnableMoreVoices.Value ? $" (max {ModConfig.MaxVoiceEvents.Value})" : "") +
+            (ModConfig.EnableMoreVoices.Value
+                ? $" (indoor {ModConfig.MaxIndoorVoiceEvents.Value}, deathmatch {ModConfig.MaxDeathMatchVoiceEvents.Value}, outdoor {ModConfig.MaxOutdoorVoiceEvents.Value})"
+                : "") +
             $", Persistence={ModConfig.EnablePersistence.Value}" +
             $", Statistics={ModConfig.EnableStatistics.Value}, " +
             $"JoinAnytime={ModConfig.EnableJoinAnytime.Value}, " +

@@ -20,7 +20,7 @@ Tested with **MIMESIS 0.3.0** and **MelonLoader 0.7.3**.
 | Feature | What it does | Everyone needs the mod? |
 |---------|--------------|-------------------------|
 | **More Players** | Raise the 4-player cap (default: 999) | No — host only |
-| **More Voices** | Record more mimic voice lines (default: 3000) | No — host only |
+| **More Voices** | Record more mimic voice lines per context (default: 3000 each for indoor, deathmatch, outdoor) | No — host only |
 | **Persistence** | Keep mimic voices after save/load | No — host only |
 | **Join Anytime** | Join a session that already started | **Yes — every player** |
 | **Statistics** | Session stats and leaderboard per save slot | No — host only |
@@ -50,6 +50,8 @@ After the first launch, the mod creates a config file here:
 
 You can edit it anytime. The game reloads the file while running, but **most changes only fully apply after a restart**. Some settings may not update correctly until you quit and start again.
 
+**Upgrade note:** `MaxVoiceEvents` was replaced by `MaxIndoorVoiceEvents`, `MaxDeathMatchVoiceEvents`, and `MaxOutdoorVoiceEvents`. Set all three keys manually; there is no automatic migration from the old setting.
+
 ### Options
 
 | Key | Type | Default | What it does |
@@ -57,7 +59,9 @@ You can edit it anytime. The game reloads the file while running, but **most cha
 | `EnableMorePlayers` | bool | `true` | Turn the higher player cap on or off. When off, the game stays at 4 players. |
 | `MaxPlayers` | int | `999` | Max players in a session, host included. `1` = solo, `2` = host + one friend, and so on. Minimum is `1`. |
 | `EnableMoreVoices` | bool | `true` | Turn higher voice recording limits on or off. |
-| `MaxVoiceEvents` | int | `3000` | How many mimic voice lines each player can store. The normal game limit is much lower. Minimum is `1`. |
+| `MaxIndoorVoiceEvents` | int | `3000` | How many mimic voice lines each player can store in indoor dungeon runs. Minimum is `1`. |
+| `MaxDeathMatchVoiceEvents` | int | `3000` | How many mimic voice lines each player can store in deathmatch. Minimum is `1`. |
+| `MaxOutdoorVoiceEvents` | int | `3000` | How many mimic voice lines each player can store outdoors. Minimum is `1`. |
 | `EnablePersistence` | bool | `true` | Save mimic voices when you save the game and bring them back when you load. |
 | `EnableStatistics` | bool | `true` | Track player stats (deaths, kills, voice events, play time, etc.) per save slot. Host only. |
 | `SessionReconnectGraceMinutes` | int | `5` | If someone disconnects and rejoins within this many minutes, their stats session continues instead of starting fresh. Minimum is `1`. |
@@ -191,7 +195,9 @@ Example (full config):
 EnableMorePlayers = true
 MaxPlayers = 32
 EnableMoreVoices = true
-MaxVoiceEvents = 3000
+MaxIndoorVoiceEvents = 3000
+MaxDeathMatchVoiceEvents = 3000
+MaxOutdoorVoiceEvents = 3000
 EnablePersistence = true
 EnableStatistics = true
 SessionReconnectGraceMinutes = 5

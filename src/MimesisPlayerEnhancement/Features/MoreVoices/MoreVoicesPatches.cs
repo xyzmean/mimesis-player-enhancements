@@ -44,7 +44,9 @@ public static class MoreVoicesPatches
         if (!ModConfig.EnableMoreVoices.Value)
             return;
 
-        int max = ModConfig.MaxVoiceEvents.Value;
+        int maxIndoor = ModConfig.MaxIndoorVoiceEvents.Value;
+        int maxDeathMatch = ModConfig.MaxDeathMatchVoiceEvents.Value;
+        int maxOutdoor = ModConfig.MaxOutdoorVoiceEvents.Value;
         int updated = 0;
 
         foreach (var archive in UnityEngine.Object.FindObjectsByType<SpeechEventArchive>(FindObjectsSortMode.None))
@@ -52,17 +54,18 @@ public static class MoreVoicesPatches
             if (archive == null)
                 continue;
 
-            if (ApplyLimitsToArchive(archive, max))
+            if (ApplyLimitsToArchive(archive, maxIndoor, maxDeathMatch, maxOutdoor))
                 updated++;
         }
 
+        string limits = FormatLimits(maxIndoor, maxDeathMatch, maxOutdoor);
         if (updated > 0)
         {
-            ModLog.Info(Feature, $"Refreshed voice limits on {updated} archive(s) — maxCap={max}.");
+            ModLog.Info(Feature, $"Refreshed voice limits on {updated} archive(s) — {limits}.");
         }
         else
         {
-            ModLog.Debug(Feature, $"Voice limit refresh complete — maxCap={max}, no active archives.");
+            ModLog.Debug(Feature, $"Voice limit refresh complete — {limits}, no active archives.");
         }
     }
 
@@ -85,17 +88,23 @@ public static class MoreVoicesPatches
 
             try
             {
-                if (ApplyLimitsToArchive(__instance, ModConfig.MaxVoiceEvents.Value))
+                int maxIndoor = ModConfig.MaxIndoorVoiceEvents.Value;
+                int maxDeathMatch = ModConfig.MaxDeathMatchVoiceEvents.Value;
+                int maxOutdoor = ModConfig.MaxOutdoorVoiceEvents.Value;
+
+                if (ApplyLimitsToArchive(__instance, maxIndoor, maxDeathMatch, maxOutdoor))
                 {
                     ModLog.Info(
                         Feature,
-                        $"Voice archive started — maxCap={ModConfig.MaxVoiceEvents.Value}, " +
+                        $"Voice archive started — {FormatLimits(maxIndoor, maxDeathMatch, maxOutdoor)}, " +
                         $"{VoiceEventStats.DescribePlayer(__instance)}");
                 }
 
                 ModLog.Debug(
                     Feature,
                     $"Voice archive detail — maxEvents={GetFieldValue(__instance, MaxEventsField)}, " +
+                    $"maxDeathMatch={GetFieldValue(__instance, MaxDeathMatchEventsField)}, " +
+                    $"maxOutdoor={GetFieldValue(__instance, MaxOutDoorEventsField)}, " +
                     $"{VoiceEventStats.DescribePlayerVerbose(__instance)}");
             }
             catch (Exception ex)
@@ -105,7 +114,11 @@ public static class MoreVoicesPatches
         }
     }
 
-    private static bool ApplyLimitsToArchive(SpeechEventArchive archive, int max)
+    private static bool ApplyLimitsToArchive(
+        SpeechEventArchive archive,
+        int maxIndoor,
+        int maxDeathMatch,
+        int maxOutdoor)
     {
         try
         {
@@ -113,13 +126,13 @@ public static class MoreVoicesPatches
             int oldMaxDeathMatch = GetFieldValue(archive, MaxDeathMatchEventsField);
             int oldMaxOutdoor = GetFieldValue(archive, MaxOutDoorEventsField);
 
-            SetFieldValue(archive, MaxEventsField, max);
-            SetFieldValue(archive, MaxDeathMatchEventsField, max);
-            SetFieldValue(archive, MaxOutDoorEventsField, max);
+            SetFieldValue(archive, MaxEventsField, maxIndoor);
+            SetFieldValue(archive, MaxDeathMatchEventsField, maxDeathMatch);
+            SetFieldValue(archive, MaxOutDoorEventsField, maxOutdoor);
 
             ModLog.Debug(
                 Feature,
-                $"Applied instance limits -> {max} " +
+                $"Applied instance limits -> {FormatLimits(maxIndoor, maxDeathMatch, maxOutdoor)} " +
                 $"(was maxEvents={oldMaxEvents}, maxDeathMatch={oldMaxDeathMatch}, maxOutdoor={oldMaxOutdoor}).");
             return true;
         }
@@ -129,6 +142,9 @@ public static class MoreVoicesPatches
             return false;
         }
     }
+
+    private static string FormatLimits(int maxIndoor, int maxDeathMatch, int maxOutdoor) =>
+        $"indoor={maxIndoor}, deathmatch={maxDeathMatch}, outdoor={maxOutdoor}";
 
     private static int GetFieldValue(SpeechEventArchive archive, FieldInfo? field)
     {

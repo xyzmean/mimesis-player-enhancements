@@ -27,7 +27,9 @@ public static class ModConfig
     public static MelonPreferences_Entry<int> MaxPlayers { get; private set; } = null!;
 
     public static MelonPreferences_Entry<bool> EnableMoreVoices { get; private set; } = null!;
-    public static MelonPreferences_Entry<int> MaxVoiceEvents { get; private set; } = null!;
+    public static MelonPreferences_Entry<int> MaxIndoorVoiceEvents { get; private set; } = null!;
+    public static MelonPreferences_Entry<int> MaxDeathMatchVoiceEvents { get; private set; } = null!;
+    public static MelonPreferences_Entry<int> MaxOutdoorVoiceEvents { get; private set; } = null!;
 
     public static MelonPreferences_Entry<bool> EnablePersistence { get; private set; } = null!;
 
@@ -119,11 +121,23 @@ public static class ModConfig
             "Enable More Voices",
             "Raise per-player voice recording limits.");
 
-        MaxVoiceEvents = Category.CreateEntry(
-            "MaxVoiceEvents",
+        MaxIndoorVoiceEvents = Category.CreateEntry(
+            "MaxIndoorVoiceEvents",
             3000,
-            "Max Voice Events",
-            "Maximum stored voice events per player (default game limit is much lower).");
+            "Max Indoor Voice Events",
+            "Maximum stored voice events per player in indoor dungeon runs (default game limit is much lower).");
+
+        MaxDeathMatchVoiceEvents = Category.CreateEntry(
+            "MaxDeathMatchVoiceEvents",
+            3000,
+            "Max Deathmatch Voice Events",
+            "Maximum stored voice events per player in deathmatch (default game limit is much lower).");
+
+        MaxOutdoorVoiceEvents = Category.CreateEntry(
+            "MaxOutdoorVoiceEvents",
+            3000,
+            "Max Outdoor Voice Events",
+            "Maximum stored voice events per player outdoors (default game limit is much lower).");
 
         EnablePersistence = Category.CreateEntry(
             "EnablePersistence",
@@ -487,12 +501,36 @@ public static class ModConfig
             NotifyChanged();
         });
 
-        MaxVoiceEvents.OnEntryValueChanged.Subscribe((_, value) =>
+        MaxIndoorVoiceEvents.OnEntryValueChanged.Subscribe((_, value) =>
         {
             if (value < 1)
             {
-                logger.Warning("MaxVoiceEvents must be at least 1; resetting to 1.");
-                MaxVoiceEvents.Value = 1;
+                logger.Warning("MaxIndoorVoiceEvents must be at least 1; resetting to 1.");
+                MaxIndoorVoiceEvents.Value = 1;
+                return;
+            }
+
+            NotifyChanged();
+        });
+
+        MaxDeathMatchVoiceEvents.OnEntryValueChanged.Subscribe((_, value) =>
+        {
+            if (value < 1)
+            {
+                logger.Warning("MaxDeathMatchVoiceEvents must be at least 1; resetting to 1.");
+                MaxDeathMatchVoiceEvents.Value = 1;
+                return;
+            }
+
+            NotifyChanged();
+        });
+
+        MaxOutdoorVoiceEvents.OnEntryValueChanged.Subscribe((_, value) =>
+        {
+            if (value < 1)
+            {
+                logger.Warning("MaxOutdoorVoiceEvents must be at least 1; resetting to 1.");
+                MaxOutdoorVoiceEvents.Value = 1;
                 return;
             }
 
