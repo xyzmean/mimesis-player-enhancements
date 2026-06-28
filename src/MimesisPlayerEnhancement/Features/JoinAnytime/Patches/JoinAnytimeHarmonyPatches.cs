@@ -1,6 +1,9 @@
+using System;
+using System.Reflection;
 using HarmonyLib;
 using MimesisPlayerEnhancement.Util;
 using ReluProtocol;
+using ReluProtocol.Enum;
 
 namespace MimesisPlayerEnhancement.Features.JoinAnytime.Patches
 {
@@ -55,6 +58,11 @@ namespace MimesisPlayerEnhancement.Features.JoinAnytime.Patches
     [HarmonyPatch(typeof(MaintenanceScene), "Start")]
     internal static class MaintenanceSceneStartPatch
     {
+        [HarmonyPostfix]
+        private static void Postfix()
+        {
+            LateJoinManager.OnMaintenanceSceneStart();
+        }
     }
 
     [HarmonyPatch(typeof(VRoomManager), nameof(VRoomManager.EnterWaitingRoom))]
@@ -131,10 +139,39 @@ namespace MimesisPlayerEnhancement.Features.JoinAnytime.Patches
     [HarmonyPatch]
     internal static class GameMainBaseCorRefreshSteamLobbyDataPatch
     {
+        private static MethodBase? TargetMethod() =>
+            AccessTools.Method(typeof(GameMainBase), "CorRefreshSteamLobbyData", [typeof(Action<bool>)]);
+
+        [HarmonyPostfix]
+        private static void Postfix()
+        {
+            LateJoinManager.RefreshLobbyVisibilityAfterSteamUpdate();
+        }
     }
 
     [HarmonyPatch]
     internal static class VPlayerCtorPatch
     {
+        private static MethodBase? TargetMethod() =>
+            AccessTools.Constructor(
+                typeof(VPlayer),
+                [
+                    typeof(SessionContext),
+                    typeof(int),
+                    typeof(int),
+                    typeof(bool),
+                    typeof(string),
+                    typeof(string),
+                    typeof(PosWithRot),
+                    typeof(bool),
+                    typeof(IVroom),
+                    typeof(ReasonOfSpawn),
+                ]);
+
+        [HarmonyPostfix]
+        private static void Postfix(VPlayer __instance)
+        {
+            LateJoinManager.OnServerPlayerCreated(__instance);
+        }
     }
 }
