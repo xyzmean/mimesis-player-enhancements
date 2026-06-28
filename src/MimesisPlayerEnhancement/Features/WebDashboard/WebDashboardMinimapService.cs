@@ -189,11 +189,16 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
                 return WebDashboardMinimapTramSpace.CreateWaitingRoomTrainMarker();
             }
 
-            if (main is not MaintenanceScene)
+            if (main is GamePlayScene or MaintenanceScene)
             {
-                return null;
+                return TryFindSceneTrainMarker(main);
             }
 
+            return null;
+        }
+
+        private static WebDashboardMinimapTrainDto? TryFindSceneTrainMarker(GameMainBase main)
+        {
             try
             {
                 Transform? root = BgRootField?.GetValue(main) as Transform;

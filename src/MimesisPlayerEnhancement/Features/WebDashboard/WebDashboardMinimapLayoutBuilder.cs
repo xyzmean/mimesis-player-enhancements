@@ -19,8 +19,6 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
         private const BindingFlags InstanceFlags =
             BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
 
-        private static readonly FieldInfo? DungeonGeneratorField =
-            typeof(GamePlayScene).GetField("dungeonGenerator", InstanceFlags);
         private static readonly FieldInfo? BgRootField =
             typeof(GameMainBase).GetField("BGRoot", InstanceFlags);
         private static readonly FieldInfo? MaintenanceRoomRootField =
@@ -59,8 +57,7 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
 
                 if (main is GamePlayScene gps && Current.LayoutKind == "dungeon")
                 {
-                    Dungeon? dungeon = TryGetCurrentDungeon(gps);
-                    if (dungeon?.AllTiles == null || dungeon.AllTiles.Count == 0)
+                    if (!WebDashboardMinimapDungeonSource.HasTiles(gps))
                     {
                         return;
                     }
@@ -99,15 +96,14 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
 
         private static WebDashboardMinimapLayoutDto TryBuildDungeonLayout(GamePlayScene gps, string runKey)
         {
-            Dungeon? dungeon = TryGetCurrentDungeon(gps);
-            if (dungeon?.AllTiles == null || dungeon.AllTiles.Count == 0)
+            if (!WebDashboardMinimapDungeonSource.TryBuildGraph(gps, out WebDashboardMinimapDungeonGraph graph))
             {
                 return BuildHubLayout(gps, ResolveDungeonLabel(gps), "dungeon");
             }
 
             try
             {
-                return BuildFromDungeon(dungeon, ResolveDungeonLabel(gps));
+                return BuildFromGraph(graph, ResolveDungeonLabel(gps));
             }
             catch (Exception ex)
             {
@@ -116,42 +112,8 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
             }
         }
 
-        private static Dungeon? TryGetCurrentDungeon(GamePlayScene gps)
+        private static WebDashboardMinimapLayoutDto BuildFromGraph(WebDashboardMinimapDungeonGraph graph, string sceneLabel)
         {
-            if (DungeonGeneratorField?.GetValue(gps) is DungeonGenerator generator && generator.CurrentDungeon != null)
-            {
-                return generator.CurrentDungeon;
-            }
-
-            MethodInfo? getRuntime = typeof(GamePlayScene).GetMethod("GetRuntimeDungeon", InstanceFlags);
-            if (getRuntime?.Invoke(gps, null) is RuntimeDungeon runtime)
-            {
-                FieldInfo? dungeonField = typeof(RuntimeDungeon).GetField("dungeon", InstanceFlags)
-                    ?? typeof(RuntimeDungeon).GetField("_dungeon", InstanceFlags);
-                if (dungeonField?.GetValue(runtime) is Dungeon fromRuntime)
-                {
-                    return fromRuntime;
-                }
-            }
-
-            return null;
-        }
-
-        private static WebDashboardMinimapLayoutDto BuildFromDungeon(Dungeon dungeon, string sceneLabel)
-        {
-            HashSet<Tile> mainPath = [];
-            if (dungeon.MainPathTiles != null)
-            {
-                foreach (Tile tile in dungeon.MainPathTiles)
-                {
-                    if (tile != null)
-                    {
-                        _ = mainPath.Add(tile);
-                    }
-                }
-            }
-
-            Dictionary<Tile, string> tileIds = [];
             List<(Tile tile, float centerX, float centerZ, float width, float height)> rawTiles = [];
 
             float minX = float.PositiveInfinity;
@@ -159,22 +121,12 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
             float minZ = float.PositiveInfinity;
             float maxZ = float.NegativeInfinity;
 
-            int index = 0;
-            foreach (Tile tile in dungeon.AllTiles)
+            foreach (Tile tile in graph.Tiles)
             {
                 if (tile == null)
                 {
                     continue;
                 }
-
-                string tileId = $"tile-{tile.GetInstanceID()}";
-                if (tileId == "tile-0")
-                {
-                    tileId = $"tile-{index}";
-                }
-
-                tileIds[tile] = tileId;
-                index++;
 
                 Bounds bounds = tile.Placement?.Bounds ?? tile.Bounds;
                 Vector3 center = bounds.center;
@@ -219,53 +171,46 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
 
             foreach ((Tile tile, float centerX, float centerZ, float width, float height) in rawTiles)
             {
+                if (!graph.TileIds.TryGetValue(tile, out int tileIndex))
+                {
+                    continue;
+                }
+
                 layout.Tiles.Add(new WebDashboardMinimapTileDto
                 {
-                    Id = tileIds[tile],
+                    Id = $"tile-{tileIndex}",
                     Label = ResolveTileLabel(tile),
                     X = Normalize(centerX - (width * 0.5f), minX, spanX),
                     Z = Normalize(centerZ - (height * 0.5f), minZ, spanZ),
                     W = Mathf.Clamp01(width / spanX),
                     H = Mathf.Clamp01(height / spanZ),
-                    IsMainPath = mainPath.Contains(tile)
-                        || (tile.Placement?.IsOnMainPath ?? false),
+                    IsMainPath = graph.MainPath.Contains(tile),
                 });
             }
 
-            if (dungeon.Connections != null)
+            HashSet<string> seenConnections = [];
+            foreach ((int from, int to) in graph.Connections)
             {
-                HashSet<string> seenConnections = [];
-                foreach (object connectionObj in dungeon.Connections)
+                string fromId = $"tile-{from}";
+                string toId = $"tile-{to}";
+                if (fromId == toId)
                 {
-                    if (connectionObj is not DungeonGraphConnection connection)
-                    {
-                        continue;
-                    }
-
-                    Tile? tileA = connection.A?.Tile ?? connection.DoorwayA?.Tile;
-                    Tile? tileB = connection.B?.Tile ?? connection.DoorwayB?.Tile;
-                    if (tileA == null || tileB == null
-                        || !tileIds.TryGetValue(tileA, out string? fromId)
-                        || !tileIds.TryGetValue(tileB, out string? toId)
-                        || fromId == toId)
-                    {
-                        continue;
-                    }
-
-                    string pairKey = string.CompareOrdinal(fromId, toId) < 0
-                        ? fromId + "|" + toId
-                        : toId + "|" + fromId;
-                    if (!seenConnections.Add(pairKey))
-                    {
-                        continue;
-                    }
-
-                    layout.Connections.Add(new WebDashboardMinimapConnectionDto
-                    {
-                        From = fromId,
-                        To = toId,
-                    });
+                    continue;
                 }
+
+                string pairKey = string.CompareOrdinal(fromId, toId) < 0
+                    ? fromId + "|" + toId
+                    : toId + "|" + fromId;
+                if (!seenConnections.Add(pairKey))
+                {
+                    continue;
+                }
+
+                layout.Connections.Add(new WebDashboardMinimapConnectionDto
+                {
+                    From = fromId,
+                    To = toId,
+                });
             }
 
             return layout;

@@ -25,5 +25,23 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
                 }
             }
         }
+
+        [HarmonyPatch(typeof(RuntimeDungeon), "BuildDungeonInfo")]
+        internal static class RuntimeDungeonBuiltPatch
+        {
+            private static void Postfix()
+            {
+                WebDashboardMinimapLayoutBuilder.RequestRebuild();
+            }
+        }
+
+        [HarmonyPatch(typeof(DungeonRoom), "InitSpawn")]
+        internal static class DungeonRoomInitSpawnPatch
+        {
+            private static void Postfix()
+            {
+                WebDashboardMinimapLayoutBuilder.RequestRebuild();
+            }
+        }
     }
 }
