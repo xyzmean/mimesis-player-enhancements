@@ -29,8 +29,23 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
             _defaultAvatarBytes = null;
         }
 
+        internal static void StorePng(ulong steamId, byte[] png)
+        {
+            if (steamId == 0 || png.Length == 0)
+            {
+                return;
+            }
+
+            StoreServeCache(steamId, new CachedAvatar(png, "image/png"));
+        }
+
         internal static void PrewarmForPlayers(IReadOnlyList<ulong> steamIds)
         {
+            if (WebDashboardGameAvatarSource.SyncFromInGameMenu())
+            {
+                WebDashboardSnapshotCache.MarkDirty();
+            }
+
             foreach (ulong steamId in steamIds)
             {
                 if (steamId == 0)
