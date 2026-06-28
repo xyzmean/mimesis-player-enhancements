@@ -28,6 +28,7 @@ Tested with **MIMESIS 0.3.0** and **MelonLoader 0.7.3**.
 | **Loot Multiplicator** | Scale loot quantity by where it comes from and item type | No — host only |
 | **Money Multiplier** | Scale startup money, round goal, scrap/sell values, shop buy prices, shop item count, and reinforce costs | No — host only |
 | **Dungeon Time** | Extend dungeon shift length by real seconds per player above a baseline (default: +10s per player above 4) | No — host only |
+| **Spectator Transition** | Shorten downed time and dead-camera duration before spectator mode | No — host for down time; dead camera on each machine with the mod |
 
 Based on community mods by [MorePlayers from NeoMimicry](https://github.com/NeoMimicry/MorePlayers), [MoreVoices from Risikus](https://thunderstore.io/c/mimesis/p/Risikus/More_Voices/), [MimesisPersistence from JoanR](https://github.com/JoanRLopez/MimesisPersistence), and [MimesisJoinAnytime from Shlygly](https://github.com/Shlygly/MimesisJoinAnytime). Please support the original authors as well :)
 
@@ -186,6 +187,27 @@ DungeonTimeBaselinePlayerCount = 4
 ExtraShiftSecondsPerPlayerAboveBaseline = 10
 ```
 
+### Spectator Transition
+
+Shortens how long players stay downed before spectator mode and how long the local dead-camera transition runs. Multipliers use the same scale as spawn/loot settings: `1` = vanilla, `0.5` = half, `0` = instant.
+
+`DyingWaitTimeMultiplier` is **host only** (server-authoritative down time). It also shortens the window teammates have to revive you. `DeadCameraDurationMultiplier` applies on each machine that has the mod loaded — for a consistent feel, use the same values on host and clients.
+
+| Key | Type | Default | What it does |
+|-----|------|---------|--------------|
+| `EnableSpectatorTransition` | bool | `true` | Master toggle for shorter death-to-spectator timing. |
+| `DyingWaitTimeMultiplier` | float | `1.0` | Scales server down/dying time before spectator (`0` = instant). Host only. Also shortens the teammate revive window. Minimum is `0`. |
+| `DeadCameraDurationMultiplier` | float | `1.0` | Scales local dead-camera blend and duration before spectator (`0` = instant). Minimum is `0`. |
+
+Example (Spectator Transition section only):
+
+```toml
+[MimesisPlayerEnhancement]
+EnableSpectatorTransition = true
+DyingWaitTimeMultiplier = 0.5
+DeadCameraDurationMultiplier = 0.5
+```
+
 Example (money section only):
 
 ```toml
@@ -257,6 +279,9 @@ ShopDiscountMaxPercent = 100
 ShopDiscountChancePercent = 0
 AutoScaleReinforcePriceByPlayerCount = true
 ReinforcePriceMultiplier = 1.0
+EnableSpectatorTransition = true
+DyingWaitTimeMultiplier = 1.0
+DeadCameraDurationMultiplier = 1.0
 EnableDebugLogging = false
 ```
 

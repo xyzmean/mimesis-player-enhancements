@@ -30,6 +30,7 @@ public sealed class Mod : MelonMod
         Features.LootMultiplicator.LootMultiplicatorPatches.Apply(_harmony);
         Features.MoneyMultiplier.MoneyMultiplierPatches.Apply(_harmony);
         Features.DungeonTime.DungeonTimePatches.Apply(_harmony);
+        Features.SpectatorTransition.SpectatorTransitionPatches.Apply(_harmony);
 
         _statisticsWasEnabled = ModConfig.EnableStatistics.Value;
         SyncFromConfig();
@@ -118,6 +119,7 @@ public sealed class Mod : MelonMod
             $"LootMultiplicator={ModConfig.EnableLootMultiplicator.Value}, " +
             $"MoneyMultiplier={ModConfig.EnableMoneyMultiplier.Value}, " +
             $"DungeonTime={ModConfig.EnableDungeonTime.Value}, " +
+            $"SpectatorTransition={ModConfig.EnableSpectatorTransition.Value}, " +
             $"DebugLogging={ModConfig.EnableDebugLogging.Value}");
     }
 
@@ -139,6 +141,7 @@ public sealed class Mod : MelonMod
             $"LootMultiplicator={ModConfig.EnableLootMultiplicator.Value}, " +
             $"MoneyMultiplier={ModConfig.EnableMoneyMultiplier.Value}, " +
             $"DungeonTime={ModConfig.EnableDungeonTime.Value}, " +
+            $"SpectatorTransition={ModConfig.EnableSpectatorTransition.Value}, " +
             $"DebugLogging={ModConfig.EnableDebugLogging.Value}");
     }
 }

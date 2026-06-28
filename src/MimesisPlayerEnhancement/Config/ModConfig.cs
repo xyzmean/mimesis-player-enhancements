@@ -97,6 +97,10 @@ public static class ModConfig
     public static MelonPreferences_Entry<int> DungeonTimeBaselinePlayerCount { get; private set; } = null!;
     public static MelonPreferences_Entry<float> ExtraShiftSecondsPerPlayerAboveBaseline { get; private set; } = null!;
 
+    public static MelonPreferences_Entry<bool> EnableSpectatorTransition { get; private set; } = null!;
+    public static MelonPreferences_Entry<float> DyingWaitTimeMultiplier { get; private set; } = null!;
+    public static MelonPreferences_Entry<float> DeadCameraDurationMultiplier { get; private set; } = null!;
+
     public static MelonPreferences_Entry<bool> EnableDebugLogging { get; private set; } = null!;
 
     private static readonly List<MelonPreferences_Entry<float>> FloatEntries = new();
@@ -497,6 +501,24 @@ public static class ModConfig
             "Extra Shift Seconds Per Player Above Baseline",
             "Real seconds added to the shift deadline for each player above the baseline. Minimum is 0.");
 
+        EnableSpectatorTransition = Category.CreateEntry(
+            "EnableSpectatorTransition",
+            true,
+            "Enable Spectator Transition",
+            "Shorten downed time and dead-camera duration before entering spectator mode.");
+
+        DyingWaitTimeMultiplier = Category.CreateEntry(
+            "DyingWaitTimeMultiplier",
+            1f,
+            "Dying Wait Time Multiplier",
+            "Scales server down/dying time before spectator (1 = vanilla, 0 = instant). Also shortens the teammate revive window. Host only.");
+
+        DeadCameraDurationMultiplier = Category.CreateEntry(
+            "DeadCameraDurationMultiplier",
+            1f,
+            "Dead Camera Duration Multiplier",
+            "Scales local dead-camera transition time before spectator (1 = vanilla, 0 = instant). Applies on each machine with the mod loaded.");
+
         EnableDebugLogging = Category.CreateEntry(
             "EnableDebugLogging",
             false,
@@ -650,6 +672,12 @@ public static class ModConfig
         ExtraShiftSecondsPerPlayerAboveBaseline.OnEntryValueChanged.Subscribe((_, value) =>
             OnExtraShiftSecondsPerPlayerChanged(logger, value));
 
+        EnableSpectatorTransition.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
+        DyingWaitTimeMultiplier.OnEntryValueChanged.Subscribe((_, value) =>
+            OnSpawnMultiplierChanged(logger, value, DyingWaitTimeMultiplier));
+        DeadCameraDurationMultiplier.OnEntryValueChanged.Subscribe((_, value) =>
+            OnSpawnMultiplierChanged(logger, value, DeadCameraDurationMultiplier));
+
         EnableDebugLogging.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
 
         RegisterFloatEntries();
@@ -694,6 +722,8 @@ public static class ModConfig
             ShopItemsMultiplier,
             ReinforcePriceMultiplier,
             ExtraShiftSecondsPerPlayerAboveBaseline,
+            DyingWaitTimeMultiplier,
+            DeadCameraDurationMultiplier,
         });
     }
 
