@@ -104,11 +104,6 @@ namespace MimesisPlayerEnhancement
         public static MelonPreferences_Entry<int> DungeonTimeBaselinePlayerCount { get; private set; } = null!;
         public static MelonPreferences_Entry<float> ExtraShiftSecondsPerPlayerAboveBaseline { get; private set; } = null!;
 
-        public static MelonPreferences_Entry<bool> EnableDungeonSizeScaling { get; private set; } = null!;
-        public static MelonPreferences_Entry<float> DungeonSizeMultiplier { get; private set; } = null!;
-        public static MelonPreferences_Entry<bool> AutoScaleDungeonSizeByPlayerCount { get; private set; } = null!;
-        public static MelonPreferences_Entry<int> DungeonSizeBaselinePlayerCount { get; private set; } = null!;
-
         public static MelonPreferences_Entry<bool> EnableSpectatorTransition { get; private set; } = null!;
         public static MelonPreferences_Entry<float> DyingWaitTimeMultiplier { get; private set; } = null!;
         public static MelonPreferences_Entry<float> DeadCameraDurationMultiplier { get; private set; } = null!;
@@ -141,7 +136,6 @@ namespace MimesisPlayerEnhancement
         private static MelonPreferences_Category _lootMultiplicatorCategory = null!;
         private static MelonPreferences_Category _moneyMultiplierCategory = null!;
         private static MelonPreferences_Category _dungeonTimeCategory = null!;
-        private static MelonPreferences_Category _dungeonSizeScalingCategory = null!;
         private static MelonPreferences_Category _spectatorTransitionCategory = null!;
         private static MelonPreferences_Category _dungeonRandomizerCategory = null!;
         private static MelonPreferences_Category _webDashboardCategory = null!;
@@ -164,7 +158,6 @@ namespace MimesisPlayerEnhancement
             _lootMultiplicatorCategory = CreateCategory("MimesisPlayerEnhancement_LootMultiplicator", "Loot Multiplicator");
             _moneyMultiplierCategory = CreateCategory("MimesisPlayerEnhancement_MoneyMultiplier", "Money Multiplier");
             _dungeonTimeCategory = CreateCategory("MimesisPlayerEnhancement_DungeonTime", "Dungeon Time");
-            _dungeonSizeScalingCategory = CreateCategory("MimesisPlayerEnhancement_DungeonSizeScaling", "Dungeon Size Scaling");
             _spectatorTransitionCategory = CreateCategory("MimesisPlayerEnhancement_SpectatorTransition", "Spectator Transition");
             _dungeonRandomizerCategory = CreateCategory("MimesisPlayerEnhancement_DungeonRandomizer", "Dungeon Randomizer");
             _webDashboardCategory = CreateCategory("MimesisPlayerEnhancement_WebDashboard", "Web Dashboard");
@@ -577,30 +570,6 @@ namespace MimesisPlayerEnhancement
                 "Extra Shift Seconds Per Player Above Baseline",
                 "Real seconds added to the shift deadline for each player above the baseline. Minimum is 0.");
 
-            EnableDungeonSizeScaling = _dungeonSizeScalingCategory.CreateEntry(
-                "EnableDungeonSizeScaling",
-                true,
-                "Enable Dungeon Size Scaling",
-                "Scale procedural dungeon length. Applied on each machine during DunGen generation so layouts stay in sync.");
-
-            DungeonSizeMultiplier = _dungeonSizeScalingCategory.CreateEntry(
-                "DungeonSizeMultiplier",
-                1f,
-                "Dungeon Size Multiplier",
-                "Base dungeon length multiplier (1 = vanilla, 2 = double). Stacks with Auto Scale Dungeon Size By Player Count.");
-
-            AutoScaleDungeonSizeByPlayerCount = _dungeonSizeScalingCategory.CreateEntry(
-                "AutoScaleDungeonSizeByPlayerCount",
-                true,
-                "Auto Scale Dungeon Size By Player Count",
-                "When enabled, multiply dungeon size by player count / baseline above the baseline (e.g. 8 players with baseline 4 = ×2; stacks with DungeonSizeMultiplier).");
-
-            DungeonSizeBaselinePlayerCount = _dungeonSizeScalingCategory.CreateEntry(
-                "DungeonSizeBaselinePlayerCount",
-                4,
-                "Dungeon Size Baseline Player Count",
-                "No player-count size bonus at or below this count (vanilla is 4). Minimum is 1.");
-
             EnableSpectatorTransition = _spectatorTransitionCategory.CreateEntry(
                 "EnableSpectatorTransition",
                 true,
@@ -851,22 +820,6 @@ namespace MimesisPlayerEnhancement
             ExtraShiftSecondsPerPlayerAboveBaseline.OnEntryValueChanged.Subscribe((_, value) =>
                 OnExtraShiftSecondsPerPlayerChanged(logger, value));
 
-            EnableDungeonSizeScaling.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
-            DungeonSizeMultiplier.OnEntryValueChanged.Subscribe((_, value) =>
-                OnSpawnMultiplierChanged(logger, value, DungeonSizeMultiplier));
-            AutoScaleDungeonSizeByPlayerCount.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
-            DungeonSizeBaselinePlayerCount.OnEntryValueChanged.Subscribe((_, value) =>
-            {
-                if (value < 1)
-                {
-                    logger.Warning("DungeonSizeBaselinePlayerCount must be at least 1; resetting to 1.");
-                    DungeonSizeBaselinePlayerCount.Value = 1;
-                    return;
-                }
-
-                NotifyChanged();
-            });
-
             EnableSpectatorTransition.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
             DyingWaitTimeMultiplier.OnEntryValueChanged.Subscribe((_, value) =>
                 OnSpawnMultiplierChanged(logger, value, DyingWaitTimeMultiplier));
@@ -964,7 +917,6 @@ namespace MimesisPlayerEnhancement
                 ShopItemsMultiplier,
                 ReinforcePriceMultiplier,
                 ExtraShiftSecondsPerPlayerAboveBaseline,
-                DungeonSizeMultiplier,
                 DyingWaitTimeMultiplier,
                 DeadCameraDurationMultiplier,
             ]);

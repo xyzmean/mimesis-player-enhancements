@@ -136,7 +136,6 @@ namespace MimesisPlayerEnhancement
                 $"DungeonTime={ModConfig.EnableDungeonTime.Value}, " +
                 $"SpectatorTransition={ModConfig.EnableSpectatorTransition.Value}, " +
                 $"DungeonRandomizer={ModConfig.EnableDungeonRandomizer.Value}, " +
-                $"DungeonSizeScaling={ModConfig.EnableDungeonSizeScaling.Value}, " +
                 $"WebDashboard={ModConfig.EnableWebDashboard.Value}" +
                 (ModConfig.EnableWebDashboard.Value
                     ? $" ({ModConfig.WebDashboardListenAddress.Value}:{ModConfig.WebDashboardListenPort.Value})"
@@ -164,7 +163,6 @@ namespace MimesisPlayerEnhancement
                 $"DungeonTime={ModConfig.EnableDungeonTime.Value}, " +
                 $"SpectatorTransition={ModConfig.EnableSpectatorTransition.Value}, " +
                 $"DungeonRandomizer={ModConfig.EnableDungeonRandomizer.Value}, " +
-                $"DungeonSizeScaling={ModConfig.EnableDungeonSizeScaling.Value}, " +
                 $"WebDashboard={ModConfig.EnableWebDashboard.Value}" +
                 (ModConfig.EnableWebDashboard.Value
                     ? $" ({ModConfig.WebDashboardListenAddress.Value}:{ModConfig.WebDashboardListenPort.Value})"

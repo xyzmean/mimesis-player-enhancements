@@ -21,7 +21,6 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
             "MimesisPlayerEnhancement_LootMultiplicator",
             "MimesisPlayerEnhancement_MoneyMultiplier",
             "MimesisPlayerEnhancement_DungeonTime",
-            "MimesisPlayerEnhancement_DungeonSizeScaling",
             "MimesisPlayerEnhancement_SpectatorTransition",
             "MimesisPlayerEnhancement_DungeonRandomizer",
             "MimesisPlayerEnhancement_WebDashboard",

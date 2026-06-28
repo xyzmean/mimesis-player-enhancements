@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using MimesisPlayerEnhancement.Features.DungeonRandomizer;
-using MimesisPlayerEnhancement.Features.DungeonSizeScaling;
 using MimesisPlayerEnhancement.Features.DungeonTime;
 using MimesisPlayerEnhancement.Features.LootMultiplicator;
 using MimesisPlayerEnhancement.Features.MoneyMultiplier;
@@ -96,7 +95,6 @@ namespace MimesisPlayerEnhancement.Util
             new FeatureModule("DungeonTime", DungeonTimePatches.Apply),
             new FeatureModule("SpectatorTransition", SpectatorTransitionPatches.Apply),
             new FeatureModule("DungeonRandomizer", DungeonRandomizerPatches.Apply),
-            new FeatureModule("DungeonSizeScaling", DungeonSizeScalingPatches.Apply),
             new FeatureModule("WebDashboard", WebDashboardServer.Apply,
                 syncFromConfig: WebDashboardServer.SyncFromConfig,
                 onUpdate: WebDashboardServer.OnUpdate),

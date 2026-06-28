@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using Bifrost.ConstEnum;
-using MimesisPlayerEnhancement.Features.DungeonSizeScaling;
 using MimesisPlayerEnhancement.Features.DungeonTime;
 using MimesisPlayerEnhancement.Features.LootMultiplicator;
 using MimesisPlayerEnhancement.Features.MoneyMultiplier;
@@ -25,7 +24,6 @@ namespace MimesisPlayerEnhancement.Features.PlayerAnnouncements
             AppendLootSummary(parts, playerCount);
             AppendMoneySummary(parts, playerCount);
             AppendDungeonTime(parts, playerCount);
-            AppendDungeonSize(parts, playerCount);
             AppendDungeonRandomizer(parts);
 
             return parts.Count == 0 ? null : $"This run: {string.Join(", ", parts)}.";
@@ -94,17 +92,6 @@ namespace MimesisPlayerEnhancement.Features.PlayerAnnouncements
             }
 
             parts.Add($"+{(int)bonusSeconds}s shift time");
-        }
-
-        private static void AppendDungeonSize(List<string> parts, int playerCount)
-        {
-            if (!ModConfig.EnableDungeonSizeScaling.Value)
-            {
-                return;
-            }
-
-            float multiplier = DungeonSizeScalingResolver.GetLengthMultiplier(playerCount);
-            AppendMultiplier(parts, "dungeon size", multiplier);
         }
 
         private static void AppendDungeonRandomizer(List<string> parts)

@@ -35,7 +35,6 @@ Remove older separate mods (MorePlayers, More Voices, MimesisPersistence, JoinAn
 | **Loot Multiplicator** | Scale loot quantity by source and item type | No — host only |
 | **Money Multiplier** | Scale startup money, goals, scrap, shop prices, and more | No — host only |
 | **Dungeon Time** | Extend shift length for larger lobbies | No — host only |
-| **Dungeon Size Scaling** | Scale procedural dungeon length by player count | Same config on all machines |
 | **Dungeon Randomizer** | Randomize tram pick, layout, map variant, and seed | No — host only |
 | **Spectator Transition** | Shorten downed/dead-camera time before spectator | Host + clients for camera timing |
 
