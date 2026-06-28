@@ -18,7 +18,7 @@ namespace MimesisPlayerEnhancement.Features.JoinAnytime
 
         private static void SendOnPlayingState(long uid, Action<IMsg> send)
         {
-            if (!LateJoinManager.TryMarkPlayingStateSent(uid))
+            if (LateJoinManager.HasPlayingStateBeenSent(uid))
             {
                 return;
             }
@@ -36,7 +36,14 @@ namespace MimesisPlayerEnhancement.Features.JoinAnytime
                 return;
             }
 
-            int pickedMapId = JoinAnytimeRoomTools.GetPickedMapId(dungeonRoom);
+            int pickedMapId = JoinAnytimeRoomTools.ResolvePickedMapId(dungeonRoom);
+            if (pickedMapId == 0)
+            {
+                ModLog.Warn(
+                    "JoinAnytime",
+                    $"SendOnPlayingState failed — could not resolve picked map for uid={uid}, roomUID={dungeonRoom.RoomID}");
+                return;
+            }
 
             ModLog.Info(
                 "JoinAnytime",
@@ -58,6 +65,8 @@ namespace MimesisPlayerEnhancement.Features.JoinAnytime
                     roomUID = dungeonRoom.RoomID,
                 },
             });
+
+            LateJoinManager.MarkPlayingStateSent(uid);
         }
     }
 }

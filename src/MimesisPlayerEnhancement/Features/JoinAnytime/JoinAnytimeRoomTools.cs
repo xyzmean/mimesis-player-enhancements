@@ -15,6 +15,9 @@ namespace MimesisPlayerEnhancement.Features.JoinAnytime
         private static readonly PropertyInfo? HubDatamanProperty =
             typeof(Hub).GetProperty("dataman", InstanceFlags);
 
+        private static readonly PropertyInfo? HubVworldProperty =
+            typeof(Hub).GetProperty("vworld", InstanceFlags);
+
         internal static void MoveCurrentPlayerToSnapshot(SessionContext context)
         {
             FieldInfo playerField = typeof(SessionContext).GetField("_vPlayer", InstanceFlags);
@@ -42,7 +45,7 @@ namespace MimesisPlayerEnhancement.Features.JoinAnytime
                 return string.Empty;
             }
 
-            if (Hub.s == null || HubDatamanProperty?.GetValue(Hub.s) is not DataManager dataman)
+            if (!TryGetDataman(out DataManager dataman))
             {
                 ModLog.Warn(Feature, "GetSceneNameFromMapId failed — dataman unavailable");
                 return string.Empty;
@@ -54,12 +57,13 @@ namespace MimesisPlayerEnhancement.Features.JoinAnytime
 
         internal static string GetSceneNameFromDungeon(int dungeonMasterId, int pickedMapId = 0)
         {
-            if (pickedMapId != 0)
+            int resolvedMapId = pickedMapId != 0 ? pickedMapId : ResolvePickedMapId(null);
+            if (resolvedMapId != 0)
             {
-                return GetSceneNameFromMapId(pickedMapId);
+                return GetSceneNameFromMapId(resolvedMapId);
             }
 
-            if (Hub.s == null || HubDatamanProperty?.GetValue(Hub.s) is not DataManager dataman)
+            if (!TryGetDataman(out DataManager dataman))
             {
                 ModLog.Warn(Feature, "GetSceneNameFromDungeon failed — dataman unavailable");
                 return string.Empty;
@@ -79,41 +83,31 @@ namespace MimesisPlayerEnhancement.Features.JoinAnytime
             return GetSceneNameFromMapId(dungeonInfo.MapIDs[0]);
         }
 
-        internal static int GetPickedMapId(IVroom? room)
+        internal static int ResolvePickedMapId(IVroom? room)
         {
-            return room is DungeonRoom dungeonRoom ? dungeonRoom.PickedMapID : 0;
+            if (room is DungeonRoom dungeonRoom && dungeonRoom.PickedMapID != 0)
+            {
+                return dungeonRoom.PickedMapID;
+            }
+
+            if (TryGetVRoomManager(out VRoomManager? vroomManager) && vroomManager != null)
+            {
+                GameSessionInfo sessionInfo = vroomManager.GetGameSessionInfo();
+                if (sessionInfo.PickedMapID != 0)
+                {
+                    return sessionInfo.PickedMapID;
+                }
+            }
+
+            Hub.PersistentData? pdata = JoinAnytimeHub.GetPdata();
+            return pdata?.PickedMapID ?? 0;
         }
 
         internal static IVroom? GetActiveDungeonRoom()
         {
-            if (Hub.s == null)
+            if (!TryGetVRoomManager(out VRoomManager? vroomManager) || vroomManager == null)
             {
-                return null;
-            }
-
-            Hub.PersistentData? pdata = JoinAnytimeHub.GetPdata();
-            long preferredRoomUid = 0;
-            if (pdata?.main is GamePlayScene gps)
-            {
-                FieldInfo roomUidField = typeof(GamePlayScene).GetField("RoomUID", InstanceFlags)
-                                   ?? typeof(GamePlayScene).GetField("roomUID", InstanceFlags);
-                if (roomUidField != null)
-                {
-                    preferredRoomUid = System.Convert.ToInt64(roomUidField.GetValue(gps));
-                }
-            }
-
-            FieldInfo vworldField = typeof(Hub).GetField("<vworld>k__BackingField", InstanceFlags)
-                              ?? typeof(Hub).GetField("vworld", InstanceFlags);
-            if (vworldField?.GetValue(Hub.s) is not VWorld vworld)
-            {
-                ModLog.Warn(Feature, "GetActiveDungeonRoom failed — vworld unavailable");
-                return null;
-            }
-
-            VRoomManager? vroomManager = vworld.VRoomManager;
-            if (vroomManager == null)
-            {
+                ModLog.Warn(Feature, "GetActiveDungeonRoom failed — VRoomManager unavailable");
                 return null;
             }
 
@@ -122,7 +116,11 @@ namespace MimesisPlayerEnhancement.Features.JoinAnytime
                 return null;
             }
 
-            IVroom? fallback = null;
+            IVroom? bestOccupied = null;
+            int bestOccupiedCount = -1;
+            IVroom? newest = null;
+            long newestRoomId = long.MinValue;
+
             foreach (IVroom room in rooms.Values)
             {
                 if (room is not DungeonRoom)
@@ -130,14 +128,52 @@ namespace MimesisPlayerEnhancement.Features.JoinAnytime
                     continue;
                 }
 
-                fallback ??= room;
-                if (preferredRoomUid != 0 && room.RoomID == preferredRoomUid)
+                if (room.RoomID > newestRoomId)
                 {
-                    return room;
+                    newest = room;
+                    newestRoomId = room.RoomID;
+                }
+
+                int memberCount = room.GetMemberCount();
+                if (memberCount <= 0)
+                {
+                    continue;
+                }
+
+                if (bestOccupied == null
+                    || memberCount > bestOccupiedCount
+                    || (memberCount == bestOccupiedCount && room.RoomID > bestOccupied.RoomID))
+                {
+                    bestOccupied = room;
+                    bestOccupiedCount = memberCount;
                 }
             }
 
-            return fallback;
+            return bestOccupied ?? newest;
+        }
+
+        private static bool TryGetDataman(out DataManager dataman)
+        {
+            dataman = null!;
+            if (Hub.s == null || HubDatamanProperty?.GetValue(Hub.s) is not DataManager resolved)
+            {
+                return false;
+            }
+
+            dataman = resolved;
+            return true;
+        }
+
+        private static bool TryGetVRoomManager(out VRoomManager? vroomManager)
+        {
+            vroomManager = null;
+            if (Hub.s == null || HubVworldProperty?.GetValue(Hub.s) is not VWorld vworld)
+            {
+                return false;
+            }
+
+            vroomManager = vworld.VRoomManager;
+            return vroomManager != null;
         }
     }
 }

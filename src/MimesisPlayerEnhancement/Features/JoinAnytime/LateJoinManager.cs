@@ -416,15 +416,14 @@ namespace MimesisPlayerEnhancement.Features.JoinAnytime
             }
         }
 
-        internal static bool TryMarkPlayingStateSent(long uid)
+        internal static bool HasPlayingStateBeenSent(long uid) => SentPlayingStateUids.Contains(uid);
+
+        internal static void MarkPlayingStateSent(long uid)
         {
             if (!SentPlayingStateUids.Add(uid))
             {
-                ModLog.Debug(Feature, $"Skipping duplicate in-game state signal for uid={uid}");
-                return false;
+                ModLog.Debug(Feature, $"In-game state already marked sent for uid={uid}");
             }
-
-            return true;
         }
 
         internal static void RefreshLobbyVisibilityAfterSteamUpdate()
