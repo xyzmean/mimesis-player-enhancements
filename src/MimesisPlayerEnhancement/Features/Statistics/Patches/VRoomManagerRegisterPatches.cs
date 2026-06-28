@@ -13,7 +13,8 @@ namespace MimesisPlayerEnhancement.Features.Statistics.Patches
                 return;
             }
 
-            if (!MimesisSaveManager.TryGetActiveSaveSlotId(out int slotId))
+            if (!MimesisSaveManager.TryGetActiveSaveSlotId(out int slotId)
+                && !StatisticsTracker.TryGetLoadedSlotId(out slotId))
             {
                 return;
             }

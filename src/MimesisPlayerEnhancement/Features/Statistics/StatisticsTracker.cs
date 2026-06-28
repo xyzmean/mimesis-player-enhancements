@@ -527,6 +527,12 @@ namespace MimesisPlayerEnhancement.Features.Statistics
             return _connectedSince.Keys;
         }
 
+        internal static bool TryGetLoadedSlotId(out int slotId)
+        {
+            slotId = _loadedSlotId;
+            return MimesisSaveManager.IsValidSaveSlotId(slotId);
+        }
+
         internal static ulong TryResolveSteamId(ProtoActor actor)
         {
             return ResolveSteamIdFromActor(actor);

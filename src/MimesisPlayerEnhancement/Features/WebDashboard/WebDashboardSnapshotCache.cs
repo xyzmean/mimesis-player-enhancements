@@ -11,6 +11,9 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
         private static int _version;
         private static volatile bool _dirty = true;
         private static bool _lastInSession;
+        private static List<WebDashboardPlayerDto> _lastPlayers = [];
+        private static string? _lastLeaderboardJson;
+        private static List<ulong> _lastConnectedSteamIds = [];
 
         internal static int Version => Volatile.Read(ref _version);
 
@@ -66,17 +69,31 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
                     SnapshotVersion = Version,
                     ConfigVersion = ModConfig.Version,
                 },
-                Players = inSession ? WebDashboardPlayerService.CollectPlayers() : [],
             };
 
             if (!inSession)
             {
+                _lastPlayers = [];
+                _lastLeaderboardJson = null;
+                _lastConnectedSteamIds = [];
                 WebDashboardAvatarService.Clear();
             }
             else
             {
+                List<WebDashboardPlayerDto> players = WebDashboardPlayerService.CollectPlayers();
+                if (players.Count > 0)
+                {
+                    _lastPlayers = players;
+                }
+                else if (_lastPlayers.Count > 0)
+                {
+                    players = _lastPlayers;
+                }
+
+                next.Players = players;
+
                 HashSet<ulong> avatarSteamIds = [];
-                foreach (WebDashboardPlayerDto player in next.Players)
+                foreach (WebDashboardPlayerDto player in players)
                 {
                     if (player.SteamId != 0)
                     {
@@ -86,13 +103,33 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
 
                 if (isHost && saveSlotId >= 0)
                 {
-                    next.ConnectedSteamIds = WebDashboardStatisticsBridge.GetConnectedSteamIds();
-                    LeaderboardDocument? leaderboard = WebDashboardStatisticsBridge.GetLeaderboardDocument(saveSlotId);
-                    next.LeaderboardJson = leaderboard == null
-                        ? null
-                        : WebDashboardJson.SerializeLeaderboardResponse(leaderboard, next.ConnectedSteamIds);
+                    List<ulong> connectedSteamIds = WebDashboardStatisticsBridge.GetConnectedSteamIds();
+                    if (connectedSteamIds.Count > 0)
+                    {
+                        _lastConnectedSteamIds = connectedSteamIds;
+                    }
+                    else if (_lastConnectedSteamIds.Count > 0)
+                    {
+                        connectedSteamIds = _lastConnectedSteamIds;
+                    }
 
-                    foreach (ulong steamId in next.ConnectedSteamIds)
+                    next.ConnectedSteamIds = connectedSteamIds;
+                    LeaderboardDocument? leaderboard = WebDashboardStatisticsBridge.GetLeaderboardDocument(saveSlotId);
+                    string? leaderboardJson = leaderboard == null
+                        ? null
+                        : WebDashboardJson.SerializeLeaderboardResponse(leaderboard, connectedSteamIds);
+                    if (!string.IsNullOrEmpty(leaderboardJson))
+                    {
+                        _lastLeaderboardJson = leaderboardJson;
+                    }
+                    else if (!string.IsNullOrEmpty(_lastLeaderboardJson))
+                    {
+                        leaderboardJson = _lastLeaderboardJson;
+                    }
+
+                    next.LeaderboardJson = leaderboardJson;
+
+                    foreach (ulong steamId in connectedSteamIds)
                     {
                         if (steamId != 0)
                         {
@@ -127,7 +164,7 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
 
                 WebDashboardMinimapLayoutBuilder.EnsureLayout();
                 next.MinimapLayout = WebDashboardMinimapLayoutBuilder.Current;
-                next.MinimapMarkers = WebDashboardMinimapService.CollectMarkers(next.Players, out WebDashboardMinimapTrainDto? train);
+                next.MinimapMarkers = WebDashboardMinimapService.CollectMarkers(players, out WebDashboardMinimapTrainDto? train);
                 next.MinimapTrain = train;
             }
 
