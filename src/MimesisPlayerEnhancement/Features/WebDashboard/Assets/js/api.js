@@ -1,7 +1,16 @@
 const Api = {
   async fetchJson(path, options) {
     const res = await fetch(path, Object.assign({ cache: 'no-store' }, options || {}));
-    if (!res.ok) throw new Error(path + ' ' + res.status);
+    if (!res.ok) {
+      let message = path + ' ' + res.status;
+      try {
+        const body = await res.json();
+        if (body.message) message = body.message;
+      } catch (_) {
+        /* ignore */
+      }
+      throw new Error(message);
+    }
     return res.json();
   },
 
@@ -18,14 +27,7 @@ const Api = {
   },
 
   async getPlayerStats(steamId) {
-    const res = await fetch('/api/players/' + encodeURIComponent(steamId) + '/stats', {
-      cache: 'no-store',
-    });
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}));
-      throw new Error(body.message || 'stats ' + res.status);
-    }
-    return res.json();
+    return Api.fetchJson('/api/players/' + encodeURIComponent(steamId) + '/stats');
   },
 
   async postAction(steamId, action) {

@@ -12,6 +12,19 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard.Models
         public int SnapshotVersion;
     }
 
+    internal sealed class WebDashboardSessionStatsDto
+    {
+        public long CurrencyEarned;
+        public long Kills;
+        public long Deaths;
+        public long Revives;
+        public long MimicEncounterCount;
+        public long ItemCarryCount;
+        public long VoiceEvents;
+        public long DamageToAlly;
+        public long TotalConnectedSeconds;
+    }
+
     internal sealed class WebDashboardPlayerDto
     {
         public ulong SteamId;
@@ -21,6 +34,10 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard.Models
         public bool IsLocal;
         public bool IsBanned;
         public int NetworkGrade = -1;
+        public string ConnectionRole = "";
+        public string ConnectionAddress = "";
+        public int VoiceEventCount;
+        public WebDashboardSessionStatsDto? CurrentSession;
     }
 
     internal sealed class WebDashboardSnapshot

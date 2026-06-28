@@ -7,6 +7,16 @@ using Mimic.Voice.SpeechSystem;
 
 namespace MimesisPlayerEnhancement
 {
+    public sealed class PlayerConnectionInfo
+    {
+        public long PlayerUid;
+        public string DisplayName = "";
+        public string ConnectionRole = "";
+        public ulong SteamId;
+        public string ConnectionAddress = "";
+        public int VoiceEventCount;
+    }
+
     public static class VoiceEventStats
     {
         private const BindingFlags InstanceMemberFlags =
@@ -100,6 +110,24 @@ namespace MimesisPlayerEnhancement
                 return "archive=null";
             }
 
+            if (!TryGetConnectionInfo(archive, out PlayerConnectionInfo info))
+            {
+                return "archive=unavailable";
+            }
+
+            string uid = info.PlayerUid == 0 ? "(pending)" : info.PlayerUid.ToString();
+            string steamId = info.SteamId == 0 ? "(pending)" : info.SteamId.ToString();
+            return $"uid={uid} name={info.DisplayName} role={info.ConnectionRole} steamId={steamId} ip={info.ConnectionAddress} voiceEvents={info.VoiceEventCount}";
+        }
+
+        public static bool TryGetConnectionInfo(SpeechEventArchive? archive, out PlayerConnectionInfo info)
+        {
+            info = new PlayerConnectionInfo();
+            if (archive == null)
+            {
+                return false;
+            }
+
             long playerUid = 0;
             bool isLocal = false;
 
@@ -113,10 +141,6 @@ namespace MimesisPlayerEnhancement
                 /* Player component may not be ready yet */
             }
 
-            int count = GetEventCount(archive);
-            string role = isLocal ? "host" : "client";
-            string uid = playerUid == 0 ? "(pending)" : playerUid.ToString();
-            string name = ResolveDisplayName(archive, playerUid, isLocal);
             SessionContext? session = FindSessionContext(playerUid, 0);
             ulong steamIdValue = ResolveSteamId(playerUid, isLocal, session);
             if (session == null && steamIdValue != 0)
@@ -129,9 +153,50 @@ namespace MimesisPlayerEnhancement
                 steamIdValue = ResolveSteamId(playerUid, isLocal, session);
             }
 
-            string steamId = FormatSteamId(steamIdValue);
-            string ip = ResolveConnectionAddress(isLocal, session);
-            return $"uid={uid} name={name} role={role} steamId={steamId} ip={ip} voiceEvents={count}";
+            return TryBuildConnectionInfo(
+                archive,
+                playerUid,
+                isLocal,
+                steamIdValue,
+                session,
+                out info);
+        }
+
+        public static bool TryGetConnectionInfo(
+            SessionContext? session,
+            long playerUid,
+            ulong steamId,
+            bool isLocal,
+            out PlayerConnectionInfo info)
+        {
+            return TryBuildConnectionInfo(
+                null,
+                playerUid,
+                isLocal,
+                steamId,
+                session,
+                out info);
+        }
+
+        private static bool TryBuildConnectionInfo(
+            SpeechEventArchive? archive,
+            long playerUid,
+            bool isLocal,
+            ulong steamIdValue,
+            SessionContext? session,
+            out PlayerConnectionInfo info)
+        {
+            info = new PlayerConnectionInfo
+            {
+                PlayerUid = playerUid,
+                DisplayName = ResolveDisplayName(archive, playerUid, isLocal),
+                ConnectionRole = isLocal ? "host" : "client",
+                SteamId = steamIdValue,
+                ConnectionAddress = ResolveConnectionAddress(isLocal, session),
+                VoiceEventCount = GetEventCount(archive),
+            };
+
+            return true;
         }
 
         /// <summary>Same as <see cref="DescribePlayer"/> plus voice-comms UUID (debug only).</summary>
@@ -161,11 +226,6 @@ namespace MimesisPlayerEnhancement
             }
 
             return $"{summary} voiceId={GetVoiceId(archive)} serverId={serverId}";
-        }
-
-        private static string FormatSteamId(ulong steamId)
-        {
-            return steamId == 0 ? "(pending)" : steamId.ToString();
         }
 
         /// <summary>

@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using System.Reflection;
 using Mimic.Actors;
+using Mimic.Voice.SpeechSystem;
+using MimesisPlayerEnhancement.Features.Persistence;
 using MimesisPlayerEnhancement.Features.Statistics.Models;
 using MimesisPlayerEnhancement.Features.WebDashboard.Models;
 using MimesisPlayerEnhancement.Util;
@@ -160,6 +162,7 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
             bool forceHost = false)
         {
             long playerUid = 0;
+            SessionContext? matchedContext = null;
             if (sessionManager != null)
             {
                 foreach (SessionContext context in WebDashboardSessionAccess.EnumerateSessionContexts(sessionManager))
@@ -169,6 +172,7 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
                         continue;
                     }
 
+                    matchedContext = context;
                     try
                     {
                         playerUid = context.GetPlayerUID();
@@ -203,6 +207,7 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
                 dto.NetworkGrade = grade;
             }
 
+            EnrichPlayerDto(dto, sessionManager, matchedContext, dashboardIsHost);
             return dto;
         }
 
@@ -267,6 +272,7 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
                     dto.NetworkGrade = grade;
                 }
 
+                EnrichPlayerDto(dto, sessionManager, context, dashboardIsHost);
                 return dto;
             }
             catch
@@ -349,6 +355,130 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
             }
 
             return null;
+        }
+
+        private static void EnrichPlayerDto(
+            WebDashboardPlayerDto dto,
+            SessionManager? sessionManager,
+            SessionContext? context,
+            bool dashboardIsHost)
+        {
+            ApplyConnectionInfo(dto, context);
+
+            if (dashboardIsHost && ModConfig.EnableStatistics.Value)
+            {
+                dto.CurrentSession = BuildSessionStats(dto.SteamId);
+            }
+        }
+
+        private static void ApplyConnectionInfo(WebDashboardPlayerDto dto, SessionContext? context)
+        {
+            SpeechEventArchive? archive = FindArchive(dto.PlayerUid, dto.SteamId);
+            if (archive != null && VoiceEventStats.TryGetConnectionInfo(archive, out PlayerConnectionInfo fromArchive))
+            {
+                ApplyConnectionFields(dto, fromArchive);
+                return;
+            }
+
+            if (context != null
+                && VoiceEventStats.TryGetConnectionInfo(
+                    context,
+                    dto.PlayerUid,
+                    dto.SteamId,
+                    dto.IsLocal,
+                    out PlayerConnectionInfo fromSession))
+            {
+                ApplyConnectionFields(dto, fromSession);
+                return;
+            }
+
+            dto.ConnectionRole = dto.IsLocal ? "host" : "client";
+            dto.ConnectionAddress = dto.IsLocal ? "local" : "(unavailable)";
+            dto.VoiceEventCount = 0;
+        }
+
+        private static void ApplyConnectionFields(WebDashboardPlayerDto dto, PlayerConnectionInfo info)
+        {
+            if (info.PlayerUid != 0)
+            {
+                dto.PlayerUid = info.PlayerUid;
+            }
+
+            if (!string.IsNullOrWhiteSpace(info.DisplayName) && info.DisplayName != "(pending)")
+            {
+                dto.DisplayName = info.DisplayName;
+            }
+
+            dto.ConnectionRole = info.ConnectionRole;
+            dto.ConnectionAddress = info.ConnectionAddress;
+            dto.VoiceEventCount = info.VoiceEventCount;
+
+            if (info.SteamId != 0)
+            {
+                dto.SteamId = info.SteamId;
+            }
+        }
+
+        private static SpeechEventArchive? FindArchive(long playerUid, ulong steamId)
+        {
+            foreach (SpeechEventArchive archive in SpeechEventArchiveRegistry.EnumerateActive())
+            {
+                if (archive == null)
+                {
+                    continue;
+                }
+
+                long archiveUid = 0;
+                try
+                {
+                    archiveUid = archive.PlayerUID;
+                }
+                catch
+                {
+                    continue;
+                }
+
+                if (playerUid != 0 && archiveUid == playerUid)
+                {
+                    return archive;
+                }
+
+                if (steamId != 0 && VoiceEventStats.TryGetConnectionInfo(archive, out PlayerConnectionInfo info)
+                    && info.SteamId == steamId)
+                {
+                    return archive;
+                }
+            }
+
+            return null;
+        }
+
+        private static WebDashboardSessionStatsDto? BuildSessionStats(ulong steamId)
+        {
+            if (steamId == 0)
+            {
+                return null;
+            }
+
+            if (StatisticsTracker.TryGetPlayerDocument(steamId) is not PlayerStatisticsDocument doc
+                || doc.CurrentSession?.Counters == null)
+            {
+                return null;
+            }
+
+            StatCounters c = doc.CurrentSession.Counters;
+            return new WebDashboardSessionStatsDto
+            {
+                CurrencyEarned = c.CurrencyEarned,
+                Kills = c.Kills,
+                Deaths = c.Deaths,
+                Revives = c.Revives,
+                MimicEncounterCount = c.MimicEncounterCount,
+                ItemCarryCount = c.ItemCarryCount,
+                VoiceEvents = c.VoiceEvents,
+                DamageToAlly = c.DamageToAlly,
+                TotalConnectedSeconds = c.TotalConnectedSeconds,
+            };
         }
 
         private static string? TryGetLeaderboardDisplayName(int saveSlotId, ulong steamId)

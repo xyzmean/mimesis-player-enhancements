@@ -68,7 +68,7 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
                 doc.DisplayName = displayName;
             }
 
-            return StatisticsJson.SerializePlayer(doc);
+            return WebDashboardJson.SerializePlayerStats(doc);
         }
 
         internal static List<ulong> GetConnectedSteamIds()
