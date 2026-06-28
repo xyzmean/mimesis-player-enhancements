@@ -9,7 +9,7 @@ internal static class DungeonPickResolver
     private static string _cachedAllowlistRaw = "";
     private static string _cachedBlocklistRaw = "";
 
-    internal static bool ShouldClearExcludeList()
+    internal static bool ShouldIgnoreDungeonExcludeList()
     {
         if (!DungeonRandomizerHost.ShouldApply() || !ModConfig.RandomizeDungeonPick.Value)
             return false;
@@ -18,7 +18,7 @@ internal static class DungeonPickResolver
                && ModConfig.IgnoreDungeonExcludeList.Value;
     }
 
-    internal static int ResolvePick(int vanillaResult)
+    internal static int ResolvePick(int vanillaResult, IReadOnlyList<int> excludeDungeonIds)
     {
         GetFilters(out HashSet<int> allowlist, out HashSet<int> blocklist);
         DungeonPickPoolMode mode = DungeonIdListParser.ParsePoolMode(ModConfig.DungeonPickPoolMode.Value);
@@ -26,9 +26,18 @@ internal static class DungeonPickResolver
         if (mode == DungeonPickPoolMode.AllActiveUniform)
         {
             List<int> pool = DungeonDataAccess.GetFilteredActiveDungeonIds(allowlist, blocklist);
-            if (DungeonDataAccess.TryPickUniform(pool, out int uniformPick))
+            List<int> eligiblePool = DungeonDataAccess.FilterExcluded(pool, excludeDungeonIds);
+            if (eligiblePool.Count == 0 && excludeDungeonIds.Count > 0)
             {
-                DungeonRandomizerLog.Debug($"Dungeon pick (AllActiveUniform): {uniformPick} from pool of {pool.Count}");
+                DungeonRandomizerLog.Warn(
+                    "AllActiveUniform pool empty after tram excludes; falling back to full filtered pool.");
+                eligiblePool = pool;
+            }
+
+            if (DungeonDataAccess.TryPickUniform(eligiblePool, out int uniformPick))
+            {
+                DungeonRandomizerLog.Debug(
+                    $"Dungeon pick (AllActiveUniform): {uniformPick} from pool of {eligiblePool.Count}");
                 return uniformPick;
             }
 
@@ -36,14 +45,23 @@ internal static class DungeonPickResolver
             return vanillaResult;
         }
 
-        if (IsEligible(vanillaResult, allowlist, blocklist))
+        if (IsEligible(vanillaResult, allowlist, blocklist)
+            && !DungeonDataAccess.IsExcluded(vanillaResult, excludeDungeonIds))
         {
             DungeonRandomizerLog.Debug($"Dungeon pick (WidenVanilla): keeping vanilla result {vanillaResult}");
             return vanillaResult;
         }
 
         List<int> fallbackPool = DungeonDataAccess.GetFilteredActiveDungeonIds(allowlist, blocklist);
-        if (DungeonDataAccess.TryPickUniform(fallbackPool, out int fallbackPick))
+        List<int> eligibleFallback = DungeonDataAccess.FilterExcluded(fallbackPool, excludeDungeonIds);
+        if (eligibleFallback.Count == 0 && excludeDungeonIds.Count > 0)
+        {
+            DungeonRandomizerLog.Warn(
+                "WidenVanilla fallback pool empty after tram excludes; falling back to full filtered pool.");
+            eligibleFallback = fallbackPool;
+        }
+
+        if (DungeonDataAccess.TryPickUniform(eligibleFallback, out int fallbackPick))
         {
             DungeonRandomizerLog.Debug(
                 $"Dungeon pick (WidenVanilla): vanilla {vanillaResult} filtered out; fallback {fallbackPick}");

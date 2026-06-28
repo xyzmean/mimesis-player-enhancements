@@ -29,21 +29,37 @@ public static class DungeonRandomizerPatches
         HarmonyPatchHelper.LogPatchAudit(Feature, harmony, new (string, MethodBase?)[]
         {
             ("PickDungeon/ExcelDataManager", AccessTools.Method(typeof(ExcelDataManager), nameof(ExcelDataManager.PickDungeon))),
+            ("RollDiceDungeon/VWaitingRoom", AccessTools.Method(typeof(VWaitingRoom), nameof(VWaitingRoom.RollDiceDungeon))),
             ("GetRandomDungenName/DungeonMasterInfo", AccessTools.Method(typeof(DungeonMasterInfo), nameof(DungeonMasterInfo.GetRandomDungenName))),
             ("PickMapID/DungeonMasterInfo", AccessTools.Method(typeof(DungeonMasterInfo), nameof(DungeonMasterInfo.PickMapID))),
             ("SetNextDungeonMasterID/GameSessionInfo", AccessTools.Method(typeof(GameSessionInfo), nameof(GameSessionInfo.SetNextDungeonMasterID))),
         });
     }
 
+    [HarmonyPatch(typeof(VWaitingRoom), nameof(VWaitingRoom.RollDiceDungeon))]
+    public static class VWaitingRoomRollDiceDungeonPatch
+    {
+        [HarmonyPrefix]
+        public static void Prefix(bool reroll) => DungeonPickRollContext.BeginRoll(reroll);
+
+        [HarmonyPostfix]
+        public static void Postfix() => DungeonPickRollContext.EndRoll();
+    }
+
     [HarmonyPatch(typeof(ExcelDataManager), nameof(ExcelDataManager.PickDungeon))]
     public static class ExcelDataManagerPickDungeonPatch
     {
+        private static IReadOnlyList<int> _excludeIdsForResolve = Array.Empty<int>();
+
         [HarmonyPrefix]
         public static void Prefix(ref List<int> excludeDungeonIDs)
         {
             try
             {
-                if (!DungeonPickResolver.ShouldClearExcludeList())
+                bool clearRerollExcludes = DungeonPickRollContext.ShouldClearRerollExcludes();
+                _excludeIdsForResolve = clearRerollExcludes ? Array.Empty<int>() : excludeDungeonIDs;
+
+                if (!clearRerollExcludes)
                     return;
 
                 excludeDungeonIDs = new List<int>();
@@ -59,14 +75,21 @@ public static class DungeonRandomizerPatches
         {
             try
             {
+                if (DungeonPickRollContext.InRollDiceDungeon)
+                    DungeonPickRollContext.AdvancePick();
+
                 if (!DungeonRandomizerHost.ShouldApply() || !ModConfig.RandomizeDungeonPick.Value)
                     return;
 
-                __result = DungeonPickResolver.ResolvePick(__result);
+                __result = DungeonPickResolver.ResolvePick(__result, _excludeIdsForResolve);
             }
             catch (Exception ex)
             {
                 DungeonRandomizerLog.Warn($"PickDungeon postfix failed — {ex.Message}");
+            }
+            finally
+            {
+                _excludeIdsForResolve = Array.Empty<int>();
             }
         }
     }

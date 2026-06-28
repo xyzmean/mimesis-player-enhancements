@@ -52,6 +52,36 @@ internal static class DungeonDataAccess
         return pool;
     }
 
+    internal static bool IsExcluded(int dungeonId, IReadOnlyList<int> excludeIds)
+    {
+        if (excludeIds == null || excludeIds.Count == 0)
+            return false;
+
+        for (int i = 0; i < excludeIds.Count; i++)
+        {
+            if (excludeIds[i] == dungeonId)
+                return true;
+        }
+
+        return false;
+    }
+
+    internal static List<int> FilterExcluded(IReadOnlyList<int> pool, IReadOnlyList<int> excludeIds)
+    {
+        if (excludeIds == null || excludeIds.Count == 0)
+            return new List<int>(pool);
+
+        var filtered = new List<int>(pool.Count);
+        for (int i = 0; i < pool.Count; i++)
+        {
+            int id = pool[i];
+            if (!IsExcluded(id, excludeIds))
+                filtered.Add(id);
+        }
+
+        return filtered;
+    }
+
     internal static bool TryPickUniform(IReadOnlyList<int> pool, out int dungeonId)
     {
         dungeonId = 0;
