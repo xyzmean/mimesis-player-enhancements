@@ -26,7 +26,7 @@ Tested with **MIMESIS 0.3.0** and **MelonLoader 0.7.3**.
 | **Statistics** | Session stats and leaderboard per save slot | No — host only |
 | **Spawn Scaling** | Scale mimic/monster spawn budgets by type and player count | No — host only |
 | **Loot Multiplicator** | Scale loot quantity by where it comes from and item type | No — host only |
-| **Money Multiplier** | Scale startup money, round goal, scrap/sell values, shop buy, and reinforce costs | No — host only |
+| **Money Multiplier** | Scale startup money, round goal, scrap/sell values, shop buy prices, shop item count, and reinforce costs | No — host only |
 
 Based on community mods by [MorePlayers from NeoMimicry](https://github.com/NeoMimicry/MorePlayers), [MoreVoices from Risikus](https://thunderstore.io/c/mimesis/p/Risikus/More_Voices/), [MimesisPersistence from JoanR](https://github.com/JoanRLopez/MimesisPersistence), and [MimesisJoinAnytime from Shlygly](https://github.com/Shlygly/MimesisJoinAnytime). Please support the original authors as well :)
 
@@ -128,7 +128,7 @@ Does **not** scale: items you release from inventory, shop purchases, admin/chea
 
 ### Money Multiplier
 
-Host-only. Scales five separate money values. Each has an **Auto Scale … By Player Count** toggle (shown above its multiplier in config) and a multiplier (`1` = vanilla, `2` = double). When auto-scale is on and there are more than 4 players, the effective value is multiplied by player count ÷ 4 (e.g. 8 players → ×2 on top of your multiplier). Minimum multiplier is `0`.
+Host-only. Scales six separate money values. Each has an **Auto Scale … By Player Count** toggle (shown above its multiplier in config) and a multiplier (`1` = vanilla, `2` = double). When auto-scale is on and there are more than 4 players, the effective value is multiplied by player count ÷ 4 (e.g. 8 players → ×2 on top of your multiplier). Minimum multiplier is `0`.
 
 | Money type | What it affects |
 |------------|-----------------|
@@ -136,9 +136,12 @@ Host-only. Scales five separate money values. Each has an **Auto Scale … By Pl
 | **Round goal** | Target currency (quota) required to finish a stage |
 | **Scrap / sell value** | Currency from scrapping items and item value counted in the tram toward the quota |
 | **Shop buy price** | Maintenance shop purchase cost |
+| **Shop items** | Number of unique items offered in the maintenance shop |
 | **Reinforce price** | Maintenance item reinforcement cost |
 
 Does **not** change saved player balances on load or mid-round currency pickups. Complements **Loot Multiplicator** (item quantity) — this mod scales currency amounts and prices, not how many items spawn.
+
+**Shop discounts:** When `ShopDiscountChancePercent` is above `0`, each shop item independently rolls for a discount. Successful rolls pick a random percentage between `ShopDiscountMinPercent` and `ShopDiscountMaxPercent`, update the item's sale price, and sync vending-machine displays. At `0` chance, vanilla shop discount tables are used unchanged.
 
 | Key | Type | Default | What it does |
 |-----|------|---------|--------------|
@@ -151,6 +154,11 @@ Does **not** change saved player balances on load or mid-round currency pickups.
 | `ScrapSellValueMultiplier` | float | `1.0` | Scrap/sell value multiplier. Minimum is `0`. |
 | `AutoScaleShopBuyPriceByPlayerCount` | bool | `true` | Player-count scaling for shop buy prices. |
 | `ShopBuyPriceMultiplier` | float | `1.0` | Shop buy price multiplier. Minimum is `0`. |
+| `AutoScaleShopItemsByPlayerCount` | bool | `true` | Player-count scaling for shop item count. |
+| `ShopItemsMultiplier` | float | `1.0` | Number of unique maintenance shop items (`1` = vanilla, `2` = double). Extra items are rolled from vending-machine shop groups on the map. Minimum is `0`. |
+| `ShopDiscountMinPercent` | int | `0` | Minimum discount percentage when a shop discount is rolled (`0`–`100`). Only used when `ShopDiscountChancePercent` is above `0`. |
+| `ShopDiscountMaxPercent` | int | `100` | Maximum discount percentage when a shop discount is rolled (`0`–`100`). Must be ≥ `ShopDiscountMinPercent`. |
+| `ShopDiscountChancePercent` | int | `0` | Chance per shop item to receive a discount in the min–max range (`0` = vanilla shop discounts, `100` = every item discounted). |
 | `AutoScaleReinforcePriceByPlayerCount` | bool | `true` | Player-count scaling for reinforce costs. |
 | `ReinforcePriceMultiplier` | float | `1.0` | Reinforce price multiplier. Minimum is `0`. |
 
@@ -216,6 +224,11 @@ AutoScaleScrapSellValueByPlayerCount = true
 ScrapSellValueMultiplier = 1.0
 AutoScaleShopBuyPriceByPlayerCount = true
 ShopBuyPriceMultiplier = 1.0
+AutoScaleShopItemsByPlayerCount = true
+ShopItemsMultiplier = 1.0
+ShopDiscountMinPercent = 0
+ShopDiscountMaxPercent = 100
+ShopDiscountChancePercent = 0
 AutoScaleReinforcePriceByPlayerCount = true
 ReinforcePriceMultiplier = 1.0
 EnableDebugLogging = false

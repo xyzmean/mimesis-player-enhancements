@@ -166,6 +166,9 @@ internal static class FixedSpawnCoordinator
             if (now < pending.ExecuteAt)
                 continue;
 
+            if (now < pending.NextAttemptAt)
+                continue;
+
             if (pending.Room == null || pending.Data == null)
             {
                 PendingRespawns.RemoveAt(i);
@@ -182,6 +185,7 @@ internal static class FixedSpawnCoordinator
                         $"players within {ModConfig.FixedSpawnRespawnMinPlayerDistanceMeters.Value:0.#}m");
                 }
 
+                DeferNextAttempt(i, pending, now);
                 continue;
             }
 
@@ -206,20 +210,17 @@ internal static class FixedSpawnCoordinator
                 }
 
                 if (FixedSpawnProximity.IsPlayerBlockingRespawn(pending.Room, pending.Data.PosVector))
+                {
+                    DeferNextAttempt(i, pending, now);
                     continue;
+                }
 
-                if (pending.QuotaConsumed)
-                    state.RestoreQuota(pending.MasterId);
-
-                PendingRespawns.RemoveAt(i);
+                DeferNextAttempt(i, pending, now);
             }
             catch (Exception ex)
             {
-                if (pending.QuotaConsumed)
-                    state.RestoreQuota(pending.MasterId);
-
                 ModLog.Warn(Feature, $"Fixed spawn respawn failed — master={pending.MasterId}: {ex.Message}");
-                PendingRespawns.RemoveAt(i);
+                DeferNextAttempt(i, pending, now);
             }
         }
     }
@@ -399,6 +400,9 @@ internal static class FixedSpawnCoordinator
         }
     }
 
+    private static void DeferNextAttempt(int index, PendingRespawn pending, float now) =>
+        PendingRespawns[index] = pending.WithNextAttemptAt(now + FixedSpawnRespawnTiming.RetryIntervalSeconds);
+
     private static bool TryFindRoomState(SpawnedActorData spawnData, out RoomState state, out DungeonRoom room)
     {
         foreach (KeyValuePair<DungeonRoom, RoomState> entry in RoomStates)
@@ -519,6 +523,7 @@ internal static class FixedSpawnCoordinator
             Data = data;
             MasterId = masterId;
             ExecuteAt = executeAt;
+            NextAttemptAt = executeAt;
             QuotaConsumed = quotaConsumed;
         }
 
@@ -530,6 +535,27 @@ internal static class FixedSpawnCoordinator
 
         internal float ExecuteAt { get; }
 
+        internal float NextAttemptAt { get; }
+
         internal bool QuotaConsumed { get; }
+
+        internal PendingRespawn WithNextAttemptAt(float nextAttemptAt) =>
+            new PendingRespawn(Room, Data, MasterId, ExecuteAt, QuotaConsumed, nextAttemptAt);
+
+        private PendingRespawn(
+            DungeonRoom room,
+            SpawnedActorData data,
+            int masterId,
+            float executeAt,
+            bool quotaConsumed,
+            float nextAttemptAt)
+        {
+            Room = room;
+            Data = data;
+            MasterId = masterId;
+            ExecuteAt = executeAt;
+            NextAttemptAt = nextAttemptAt;
+            QuotaConsumed = quotaConsumed;
+        }
     }
 }

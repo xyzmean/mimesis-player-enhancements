@@ -1,0 +1,51 @@
+using Bifrost.ConstEnum;
+using MimesisPlayerEnhancement.Features.SpawnScaling;
+using ReluProtocol;
+
+namespace MimesisPlayerEnhancement.Features.LootMultiplicator;
+
+internal static class LootItemCountScaler
+{
+    internal static bool TryScaleElementStack(IVroom? room, ItemElement element, LootSource source)
+    {
+        if (element == null || element.ItemMasterID <= 0)
+            return false;
+
+        int before = ItemElementStackHelper.GetStackCount(element);
+        int scaled = before;
+        if (!TryScaleItemCount(room, source, element.ItemMasterID, ref scaled))
+            return false;
+
+        if (scaled == before)
+            return false;
+
+        ItemElementStackHelper.SetStackCount(element, scaled);
+        return true;
+    }
+
+    private static bool TryScaleItemCount(IVroom? room, LootSource source, int masterId, ref int itemCount)
+    {
+        if (!ModConfig.EnableLootMultiplicator.Value || masterId <= 0)
+            return false;
+
+        if (SpawnScalingHost.IsParticipantClient() || !SpawnScalingHost.ShouldApplyScaling())
+            return false;
+
+        ItemType itemType = ItemTypeLookup.GetItemType(masterId);
+        if (!itemType.Equals(ItemType.Consumable))
+            return false;
+
+        int playerCount = LootPlayerCountHelper.ResolvePlayerCount(room);
+        float multiplier = LootMultiplierResolver.GetEffectiveMultiplier(source, itemType, playerCount);
+        if (multiplier <= 1f)
+            return false;
+
+        int baseCount = itemCount > 0 ? itemCount : 1;
+        int scaled = LootMultiplierResolver.ScaleCount(baseCount, multiplier);
+        if (scaled == itemCount)
+            return false;
+
+        itemCount = scaled;
+        return true;
+    }
+}

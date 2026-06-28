@@ -1,0 +1,105 @@
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using MelonLoader;
+
+namespace MimesisPlayerEnhancement;
+
+internal static class ModConfigFloatHelper
+{
+    internal const int DecimalPlaces = 4;
+
+    private static bool _normalizingFile;
+
+    internal static float Round(float value) =>
+        (float)Math.Round(value, DecimalPlaces, MidpointRounding.AwayFromZero);
+
+    internal static string Format(float value) =>
+        Round(value).ToString("0.####", CultureInfo.InvariantCulture);
+
+    internal static void SanitizeEntry(MelonPreferences_Entry<float> entry)
+    {
+        float rounded = Round(entry.Value);
+        if (!entry.Value.Equals(rounded))
+            entry.Value = rounded;
+    }
+
+    internal static void SanitizeAll(IReadOnlyList<MelonPreferences_Entry<float>> entries)
+    {
+        for (int i = 0; i < entries.Count; i++)
+            SanitizeEntry(entries[i]);
+    }
+
+    internal static void NormalizeSavedFloats(string filePath, IReadOnlyList<MelonPreferences_Entry<float>> entries)
+    {
+        if (_normalizingFile || !File.Exists(filePath))
+            return;
+
+        var floatKeys = new HashSet<string>(StringComparer.Ordinal);
+        for (int i = 0; i < entries.Count; i++)
+            floatKeys.Add(entries[i].Identifier);
+
+        string[] lines = File.ReadAllLines(filePath);
+        bool changed = false;
+
+        for (int i = 0; i < lines.Length; i++)
+        {
+            if (!TryNormalizeLine(lines[i], floatKeys, out string normalized))
+                continue;
+
+            if (normalized == lines[i])
+                continue;
+
+            lines[i] = normalized;
+            changed = true;
+        }
+
+        if (!changed)
+            return;
+
+        _normalizingFile = true;
+        try
+        {
+            File.WriteAllLines(filePath, lines);
+        }
+        finally
+        {
+            _normalizingFile = false;
+        }
+    }
+
+    private static bool TryNormalizeLine(string line, HashSet<string> floatKeys, out string normalized)
+    {
+        normalized = line;
+        int eq = line.IndexOf('=');
+        if (eq < 0)
+            return false;
+
+        string key = line.Substring(0, eq).Trim();
+        if (!floatKeys.Contains(key))
+            return false;
+
+        string remainder = line.Substring(eq + 1);
+        string valuePart = remainder;
+        string trailing = "";
+
+        int commentIdx = remainder.IndexOf('#');
+        if (commentIdx >= 0)
+        {
+            valuePart = remainder.Substring(0, commentIdx);
+            trailing = remainder.Substring(commentIdx);
+        }
+
+        valuePart = valuePart.Trim();
+        if (!float.TryParse(valuePart, NumberStyles.Float, CultureInfo.InvariantCulture, out float parsed))
+            return false;
+
+        string formatted = Format(parsed);
+        if (valuePart == formatted)
+            return false;
+
+        normalized = key + " = " + formatted + trailing;
+        return true;
+    }
+}

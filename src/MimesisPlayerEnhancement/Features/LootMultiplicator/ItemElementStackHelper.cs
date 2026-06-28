@@ -1,5 +1,6 @@
 using System.Reflection;
 using Bifrost.ConstEnum;
+using HarmonyLib;
 using ReluProtocol;
 
 namespace MimesisPlayerEnhancement.Features.LootMultiplicator;
@@ -9,16 +10,16 @@ internal static class ItemElementStackHelper
     private const BindingFlags InstanceFlags =
         BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
 
-    private static readonly FieldInfo? ConsumableRemainCountField =
-        typeof(ConsumableItemElement).GetField("<RemainCount>k__BackingField", InstanceFlags);
+    private static readonly MethodInfo? SetConsumableRemainCountMethod =
+        AccessTools.PropertySetter(typeof(ConsumableItemElement), "RemainCount");
 
     internal static int GetStackCount(ItemElement element)
     {
         if (element == null)
             return 1;
 
-        if (element is ConsumableItemElement && ConsumableRemainCountField != null)
-            return (int)(ConsumableRemainCountField.GetValue(element) ?? 1);
+        if (element is ConsumableItemElement consumable)
+            return consumable.RemainCount > 0 ? consumable.RemainCount : 1;
 
         try
         {
@@ -33,24 +34,16 @@ internal static class ItemElementStackHelper
 
     internal static void SetStackCount(ItemElement element, int stackCount)
     {
-        if (element == null)
+        if (element == null || stackCount <= 0)
             return;
 
-        if (element is ConsumableItemElement && ConsumableRemainCountField != null)
+        if (element is ConsumableItemElement consumable && SetConsumableRemainCountMethod != null)
         {
-            ConsumableRemainCountField.SetValue(element, stackCount);
+            SetConsumableRemainCountMethod.Invoke(consumable, new object[] { stackCount });
             return;
         }
 
-        try
-        {
-            ItemInfo info = element.toItemInfo();
-            info.stackCount = stackCount;
-        }
-        catch
-        {
-            // Best effort only.
-        }
+        // Equipment and miscellany do not support stack counts on map loot.
     }
 
     internal static ItemType GetItemType(ItemElement element)

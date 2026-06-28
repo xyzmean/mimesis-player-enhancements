@@ -6,7 +6,13 @@ namespace MimesisPlayerEnhancement.Features.SpawnScaling;
 
 internal static class FixedSpawnProximity
 {
-    internal static bool ShouldBlockFixedCreatureRespawn(DungeonRoom? room, SpawnedActorData? spawnData)
+    private static readonly Dictionary<SpawnedActorData, CachedBlockResult> CreatureBlockCache = new();
+    private static readonly Dictionary<SpawnedActorData, CachedBlockResult> LootBlockCache = new();
+
+    internal static bool ShouldBlockFixedCreatureRespawn(
+        DungeonRoom? room,
+        SpawnedActorData? spawnData,
+        bool throttle = true)
     {
         if (ModConfig.FixedSpawnRespawnMinPlayerDistanceMeters.Value <= 0f || room == null || spawnData == null)
             return false;
@@ -14,10 +20,13 @@ internal static class FixedSpawnProximity
         if (!IsFixedCreatureRespawn(spawnData))
             return false;
 
-        return IsPlayerBlockingRespawn(room, spawnData.PosVector);
+        return IsPlayerBlockingRespawnCached(room, spawnData, CreatureBlockCache, throttle);
     }
 
-    internal static bool ShouldBlockFixedLootRespawn(DungeonRoom? room, SpawnedActorData? spawnData)
+    internal static bool ShouldBlockFixedLootRespawn(
+        DungeonRoom? room,
+        SpawnedActorData? spawnData,
+        bool throttle = true)
     {
         if (ModConfig.FixedSpawnRespawnMinPlayerDistanceMeters.Value <= 0f || room == null || spawnData == null)
             return false;
@@ -25,7 +34,7 @@ internal static class FixedSpawnProximity
         if (!IsFixedLootRespawn(spawnData))
             return false;
 
-        return IsPlayerBlockingRespawn(room, spawnData.PosVector);
+        return IsPlayerBlockingRespawnCached(room, spawnData, LootBlockCache, throttle);
     }
 
     internal static bool IsPlayerBlockingRespawn(DungeonRoom room, Vector3 spawnPos)
@@ -47,6 +56,41 @@ internal static class FixedSpawnProximity
         }
 
         return false;
+    }
+
+    private static bool IsPlayerBlockingRespawnCached(
+        DungeonRoom room,
+        SpawnedActorData spawnData,
+        Dictionary<SpawnedActorData, CachedBlockResult> cache,
+        bool throttle)
+    {
+        float now = Time.time;
+
+        if (throttle
+            && cache.TryGetValue(spawnData, out CachedBlockResult cached)
+            && now < cached.NextCheckAt)
+        {
+            return cached.Blocked;
+        }
+
+        bool blocked = IsPlayerBlockingRespawn(room, spawnData.PosVector);
+        if (throttle)
+            cache[spawnData] = new CachedBlockResult(blocked, now + FixedSpawnRespawnTiming.RetryIntervalSeconds);
+
+        return blocked;
+    }
+
+    private readonly struct CachedBlockResult
+    {
+        internal CachedBlockResult(bool blocked, float nextCheckAt)
+        {
+            Blocked = blocked;
+            NextCheckAt = nextCheckAt;
+        }
+
+        internal bool Blocked { get; }
+
+        internal float NextCheckAt { get; }
     }
 
     private static bool IsFixedCreatureRespawn(SpawnedActorData spawnData) =>

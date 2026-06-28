@@ -10,31 +10,35 @@ internal static class RuntimeLootScaler
         IVroom? room,
         ItemElement element,
         ReasonOfSpawn reasonOfSpawn,
-        int spawnPointIndex = 0)
+        int spawnPointIndex = 0,
+        bool isRestored = false)
     {
         if (!ModConfig.EnableLootMultiplicator.Value || element == null)
+            return;
+
+        if (LootSpawnScalingContext.IsDuplicating)
             return;
 
         if (SpawnScalingHost.IsParticipantClient() || !SpawnScalingHost.ShouldApplyScaling())
             return;
 
-        if (!TryResolveLootSource(reasonOfSpawn, spawnPointIndex, out LootSource source))
+        if (!LootSourceResolver.ShouldScaleSpawn(reasonOfSpawn, isRestored)
+            || !LootSourceResolver.TryResolveLootSource(reasonOfSpawn, spawnPointIndex, out LootSource source))
+        {
             return;
-
-        ItemType itemType = ItemElementStackHelper.GetItemType(element);
-        int playerCount = LootPlayerCountHelper.ResolvePlayerCount(room);
-        float multiplier = LootMultiplierResolver.GetEffectiveMultiplier(source, itemType, playerCount);
-
-        if (multiplier <= 1f)
-            return;
+        }
 
         int before = ItemElementStackHelper.GetStackCount(element);
-        int baseCount = before > 0 ? before : 1;
-        int after = LootMultiplierResolver.ScaleCount(baseCount, multiplier);
-        if (after == before)
+        if (!LootItemCountScaler.TryScaleElementStack(room, element, source))
             return;
 
-        ItemElementStackHelper.SetStackCount(element, after);
+        int after = ItemElementStackHelper.GetStackCount(element);
+        ItemType itemType = ItemElementStackHelper.GetItemType(element);
+        float multiplier = LootMultiplierResolver.GetEffectiveMultiplier(
+            source,
+            itemType,
+            LootPlayerCountHelper.ResolvePlayerCount(room));
+
         LootMultiplicatorLog.InfoRuntimeScaled(
             source,
             itemType,
@@ -54,38 +58,5 @@ internal static class RuntimeLootScaler
     }
 
     internal static bool TryMapReasonToSource(ReasonOfSpawn reasonOfSpawn, out LootSource source) =>
-        TryResolveLootSource(reasonOfSpawn, 0, out source);
-
-    internal static bool TryResolveLootSource(
-        ReasonOfSpawn reasonOfSpawn,
-        int spawnPointIndex,
-        out LootSource source)
-    {
-        if (MapLootSpawnContext.IsActive)
-        {
-            source = LootSource.Map;
-            return true;
-        }
-
-        if (reasonOfSpawn.Equals(ReasonOfSpawn.Spawn))
-        {
-            source = LootSource.Map;
-            return true;
-        }
-
-        if (reasonOfSpawn.Equals(ReasonOfSpawn.ActorDying))
-        {
-            source = LootSource.Drop;
-            return true;
-        }
-
-        if (reasonOfSpawn.Equals(ReasonOfSpawn.EventAction))
-        {
-            source = LootSource.Trigger;
-            return true;
-        }
-
-        source = default;
-        return false;
-    }
+        LootSourceResolver.TryResolveLootSource(reasonOfSpawn, 0, out source);
 }

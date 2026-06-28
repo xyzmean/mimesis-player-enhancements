@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using MelonLoader;
 using MelonLoader.Utils;
@@ -82,10 +83,17 @@ public static class ModConfig
     public static MelonPreferences_Entry<float> ScrapSellValueMultiplier { get; private set; } = null!;
     public static MelonPreferences_Entry<bool> AutoScaleShopBuyPriceByPlayerCount { get; private set; } = null!;
     public static MelonPreferences_Entry<float> ShopBuyPriceMultiplier { get; private set; } = null!;
+    public static MelonPreferences_Entry<bool> AutoScaleShopItemsByPlayerCount { get; private set; } = null!;
+    public static MelonPreferences_Entry<float> ShopItemsMultiplier { get; private set; } = null!;
+    public static MelonPreferences_Entry<int> ShopDiscountMinPercent { get; private set; } = null!;
+    public static MelonPreferences_Entry<int> ShopDiscountMaxPercent { get; private set; } = null!;
+    public static MelonPreferences_Entry<int> ShopDiscountChancePercent { get; private set; } = null!;
     public static MelonPreferences_Entry<bool> AutoScaleReinforcePriceByPlayerCount { get; private set; } = null!;
     public static MelonPreferences_Entry<float> ReinforcePriceMultiplier { get; private set; } = null!;
 
     public static MelonPreferences_Entry<bool> EnableDebugLogging { get; private set; } = null!;
+
+    private static readonly List<MelonPreferences_Entry<float>> FloatEntries = new();
 
     public static void Initialize(MelonLogger.Instance logger)
     {
@@ -361,7 +369,7 @@ public static class ModConfig
             "EnableMoneyMultiplier",
             true,
             "Enable Money Multiplier",
-            "Scale startup money, round goal quota, scrap/sell values, shop buy prices, and reinforce costs. Host only.");
+            "Scale startup money, round goal quota, scrap/sell values, shop buy prices, shop item count, and reinforce costs. Host only.");
 
         AutoScaleStartupMoneyByPlayerCount = Category.CreateEntry(
             "AutoScaleStartupMoneyByPlayerCount",
@@ -411,6 +419,36 @@ public static class ModConfig
             "Shop Buy Price Multiplier",
             "Maintenance shop purchase cost multiplier (1 = vanilla, 2 = double).");
 
+        AutoScaleShopItemsByPlayerCount = Category.CreateEntry(
+            "AutoScaleShopItemsByPlayerCount",
+            true,
+            "Auto Scale Shop Items By Player Count",
+            "When enabled, multiply maintenance shop item count by player count / 4 for sessions with more than 4 players (stacks with ShopItemsMultiplier).");
+
+        ShopItemsMultiplier = Category.CreateEntry(
+            "ShopItemsMultiplier",
+            1f,
+            "Shop Items Multiplier",
+            "Number of unique items offered in the maintenance shop (1 = vanilla, 2 = double). Extra items are rolled from vending-machine shop groups on the map.");
+
+        ShopDiscountMinPercent = Category.CreateEntry(
+            "ShopDiscountMinPercent",
+            0,
+            "Shop Discount Min Percent",
+            "Minimum shop discount percentage when a discount is rolled (0-100). Only used when ShopDiscountChancePercent is above 0.");
+
+        ShopDiscountMaxPercent = Category.CreateEntry(
+            "ShopDiscountMaxPercent",
+            100,
+            "Shop Discount Max Percent",
+            "Maximum shop discount percentage when a discount is rolled (0-100). Must be >= ShopDiscountMinPercent.");
+
+        ShopDiscountChancePercent = Category.CreateEntry(
+            "ShopDiscountChancePercent",
+            0,
+            "Shop Discount Chance Percent",
+            "Chance per shop item to receive a discount between min and max percent (0 = vanilla shop discounts, 100 = every item discounted).");
+
         AutoScaleReinforcePriceByPlayerCount = Category.CreateEntry(
             "AutoScaleReinforcePriceByPlayerCount",
             true,
@@ -434,6 +472,8 @@ public static class ModConfig
             logger.Warning("MaxPlayers must be at least 1; resetting to 1.");
             MaxPlayers.Value = 1;
         }
+
+        SanitizeShopDiscountPercents(logger);
 
         MaxPlayers.OnEntryValueChanged.Subscribe((_, value) =>
         {
@@ -522,17 +562,63 @@ public static class ModConfig
         AutoScaleRoundGoalMoneyByPlayerCount.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
         AutoScaleScrapSellValueByPlayerCount.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
         AutoScaleShopBuyPriceByPlayerCount.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
+        AutoScaleShopItemsByPlayerCount.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
         AutoScaleReinforcePriceByPlayerCount.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
 
         StartupMoneyMultiplier.OnEntryValueChanged.Subscribe((_, value) => OnSpawnMultiplierChanged(logger, value, StartupMoneyMultiplier));
         RoundGoalMoneyMultiplier.OnEntryValueChanged.Subscribe((_, value) => OnSpawnMultiplierChanged(logger, value, RoundGoalMoneyMultiplier));
         ScrapSellValueMultiplier.OnEntryValueChanged.Subscribe((_, value) => OnSpawnMultiplierChanged(logger, value, ScrapSellValueMultiplier));
         ShopBuyPriceMultiplier.OnEntryValueChanged.Subscribe((_, value) => OnSpawnMultiplierChanged(logger, value, ShopBuyPriceMultiplier));
+        ShopItemsMultiplier.OnEntryValueChanged.Subscribe((_, value) => OnSpawnMultiplierChanged(logger, value, ShopItemsMultiplier));
+        ShopDiscountMinPercent.OnEntryValueChanged.Subscribe((_, value) => OnShopDiscountPercentChanged(logger, value, ShopDiscountMinPercent));
+        ShopDiscountMaxPercent.OnEntryValueChanged.Subscribe((_, value) => OnShopDiscountPercentChanged(logger, value, ShopDiscountMaxPercent));
+        ShopDiscountChancePercent.OnEntryValueChanged.Subscribe((_, value) => OnShopDiscountPercentChanged(logger, value, ShopDiscountChancePercent));
         ReinforcePriceMultiplier.OnEntryValueChanged.Subscribe((_, value) => OnSpawnMultiplierChanged(logger, value, ReinforcePriceMultiplier));
 
         EnableDebugLogging.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
 
+        RegisterFloatEntries();
+        ModConfigFloatHelper.SanitizeAll(FloatEntries);
+        NormalizeSavedFloats();
+
         IsInitialized = true;
+    }
+
+    public static void NormalizeSavedFloats() =>
+        ModConfigFloatHelper.NormalizeSavedFloats(FilePath, FloatEntries);
+
+    internal static void SanitizeFloatEntries() =>
+        ModConfigFloatHelper.SanitizeAll(FloatEntries);
+
+    private static void RegisterFloatEntries()
+    {
+        FloatEntries.AddRange(new[]
+        {
+            MimicSpawnMultiplier,
+            BossSpawnMultiplier,
+            JakoSpawnMultiplier,
+            SpecialSpawnMultiplier,
+            TrapSpawnMultiplier,
+            FixedSpawnRespawnDelayMinSeconds,
+            FixedSpawnRespawnDelayMaxSeconds,
+            FixedSpawnRespawnMinPlayerDistanceMeters,
+            OtherSpawnMultiplier,
+            MapConsumableLootMultiplier,
+            MapEquipmentLootMultiplier,
+            MapMiscellanyLootMultiplier,
+            DropConsumableLootMultiplier,
+            DropEquipmentLootMultiplier,
+            DropMiscellanyLootMultiplier,
+            TriggerConsumableLootMultiplier,
+            TriggerEquipmentLootMultiplier,
+            TriggerMiscellanyLootMultiplier,
+            StartupMoneyMultiplier,
+            RoundGoalMoneyMultiplier,
+            ScrapSellValueMultiplier,
+            ShopBuyPriceMultiplier,
+            ShopItemsMultiplier,
+            ReinforcePriceMultiplier,
+        });
     }
 
     private static void OnFixedSpawnRespawnDelayChanged(MelonLogger.Instance logger, float value, MelonPreferences_Entry<float> entry)
@@ -552,6 +638,7 @@ public static class ModConfig
             FixedSpawnRespawnDelayMaxSeconds.Value = min;
         }
 
+        ModConfigFloatHelper.SanitizeEntry(entry);
         NotifyChanged();
     }
 
@@ -564,6 +651,7 @@ public static class ModConfig
             return;
         }
 
+        ModConfigFloatHelper.SanitizeEntry(FixedSpawnRespawnMinPlayerDistanceMeters);
         NotifyChanged();
     }
 
@@ -574,6 +662,39 @@ public static class ModConfig
             logger.Warning($"{entry.Identifier} must be >= 0; resetting to 0.");
             entry.Value = 0f;
             return;
+        }
+
+        ModConfigFloatHelper.SanitizeEntry(entry);
+        NotifyChanged();
+    }
+
+    private static void SanitizeShopDiscountPercents(MelonLogger.Instance logger)
+    {
+        OnShopDiscountPercentChanged(logger, ShopDiscountMinPercent.Value, ShopDiscountMinPercent);
+        OnShopDiscountPercentChanged(logger, ShopDiscountMaxPercent.Value, ShopDiscountMaxPercent);
+        OnShopDiscountPercentChanged(logger, ShopDiscountChancePercent.Value, ShopDiscountChancePercent);
+    }
+
+    private static void OnShopDiscountPercentChanged(MelonLogger.Instance logger, int value, MelonPreferences_Entry<int> entry)
+    {
+        if (value < 0)
+        {
+            logger.Warning($"{entry.Identifier} must be >= 0; resetting to 0.");
+            entry.Value = 0;
+            return;
+        }
+
+        if (value > 100)
+        {
+            logger.Warning($"{entry.Identifier} must be <= 100; resetting to 100.");
+            entry.Value = 100;
+            return;
+        }
+
+        if (ShopDiscountMaxPercent.Value < ShopDiscountMinPercent.Value)
+        {
+            logger.Warning("ShopDiscountMaxPercent must be >= ShopDiscountMinPercent; syncing max to min.");
+            ShopDiscountMaxPercent.Value = ShopDiscountMinPercent.Value;
         }
 
         NotifyChanged();

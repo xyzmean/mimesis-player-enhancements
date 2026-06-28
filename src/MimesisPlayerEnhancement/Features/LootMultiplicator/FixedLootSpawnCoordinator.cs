@@ -52,15 +52,8 @@ internal static class FixedLootSpawnCoordinator
         AccessTools.Method(typeof(IVroom), "SpawnLootingObject", SpawnLootingObjectParameterTypes)
         ?? throw new InvalidOperationException("IVroom.SpawnLootingObject not found");
 
-    private static readonly MethodInfo MemberwiseCloneMethod =
-        AccessTools.Method(typeof(object), "MemberwiseClone")
-        ?? throw new InvalidOperationException("object.MemberwiseClone not found");
-
     private static readonly FieldInfo CurrentSpawnCountBackingField =
         AccessToolsField(typeof(SpawnedActorData), "<CurrentSpawnCount>k__BackingField");
-
-    private static readonly FieldInfo SpawnDataIndexField =
-        AccessToolsField(typeof(SpawnedActorData), "Index");
 
     private static readonly HashSet<DungeonRoom> AppliedRooms = new();
     private static readonly Dictionary<DungeonRoom, RoomState> RoomStates = new();
@@ -80,7 +73,6 @@ internal static class FixedLootSpawnCoordinator
             return;
 
         int playerCount = room.GetMemberCount();
-        MapMarker_LootingObjectSpawnPoint[] markers = CollectLootSpawnMarkers();
         var state = new RoomState(room);
 
         foreach (DictionaryEntry entry in spawnDatas)
@@ -109,40 +101,19 @@ internal static class FixedLootSpawnCoordinator
             if (need <= 0)
                 continue;
 
-            string itemName = ItemTypeLookup.GetDisplayName(masterId);
-            var usedMarkerIds = new HashSet<int>();
-            FixedSpawnedActorData? template = null;
-
-            foreach (SpawnSlot slot in group.Value)
-            {
-                usedMarkerIds.Add(slot.Data.Index);
-                template ??= slot.Data;
-            }
-
-            if (template == null)
-                continue;
-
-            var unusedMarkers = new List<MapMarker_LootingObjectSpawnPoint>();
-            foreach (MapMarker_LootingObjectSpawnPoint marker in markers)
-            {
-                if (marker.masterID != masterId || usedMarkerIds.Contains(marker.ID))
-                    continue;
-
-                unusedMarkers.Add(marker);
-            }
-
-            int activated = ActivateUnusedMarkers(room, state, spawnDatas, template, unusedMarkers, need);
-            int remainingQuota = need - activated;
-            state.SetRemainingQuota(masterId, remainingQuota);
+            // Initial pile count is handled in SpawnLootingObject; keep quota for respawns after pickup.
+            state.SetRemainingQuota(masterId, need);
 
             ModLog.Info(
                 Feature,
-                $"Fixed loot scaling — type={itemType}, name={itemName}, master={masterId}, " +
-                $"{multiplier:0.##}× (vanilla={vanillaCount}, target={targetTotal}, markers+={activated}, respawnQuota={remainingQuota})");
+                $"Fixed loot scaling — type={itemType}, master={masterId}, " +
+                $"{multiplier:0.##}× (vanilla={vanillaCount}, target={targetTotal}, respawnQuota={need})");
         }
 
         if (state.HasQuotas || state.SlotCount > 0)
             RoomStates[room] = state;
+
+        LootSpawnDataLookup.RebuildIndex(room);
     }
 
     internal static void OnActorDead(SpawnedActorData spawnData)
@@ -181,13 +152,16 @@ internal static class FixedLootSpawnCoordinator
             if (now < pending.ExecuteAt)
                 continue;
 
+            if (now < pending.NextAttemptAt)
+                continue;
+
             if (pending.Room == null || pending.Data == null)
             {
                 PendingRespawns.RemoveAt(i);
                 continue;
             }
 
-            if (FixedSpawnProximity.ShouldBlockFixedLootRespawn(pending.Room, pending.Data))
+            if (FixedSpawnProximity.ShouldBlockFixedLootRespawn(pending.Room, pending.Data, throttle: false))
             {
                 if (ModConfig.EnableDebugLogging.Value)
                 {
@@ -197,6 +171,7 @@ internal static class FixedLootSpawnCoordinator
                         $"players within {ModConfig.FixedSpawnRespawnMinPlayerDistanceMeters.Value:0.#}m");
                 }
 
+                DeferNextAttempt(i, pending, now);
                 continue;
             }
 
@@ -220,61 +195,20 @@ internal static class FixedLootSpawnCoordinator
                     continue;
                 }
 
-                if (FixedSpawnProximity.ShouldBlockFixedLootRespawn(pending.Room, pending.Data))
+                if (FixedSpawnProximity.ShouldBlockFixedLootRespawn(pending.Room, pending.Data, throttle: false))
+                {
+                    DeferNextAttempt(i, pending, now);
                     continue;
+                }
 
-                state.RestoreQuota(pending.MasterId);
-                PendingRespawns.RemoveAt(i);
+                DeferNextAttempt(i, pending, now);
             }
             catch (Exception ex)
             {
-                state.RestoreQuota(pending.MasterId);
                 ModLog.Warn(Feature, $"Fixed loot respawn failed — master={pending.MasterId}: {ex.Message}");
-                PendingRespawns.RemoveAt(i);
+                DeferNextAttempt(i, pending, now);
             }
         }
-    }
-
-    private static int ActivateUnusedMarkers(
-        DungeonRoom room,
-        RoomState state,
-        IDictionary spawnDatas,
-        FixedSpawnedActorData template,
-        List<MapMarker_LootingObjectSpawnPoint> unusedMarkers,
-        int need)
-    {
-        int activated = 0;
-
-        for (int i = 0; i < unusedMarkers.Count && activated < need; i++)
-        {
-            MapMarker_LootingObjectSpawnPoint marker = unusedMarkers[i];
-            string key = marker.Name;
-
-            if (string.IsNullOrWhiteSpace(key) || spawnDatas.Contains(key))
-                key = $"{marker.masterID}_{marker.ID}";
-
-            if (spawnDatas.Contains(key))
-                continue;
-
-            var spawnData = CreateSpawnDataFromMarker(template, marker);
-            spawnDatas.Add(key, spawnData);
-            state.RegisterSlot(key, spawnData);
-
-            try
-            {
-                if (TrySpawnFixedLoot(room, spawnData, isRespawn: false))
-                    activated++;
-                else
-                    spawnDatas.Remove(key);
-            }
-            catch (Exception ex)
-            {
-                spawnDatas.Remove(key);
-                ModLog.Warn(Feature, $"Fixed loot marker activation failed — master={marker.masterID}, marker={marker.ID}: {ex.Message}");
-            }
-        }
-
-        return activated;
     }
 
     private static bool TrySpawnFixedLoot(DungeonRoom room, SpawnedActorData spawnData, bool isRespawn)
@@ -285,7 +219,7 @@ internal static class FixedLootSpawnCoordinator
         if (spawnData.ActorID != 0 || spawnData.MasterID <= 0)
             return false;
 
-        if (isRespawn && FixedSpawnProximity.ShouldBlockFixedLootRespawn(room, spawnData))
+        if (isRespawn && FixedSpawnProximity.ShouldBlockFixedLootRespawn(room, spawnData, throttle: false))
             return false;
 
         if (isRespawn)
@@ -341,31 +275,6 @@ internal static class FixedLootSpawnCoordinator
             SetField(spawnData, CurrentSpawnCountBackingField, 0);
     }
 
-    private static FixedSpawnedActorData CreateSpawnDataFromMarker(
-        FixedSpawnedActorData template,
-        MapMarker_LootingObjectSpawnPoint marker)
-    {
-        var data = (FixedSpawnedActorData)MemberwiseCloneMethod.Invoke(template, null)!;
-        data.SetActorID(0);
-        SetField(data, CurrentSpawnCountBackingField, 0);
-        SetField(data, SpawnDataIndexField, marker.ID);
-        SetField(data, AccessToolsField(typeof(SpawnedActorData), "IsIndoor"), marker.IsIndoor);
-        SetField(data, AccessToolsField(typeof(SpawnedActorData), "MasterID"), marker.masterID);
-        SetField(data, AccessToolsField(typeof(SpawnedActorData), "MaxRespawnCount"), marker.MaxRespawnCount);
-        SetField(data, AccessToolsField(typeof(SpawnedActorData), "Name"), marker.Name);
-        SetField(data, AccessToolsField(typeof(SpawnedActorData), "Pos"), marker.pos);
-        SetField(data, AccessToolsField(typeof(SpawnedActorData), "PosVector"), marker.pos.pos);
-        SetField(data, AccessToolsField(typeof(SpawnedActorData), "SpawnWaitTime"), marker.spawnWaitTime);
-        SetField(data, AccessToolsField(typeof(SpawnedActorData), "StackCount"), marker.stackCount > 0 ? marker.stackCount : 1);
-        SetField(data, AccessToolsField(typeof(SpawnedActorData), "MarkerType"), MapMarkerType.LootingObject);
-        SetField(data, AccessToolsField(typeof(SpawnedActorData), "SpawnType"), marker.spawnType);
-        SetField(data, AccessToolsField(typeof(FixedSpawnedActorData), "Durability"), marker.durability);
-        SetField(data, AccessToolsField(typeof(FixedSpawnedActorData), "DefaultGauge"), marker.defaultGauge);
-        SetField(data, AccessToolsField(typeof(FixedSpawnedActorData), "IgnoreNav"), marker.ignoreNav);
-
-        return data;
-    }
-
     private static void SetField(object target, FieldInfo field, object? value) =>
         field.SetValue(target, value);
 
@@ -407,6 +316,9 @@ internal static class FixedLootSpawnCoordinator
         }
     }
 
+    private static void DeferNextAttempt(int index, PendingRespawn pending, float now) =>
+        PendingRespawns[index] = pending.WithNextAttemptAt(now + FixedSpawnRespawnTiming.RetryIntervalSeconds);
+
     private static bool TryFindRoomState(SpawnedActorData spawnData, out RoomState state, out DungeonRoom room)
     {
         foreach (KeyValuePair<DungeonRoom, RoomState> entry in RoomStates)
@@ -422,9 +334,6 @@ internal static class FixedLootSpawnCoordinator
         room = null!;
         return false;
     }
-
-    private static MapMarker_LootingObjectSpawnPoint[] CollectLootSpawnMarkers() =>
-        UnityEngine.Object.FindObjectsByType<MapMarker_LootingObjectSpawnPoint>(FindObjectsSortMode.None);
 
     private sealed class RoomState
     {
@@ -527,6 +436,7 @@ internal static class FixedLootSpawnCoordinator
             Data = data;
             MasterId = masterId;
             ExecuteAt = executeAt;
+            NextAttemptAt = executeAt;
         }
 
         internal DungeonRoom Room { get; }
@@ -536,5 +446,24 @@ internal static class FixedLootSpawnCoordinator
         internal int MasterId { get; }
 
         internal float ExecuteAt { get; }
+
+        internal float NextAttemptAt { get; }
+
+        internal PendingRespawn WithNextAttemptAt(float nextAttemptAt) =>
+            new PendingRespawn(Room, Data, MasterId, ExecuteAt, nextAttemptAt);
+
+        private PendingRespawn(
+            DungeonRoom room,
+            SpawnedActorData data,
+            int masterId,
+            float executeAt,
+            float nextAttemptAt)
+        {
+            Room = room;
+            Data = data;
+            MasterId = masterId;
+            ExecuteAt = executeAt;
+            NextAttemptAt = nextAttemptAt;
+        }
     }
 }

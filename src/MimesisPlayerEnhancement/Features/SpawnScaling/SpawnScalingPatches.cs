@@ -100,15 +100,6 @@ public static class SpawnScalingPatches
             if (!ModConfig.EnableSpawnScaling.Value || __instance is not DungeonRoom dungeonRoom)
                 return true;
 
-            try
-            {
-                SpawnScalingApplier.EnsureApplied(dungeonRoom);
-            }
-            catch (Exception ex)
-            {
-                ModLog.Warn(Feature, $"SpawnMonster prefix scaling failed — {ex.Message}");
-            }
-
             if (FixedSpawnProximity.ShouldBlockFixedCreatureRespawn(dungeonRoom, spawnData))
             {
                 __result = false;

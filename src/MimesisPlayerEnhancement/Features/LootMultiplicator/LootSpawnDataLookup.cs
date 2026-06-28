@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Reflection;
 
 namespace MimesisPlayerEnhancement.Features.LootMultiplicator;
@@ -13,27 +14,42 @@ internal static class LootSpawnDataLookup
         typeof(DungeonRoom).GetField("_spawnedActorDatas", InstanceFlags)
         ?? throw new InvalidOperationException("DungeonRoom._spawnedActorDatas not found");
 
+    private static readonly Dictionary<DungeonRoom, Dictionary<int, SpawnedActorData>> IndexByRoom = new();
+
+    internal static void RebuildIndex(DungeonRoom room)
+    {
+        var index = new Dictionary<int, SpawnedActorData>();
+
+        if (SpawnedActorDatasField.GetValue(room) is IDictionary spawnDatas)
+        {
+            foreach (DictionaryEntry entry in spawnDatas)
+            {
+                if (entry.Value is not SpawnedActorData candidate || candidate.Index == 0)
+                    continue;
+
+                index[candidate.Index] = candidate;
+            }
+        }
+
+        IndexByRoom[room] = index;
+    }
+
     internal static bool TryFindByMarkerIndex(DungeonRoom room, int markerIndex, out SpawnedActorData? spawnData)
     {
         spawnData = null;
         if (markerIndex == 0)
             return false;
 
-        if (SpawnedActorDatasField.GetValue(room) is not IDictionary spawnDatas)
-            return false;
-
-        foreach (DictionaryEntry entry in spawnDatas)
+        if (!IndexByRoom.TryGetValue(room, out Dictionary<int, SpawnedActorData>? index))
         {
-            if (entry.Value is not SpawnedActorData candidate)
-                continue;
-
-            if (candidate.Index == markerIndex)
-            {
-                spawnData = candidate;
-                return true;
-            }
+            RebuildIndex(room);
+            index = IndexByRoom[room];
         }
 
-        return false;
+        if (!index.TryGetValue(markerIndex, out SpawnedActorData? candidate))
+            return false;
+
+        spawnData = candidate;
+        return true;
     }
 }

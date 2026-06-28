@@ -27,16 +27,16 @@ internal static class ShopDiscountApplier
         if (!MoneyMultiplierApplier.IsEnabled())
             return;
 
-        if (ModConfig.ShopDiscountChancePercent.Value <= 0f)
+        if (ModConfig.ShopDiscountChancePercent.Value <= 0)
             return;
 
         if (PriceForItemsField.GetValue(room) is not Dictionary<int, ShopItemPriceInfo> priceForItems
             || priceForItems.Count == 0)
             return;
 
-        float minPercent = ModConfig.ShopDiscountMinPercent.Value;
-        float maxPercent = ModConfig.ShopDiscountMaxPercent.Value;
-        float chancePercent = ModConfig.ShopDiscountChancePercent.Value;
+        int minPercent = ModConfig.ShopDiscountMinPercent.Value;
+        int maxPercent = ModConfig.ShopDiscountMaxPercent.Value;
+        int chancePercent = ModConfig.ShopDiscountChancePercent.Value;
         if (maxPercent < minPercent)
             maxPercent = minPercent;
 
@@ -57,7 +57,7 @@ internal static class ShopDiscountApplier
                 continue;
             }
 
-            float discountPercent = RollDiscountPercent(minPercent, maxPercent);
+            int discountPercent = RollDiscountPercent(minPercent, maxPercent);
             info.DiscountRate = discountPercent / 100f;
             info.Price = Math.Max(1, (int)Math.Round(basePrice * (1f - info.DiscountRate)));
             discounted++;
@@ -70,7 +70,7 @@ internal static class ShopDiscountApplier
             ModLog.Debug(
                 Feature,
                 $"Shop discounts applied — {discounted}/{priceForItems.Count} items discounted " +
-                $"(chance={chancePercent:0.##}%, range={minPercent:0.##}-{maxPercent:0.##}%)");
+                $"(chance={chancePercent}%, range={minPercent}-{maxPercent}%)");
         }
     }
 
@@ -85,25 +85,23 @@ internal static class ShopDiscountApplier
         return Math.Max(1, (int)Math.Round(price / (1f - discountRate)));
     }
 
-    private static bool RollDiscount(float chancePercent)
+    private static bool RollDiscount(int chancePercent)
     {
-        if (chancePercent >= 100f)
+        if (chancePercent >= 100)
             return true;
 
-        if (chancePercent <= 0f)
+        if (chancePercent <= 0)
             return false;
 
-        return SimpleRandUtil.Next(0, 10000) < (int)Math.Round(chancePercent * 100f);
+        return SimpleRandUtil.Next(0, 10000) < chancePercent * 100;
     }
 
-    private static float RollDiscountPercent(float minPercent, float maxPercent)
+    private static int RollDiscountPercent(int minPercent, int maxPercent)
     {
         if (maxPercent <= minPercent)
             return minPercent;
 
-        int min = (int)Math.Round(minPercent);
-        int max = (int)Math.Round(maxPercent);
-        return SimpleRandUtil.Next(min, max + 1);
+        return SimpleRandUtil.Next(minPercent, maxPercent + 1);
     }
 
     private static void SyncVendingMachineLevelObjects(

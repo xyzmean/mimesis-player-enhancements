@@ -183,6 +183,7 @@ public static class LootMultiplicatorPatches
             ItemElement element,
             ReasonOfSpawn reasonOfSpawn,
             int spawnPointIndex,
+            bool isRestored,
             ref int __result)
         {
             if (!ModConfig.EnableLootMultiplicator.Value)
@@ -190,20 +191,20 @@ public static class LootMultiplicatorPatches
 
             try
             {
-                if (__instance is DungeonRoom dungeonRoom)
+                if (!LootSpawnScalingContext.IsDuplicating
+                    && __instance is DungeonRoom dungeonRoom
+                    && spawnPointIndex != 0
+                    && LootSpawnDataLookup.TryFindByMarkerIndex(dungeonRoom, spawnPointIndex, out SpawnedActorData? spawnData)
+                    && FixedSpawnProximity.ShouldBlockFixedLootRespawn(dungeonRoom, spawnData))
                 {
-                    LootMultiplicatorApplier.EnsureApplied(dungeonRoom);
-
-                    if (spawnPointIndex != 0
-                        && LootSpawnDataLookup.TryFindByMarkerIndex(dungeonRoom, spawnPointIndex, out SpawnedActorData? spawnData)
-                        && FixedSpawnProximity.ShouldBlockFixedLootRespawn(dungeonRoom, spawnData))
-                    {
-                        __result = 0;
-                        return false;
-                    }
+                    __result = 0;
+                    return false;
                 }
 
-                RuntimeLootScaler.ScaleSpawnedItem(__instance, element, reasonOfSpawn, spawnPointIndex);
+                if (__instance is DungeonRoom scalingRoom)
+                    LootMultiplicatorApplier.EnsureApplied(scalingRoom);
+
+                RuntimeLootScaler.ScaleSpawnedItem(__instance, element, reasonOfSpawn, spawnPointIndex, isRestored);
             }
             catch (Exception ex)
             {
@@ -220,12 +221,39 @@ public static class LootMultiplicatorPatches
             PosWithRot pos,
             bool isIndoor,
             ReasonOfSpawn reasonOfSpawn,
+            int spawnPointIndex,
+            int prevProjectileActorID,
+            long projectileDropTime,
+            bool ignoreNav,
+            bool isRestored,
             int __result)
         {
+            if (__result > 0)
+            {
+                try
+                {
+                    LootPileDuplicator.TrySpawnExtraPiles(
+                        __instance,
+                        element,
+                        pos,
+                        isIndoor,
+                        reasonOfSpawn,
+                        spawnPointIndex,
+                        prevProjectileActorID,
+                        projectileDropTime,
+                        ignoreNav,
+                        isRestored);
+                }
+                catch (Exception ex)
+                {
+                    ModLog.Warn(Feature, $"SpawnLootingObject pile duplication failed — {ex.Message}");
+                }
+            }
+
             if (!ModConfig.EnableDebugLogging.Value || !ModConfig.EnableLootMultiplicator.Value)
                 return;
 
-            if (element == null || !RuntimeLootScaler.TryResolveLootSource(reasonOfSpawn, 0, out LootSource source))
+            if (element == null || !RuntimeLootScaler.TryMapReasonToSource(reasonOfSpawn, out LootSource source))
                 return;
 
             DungeonRoom? dungeonRoom = __instance as DungeonRoom;

@@ -1,5 +1,6 @@
 using System;
 using MelonLoader;
+using UnityEngine;
 
 [assembly: MelonInfo(typeof(MimesisPlayerEnhancement.Mod), "MimesisPlayerEnhancement", MimesisPlayerEnhancement.VersionInfo.ModuleVersion, "kalle")]
 [assembly: MelonGame("ReLUGames", "MIMESIS")]
@@ -11,6 +12,7 @@ public sealed class Mod : MelonMod
 {
     private HarmonyLib.Harmony? _harmony;
     private bool _statisticsWasEnabled;
+    private float _nextFixedRespawnProcessTime;
 
     public override void OnInitializeMelon()
     {
@@ -35,14 +37,21 @@ public sealed class Mod : MelonMod
 
     public override void OnPreferencesSaved(string filepath)
     {
-        if (IsOurConfigFile(filepath))
-            SyncFromConfig();
+        if (!IsOurConfigFile(filepath))
+            return;
+
+        ModConfig.NormalizeSavedFloats();
+        SyncFromConfig();
     }
 
     public override void OnPreferencesLoaded(string filepath)
     {
-        if (IsOurConfigFile(filepath))
-            SyncFromConfig();
+        if (!IsOurConfigFile(filepath))
+            return;
+
+        ModConfig.SanitizeFloatEntries();
+        ModConfig.NormalizeSavedFloats();
+        SyncFromConfig();
     }
 
     public override void OnUpdate()
@@ -53,11 +62,17 @@ public sealed class Mod : MelonMod
         if (ModConfig.EnableStatistics.Value)
             Features.Statistics.StatisticsTracker.OnUpdate();
 
-        if (ModConfig.EnableSpawnScaling.Value)
-            Features.SpawnScaling.FixedSpawnCoordinator.ProcessPendingRespawns();
+        if ((ModConfig.EnableSpawnScaling.Value || ModConfig.EnableLootMultiplicator.Value)
+            && Time.time >= _nextFixedRespawnProcessTime)
+        {
+            _nextFixedRespawnProcessTime = Time.time + Features.SpawnScaling.FixedSpawnRespawnTiming.RetryIntervalSeconds;
 
-        if (ModConfig.EnableLootMultiplicator.Value)
-            Features.LootMultiplicator.FixedLootSpawnCoordinator.ProcessPendingRespawns();
+            if (ModConfig.EnableSpawnScaling.Value)
+                Features.SpawnScaling.FixedSpawnCoordinator.ProcessPendingRespawns();
+
+            if (ModConfig.EnableLootMultiplicator.Value)
+                Features.LootMultiplicator.FixedLootSpawnCoordinator.ProcessPendingRespawns();
+        }
     }
 
     public override void OnDeinitializeMelon()
