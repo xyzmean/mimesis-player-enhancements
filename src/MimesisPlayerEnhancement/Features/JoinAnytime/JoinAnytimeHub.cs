@@ -15,6 +15,9 @@ internal static class JoinAnytimeHub
     private static readonly FieldInfo? SteamInviteField =
         typeof(Hub).GetField("steamInviteDispatcher", InstanceFlags);
 
+    private static readonly FieldInfo? IsPublicRoomField =
+        typeof(SteamInviteDispatcher).GetField("isPublicRoom", InstanceFlags);
+
     private static bool _warnedMissingFields;
 
     internal static Hub.PersistentData? GetPdata()
@@ -43,6 +46,14 @@ internal static class JoinAnytimeHub
         }
 
         return SteamInviteField.GetValue(Hub.s) as SteamInviteDispatcher;
+    }
+
+    internal static bool IsHostLobbyPublic(SteamInviteDispatcher? dispatcher)
+    {
+        if (dispatcher == null || IsPublicRoomField == null)
+            return false;
+
+        return IsPublicRoomField.GetValue(dispatcher) is true;
     }
 
     private static void WarnMissingFieldsOnce()

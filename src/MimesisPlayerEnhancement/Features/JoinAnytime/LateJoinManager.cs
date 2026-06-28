@@ -328,19 +328,6 @@ internal static class LateJoinManager
         return true;
     }
 
-    internal static void KeepLobbyOpen()
-    {
-        if (!IsEnabled)
-            return;
-
-        try
-        {
-            SteamInviteDispatcher? dispatcher = JoinAnytimeHub.GetSteamInviteDispatcher();
-            dispatcher?.SetLobbyPublic(true);
-        }
-        catch (Exception ex)
-        {
-            ModLog.Debug(Feature, $"KeepLobbyOpen failed — {ex.Message}");
-        }
-    }
+    internal static void RefreshLobbyVisibilityAfterSteamUpdate() =>
+        LobbyVisibilityHelper.RefreshAfterLobbyDataUpdate();
 }

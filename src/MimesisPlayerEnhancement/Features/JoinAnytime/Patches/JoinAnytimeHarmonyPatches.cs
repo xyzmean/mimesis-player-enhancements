@@ -75,17 +75,20 @@ internal static class VoiceManagerSetVoiceModePatch
         LateJoinManager.EnsureVoiceConnected(__instance, voiceMode);
 }
 
+[HarmonyPatch(typeof(SteamInviteDispatcher), nameof(SteamInviteDispatcher.CreateLobby))]
+internal static class SteamInviteDispatcherCreateLobbyPatch
+{
+    [HarmonyPostfix]
+    private static void Postfix(SteamInviteDispatcher __instance, bool isOpenForRandomMatch) =>
+        LobbyVisibilityHelper.OnLobbyCreated(__instance, isOpenForRandomMatch);
+}
+
 [HarmonyPatch(typeof(SteamInviteDispatcher), nameof(SteamInviteDispatcher.SetLobbyPublic))]
 internal static class SteamInviteDispatcherSetLobbyPublicPatch
 {
-    [HarmonyPrefix]
-    private static void Prefix(ref bool isPublic)
-    {
-        if (!ModConfig.EnableJoinAnytime.Value)
-            return;
-
-        isPublic = true;
-    }
+    [HarmonyPostfix]
+    private static void Postfix(SteamInviteDispatcher __instance, bool isPublic) =>
+        LobbyVisibilityHelper.OnSetLobbyPublicCompleted(__instance, isPublic);
 }
 
 [HarmonyPatch(typeof(SteamInviteDispatcher), nameof(SteamInviteDispatcher.SetPresenceInLobby))]
@@ -97,8 +100,13 @@ internal static class SteamInviteDispatcherSetPresenceInLobbyPatch
         if (!ModConfig.EnableJoinAnytime.Value)
             return true;
 
-        __instance.SetPresenceInLobbyPublic();
-        return false;
+        if (JoinAnytimeHub.IsHostLobbyPublic(__instance))
+        {
+            __instance.SetPresenceInLobbyPublic();
+            return false;
+        }
+
+        return true;
     }
 }
 
@@ -109,7 +117,7 @@ internal static class GameMainBaseCorRefreshSteamLobbyDataPatch
         AccessTools.Method(typeof(GameMainBase), "CorRefreshSteamLobbyData", new[] { typeof(Action<bool>) });
 
     [HarmonyPostfix]
-    private static void Postfix() => LateJoinManager.KeepLobbyOpen();
+    private static void Postfix() => LateJoinManager.RefreshLobbyVisibilityAfterSteamUpdate();
 }
 
 [HarmonyPatch]

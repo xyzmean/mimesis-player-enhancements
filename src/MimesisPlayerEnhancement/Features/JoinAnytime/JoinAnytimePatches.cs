@@ -36,6 +36,7 @@ public static class JoinAnytimePatches
             ("EnterDungeon/VRoomManager", AccessTools.Method(typeof(VRoomManager), nameof(VRoomManager.EnterDungeon))),
             ("SetVoiceMode/VoiceManager", AccessTools.Method(typeof(VoiceManager), nameof(VoiceManager.SetVoiceMode))),
             ("SetLobbyPublic/SteamInviteDispatcher", AccessTools.Method(typeof(SteamInviteDispatcher), nameof(SteamInviteDispatcher.SetLobbyPublic))),
+            ("CreateLobby/SteamInviteDispatcher", AccessTools.Method(typeof(SteamInviteDispatcher), nameof(SteamInviteDispatcher.CreateLobby))),
             ("SetPresenceInLobby/SteamInviteDispatcher", AccessTools.Method(typeof(SteamInviteDispatcher), nameof(SteamInviteDispatcher.SetPresenceInLobby))),
             ("CorRefreshSteamLobbyData/GameMainBase", AccessTools.Method(typeof(GameMainBase), "CorRefreshSteamLobbyData", new[] { typeof(Action<bool>) })),
             (".ctor/VPlayer", AccessTools.Constructor(
