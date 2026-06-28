@@ -34,7 +34,7 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
 
         private static WebDashboardActionResult Kick(SessionManager sessionManager, WebDashboardPendingAction action)
         {
-            if (!TryResolveTarget(action, out _, out long playerUid))
+            if (!TryResolveTarget(action, out SessionContext? targetContext, out long playerUid))
             {
                 return Fail("Player not found.");
             }
@@ -44,16 +44,23 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
                 return Fail("Host player context unavailable.");
             }
 
+            if (!WebDashboardSessionAccess.TryGetSessionId(targetContext!, out long sessionId))
+            {
+                return Fail("Session ID unavailable.");
+            }
+
             try
             {
-                MsgErrorCode result = sessionManager.HandleKickPlayerReq(hostPlayer!, playerUid, hashCode);
-                if (result == MsgErrorCode.Success)
-                {
-                    ModLog.Info(Feature, $"Kicked player uid={playerUid} steam={action.SteamId}.");
-                    return Ok("Player kicked.");
-                }
-
-                return Fail($"Kick failed: {result}");
+                // HandleKickPlayerReq always adds to _bannedSteamIDs; disconnect without banning instead.
+                return DisconnectPlayer(
+                    sessionManager,
+                    hostPlayer!,
+                    playerUid,
+                    hashCode,
+                    sessionId,
+                    DisconnectReason.KickByServer,
+                    "Kicked",
+                    "Player kicked.");
             }
             catch (System.Exception ex)
             {
@@ -76,22 +83,60 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
 
             ModLog.Info(Feature, $"Banned steam={action.SteamId}.");
 
-            if (TryResolveTarget(action, out _, out long playerUid) && playerUid != 0)
+            if (TryResolveTarget(action, out SessionContext? targetContext, out long playerUid)
+                && playerUid != 0
+                && TryGetHostKickContext(sessionManager, out VPlayer? hostPlayer, out int hashCode)
+                && WebDashboardSessionAccess.TryGetSessionId(targetContext!, out long sessionId))
             {
-                WebDashboardPendingAction kickAction = new()
+                try
                 {
-                    Type = WebDashboardActionType.Kick,
-                    SteamId = action.SteamId,
-                    PlayerUid = playerUid,
-                };
-                WebDashboardActionResult kickResult = Kick(sessionManager, kickAction);
-                if (!kickResult.Success)
+                    WebDashboardActionResult disconnectResult = DisconnectPlayer(
+                        sessionManager,
+                        hostPlayer!,
+                        playerUid,
+                        hashCode,
+                        sessionId,
+                        DisconnectReason.KickByHost,
+                        "Banned and kicked",
+                        "Player banned.");
+                    if (!disconnectResult.Success)
+                    {
+                        return Ok("Player banned (disconnect may have failed if already offline).");
+                    }
+
+                    return disconnectResult;
+                }
+                catch (System.Exception ex)
                 {
-                    return Ok("Player banned (kick may have failed if already disconnected).");
+                    ModLog.Warn(Feature, $"Ban disconnect failed: {ex.Message}");
+                    return Ok("Player banned (disconnect may have failed if already offline).");
                 }
             }
 
             return Ok("Player banned.");
+        }
+
+        private static WebDashboardActionResult DisconnectPlayer(
+            SessionManager sessionManager,
+            VPlayer hostPlayer,
+            long playerUid,
+            int hashCode,
+            long sessionId,
+            DisconnectReason reason,
+            string logAction,
+            string successMessage)
+        {
+            hostPlayer.SendToMe(new KickPlayerRes(hashCode)
+            {
+                kickPlayerUID = playerUid,
+            });
+            sessionManager.BroadcastToAll(new KickPlayerSig
+            {
+                kickPlayerUID = playerUid,
+            });
+            WebDashboardSessionAccess.DisconnectSession(sessionManager, sessionId, reason);
+            ModLog.Info(Feature, $"{logAction} player uid={playerUid}.");
+            return Ok(successMessage);
         }
 
         private static WebDashboardActionResult Unban(SessionManager sessionManager, WebDashboardPendingAction action)

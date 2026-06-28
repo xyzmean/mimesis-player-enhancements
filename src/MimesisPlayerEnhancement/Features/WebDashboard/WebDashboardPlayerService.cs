@@ -67,6 +67,29 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
                 }
             }
 
+            if (dashboardIsHost && sessionManager != null)
+            {
+                foreach (ulong bannedSteamId in WebDashboardSessionAccess.EnumerateBannedSteamIds(sessionManager))
+                {
+                    if (bannedSteamId == 0 || playersBySteam.ContainsKey(bannedSteamId))
+                    {
+                        continue;
+                    }
+
+                    WebDashboardPlayerDto? bannedOffline = BuildFallbackPlayerDto(
+                        bannedSteamId,
+                        sessionManager,
+                        localSteamId,
+                        nameCache,
+                        dashboardIsHost);
+                    if (bannedOffline != null)
+                    {
+                        bannedOffline.IsBanned = true;
+                        playersBySteam[bannedSteamId] = bannedOffline;
+                    }
+                }
+            }
+
             List<WebDashboardPlayerDto> players = [.. playersBySteam.Values];
             players.Sort((a, b) =>
             {

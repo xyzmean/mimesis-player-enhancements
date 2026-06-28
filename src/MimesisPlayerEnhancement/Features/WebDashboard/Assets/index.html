@@ -101,8 +101,8 @@
                       <a class="btn-text btn" x-show="status.isHost" :href="'#/player/' + p.steamId">Stats</a>
                     </div>
                     <div class="player-actions" x-show="canModerate(p)">
-                      <button class="btn btn-outlined" @click="moderate(p.steamId, 'kick')">Kick</button>
-                      <button class="btn btn-danger" @click="moderate(p.steamId, 'ban')">Ban</button>
+                      <button class="btn btn-outlined" x-show="p.playerUid" @click="moderate(p.steamId, 'kick')">Kick</button>
+                      <button class="btn btn-danger" x-show="p.playerUid" @click="moderate(p.steamId, 'ban')">Ban</button>
                       <button class="btn btn-text" x-show="p.isBanned" @click="moderate(p.steamId, 'unban')">Unban</button>
                     </div>
                   </div>

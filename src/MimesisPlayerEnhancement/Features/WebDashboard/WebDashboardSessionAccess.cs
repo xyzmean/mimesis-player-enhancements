@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Reflection;
+using ReluProtocol.Enum;
 
 namespace MimesisPlayerEnhancement.Features.WebDashboard
 {
@@ -207,6 +208,46 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
         internal static bool TryRemoveBan(SessionManager sessionManager, ulong steamId)
         {
             return steamId != 0 && BannedSteamIdsField?.GetValue(sessionManager) is HashSet<ulong> banned && banned.Remove(steamId);
+        }
+
+        internal static IEnumerable<ulong> EnumerateBannedSteamIds(SessionManager sessionManager)
+        {
+            if (BannedSteamIdsField?.GetValue(sessionManager) is not HashSet<ulong> banned)
+            {
+                yield break;
+            }
+
+            foreach (ulong steamId in banned)
+            {
+                if (steamId != 0)
+                {
+                    yield return steamId;
+                }
+            }
+        }
+
+        internal static bool TryGetSessionId(SessionContext context, out long sessionId)
+        {
+            sessionId = 0;
+            if (context == null)
+            {
+                return false;
+            }
+
+            try
+            {
+                sessionId = context.GetSessionID();
+                return sessionId != 0;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        internal static void DisconnectSession(SessionManager sessionManager, long sessionId, DisconnectReason reason)
+        {
+            sessionManager.Remove(sessionId, reason);
         }
     }
 }
