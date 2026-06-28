@@ -93,6 +93,10 @@ public static class ModConfig
     public static MelonPreferences_Entry<bool> AutoScaleReinforcePriceByPlayerCount { get; private set; } = null!;
     public static MelonPreferences_Entry<float> ReinforcePriceMultiplier { get; private set; } = null!;
 
+    public static MelonPreferences_Entry<bool> EnableDungeonTime { get; private set; } = null!;
+    public static MelonPreferences_Entry<int> DungeonTimeBaselinePlayerCount { get; private set; } = null!;
+    public static MelonPreferences_Entry<float> ExtraShiftSecondsPerPlayerAboveBaseline { get; private set; } = null!;
+
     public static MelonPreferences_Entry<bool> EnableDebugLogging { get; private set; } = null!;
 
     private static readonly List<MelonPreferences_Entry<float>> FloatEntries = new();
@@ -431,7 +435,7 @@ public static class ModConfig
             "ShopBuyPriceMultiplier",
             1f,
             "Shop Buy Price Multiplier",
-            "Maintenance shop purchase cost multiplier (1 = vanilla, 2 = double).");
+            "Maintenance shop and vending-machine kiosk purchase cost multiplier (1 = vanilla, 2 = double). Applied when shop items are initialized each maintenance round.");
 
         AutoScaleShopItemsByPlayerCount = Category.CreateEntry(
             "AutoScaleShopItemsByPlayerCount",
@@ -474,6 +478,24 @@ public static class ModConfig
             1f,
             "Reinforce Price Multiplier",
             "Maintenance item reinforcement cost multiplier (1 = vanilla, 2 = double).");
+
+        EnableDungeonTime = Category.CreateEntry(
+            "EnableDungeonTime",
+            true,
+            "Enable Dungeon Time",
+            "Extend dungeon shift length on the host when player count exceeds the baseline.");
+
+        DungeonTimeBaselinePlayerCount = Category.CreateEntry(
+            "DungeonTimeBaselinePlayerCount",
+            4,
+            "Dungeon Time Baseline Player Count",
+            "No extra shift time at or below this player count (vanilla is 4). Minimum is 1.");
+
+        ExtraShiftSecondsPerPlayerAboveBaseline = Category.CreateEntry(
+            "ExtraShiftSecondsPerPlayerAboveBaseline",
+            10f,
+            "Extra Shift Seconds Per Player Above Baseline",
+            "Real seconds added to the shift deadline for each player above the baseline. Minimum is 0.");
 
         EnableDebugLogging = Category.CreateEntry(
             "EnableDebugLogging",
@@ -613,6 +635,21 @@ public static class ModConfig
         ShopDiscountChancePercent.OnEntryValueChanged.Subscribe((_, value) => OnShopDiscountPercentChanged(logger, value, ShopDiscountChancePercent));
         ReinforcePriceMultiplier.OnEntryValueChanged.Subscribe((_, value) => OnSpawnMultiplierChanged(logger, value, ReinforcePriceMultiplier));
 
+        EnableDungeonTime.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
+        DungeonTimeBaselinePlayerCount.OnEntryValueChanged.Subscribe((_, value) =>
+        {
+            if (value < 1)
+            {
+                logger.Warning("DungeonTimeBaselinePlayerCount must be at least 1; resetting to 1.");
+                DungeonTimeBaselinePlayerCount.Value = 1;
+                return;
+            }
+
+            NotifyChanged();
+        });
+        ExtraShiftSecondsPerPlayerAboveBaseline.OnEntryValueChanged.Subscribe((_, value) =>
+            OnExtraShiftSecondsPerPlayerChanged(logger, value));
+
         EnableDebugLogging.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
 
         RegisterFloatEntries();
@@ -656,7 +693,21 @@ public static class ModConfig
             ShopBuyPriceMultiplier,
             ShopItemsMultiplier,
             ReinforcePriceMultiplier,
+            ExtraShiftSecondsPerPlayerAboveBaseline,
         });
+    }
+
+    private static void OnExtraShiftSecondsPerPlayerChanged(MelonLogger.Instance logger, float value)
+    {
+        if (value < 0f)
+        {
+            logger.Warning("ExtraShiftSecondsPerPlayerAboveBaseline must be >= 0; resetting to 0.");
+            ExtraShiftSecondsPerPlayerAboveBaseline.Value = 0f;
+            return;
+        }
+
+        ModConfigFloatHelper.SanitizeEntry(ExtraShiftSecondsPerPlayerAboveBaseline);
+        NotifyChanged();
     }
 
     private static void OnFixedSpawnRespawnDelayChanged(MelonLogger.Instance logger, float value, MelonPreferences_Entry<float> entry)

@@ -34,7 +34,6 @@ public static class MoneyMultiplierPatches
             ("ApplyLoadedGameData/GameSessionInfo", AccessTools.Method(typeof(GameSessionInfo), nameof(GameSessionInfo.ApplyLoadedGameData))),
             ("GetPrice/ItemMasterInfo", AccessTools.Method(typeof(ItemMasterInfo), nameof(ItemMasterInfo.GetPrice))),
             ("GetMeanPrice/ItemMasterInfo", AccessTools.Method(typeof(ItemMasterInfo), nameof(ItemMasterInfo.GetMeanPrice))),
-            ("TryGetShopItemPrice/MaintenanceRoom", AccessTools.Method(typeof(MaintenanceRoom), nameof(MaintenanceRoom.TryGetShopItemPrice))),
             ("InitShopItems/MaintenanceRoom", AccessTools.Method(typeof(MaintenanceRoom), nameof(MaintenanceRoom.InitShopItems))),
             ("ReinforceItem/MaintenanceRoom", AccessTools.Method(typeof(MaintenanceRoom), nameof(MaintenanceRoom.ReinforceItem))),
         });
@@ -145,26 +144,6 @@ public static class MoneyMultiplierPatches
         }
     }
 
-    [HarmonyPatch(typeof(MaintenanceRoom), nameof(MaintenanceRoom.TryGetShopItemPrice))]
-    public static class MaintenanceRoomTryGetShopItemPricePatch
-    {
-        [HarmonyPostfix]
-        public static void Postfix(MaintenanceRoom __instance, ref int price, bool __result)
-        {
-            try
-            {
-                if (!__result)
-                    return;
-
-                price = MoneyMultiplierApplier.ScaleShopPrice(__instance, price);
-            }
-            catch (Exception ex)
-            {
-                ModLog.Warn(Feature, $"TryGetShopItemPrice postfix failed — {ex.Message}");
-            }
-        }
-    }
-
     [HarmonyPatch(typeof(MaintenanceRoom), nameof(MaintenanceRoom.InitShopItems))]
     public static class MaintenanceRoomInitShopItemsPatch
     {
@@ -175,6 +154,7 @@ public static class MoneyMultiplierPatches
             {
                 MoneyMultiplierApplier.ApplyShopItems(__instance);
                 ShopDiscountApplier.Apply(__instance);
+                ShopBuyPriceApplier.Apply(__instance);
             }
             catch (Exception ex)
             {

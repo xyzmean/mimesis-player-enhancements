@@ -27,6 +27,7 @@ Tested with **MIMESIS 0.3.0** and **MelonLoader 0.7.3**.
 | **Spawn Scaling** | Scale mimic/monster spawn budgets by type and player count | No — host only |
 | **Loot Multiplicator** | Scale loot quantity by where it comes from and item type | No — host only |
 | **Money Multiplier** | Scale startup money, round goal, scrap/sell values, shop buy prices, shop item count, and reinforce costs | No — host only |
+| **Dungeon Time** | Extend dungeon shift length by real seconds per player above a baseline (default: +10s per player above 4) | No — host only |
 
 Based on community mods by [MorePlayers from NeoMimicry](https://github.com/NeoMimicry/MorePlayers), [MoreVoices from Risikus](https://thunderstore.io/c/mimesis/p/Risikus/More_Voices/), [MimesisPersistence from JoanR](https://github.com/JoanRLopez/MimesisPersistence), and [MimesisJoinAnytime from Shlygly](https://github.com/Shlygly/MimesisJoinAnytime). Please support the original authors as well :)
 
@@ -139,7 +140,7 @@ Host-only. Scales six separate money values. Each has an **Auto Scale … By Pla
 | **Startup** | Starting currency on a new game or maintenance session reset |
 | **Round goal** | Target currency (quota) required to finish a stage |
 | **Scrap / sell value** | Currency from scrapping items and item value counted in the tram toward the quota |
-| **Shop buy price** | Maintenance shop purchase cost |
+| **Shop buy price** | Maintenance shop and vending-machine kiosk purchase cost (shown in UI and charged on buy) |
 | **Shop items** | Number of unique items offered in the maintenance shop |
 | **Reinforce price** | Maintenance item reinforcement cost |
 
@@ -157,7 +158,7 @@ Does **not** change saved player balances on load or mid-round currency pickups.
 | `AutoScaleScrapSellValueByPlayerCount` | bool | `true` | Player-count scaling for scrap/sell values. |
 | `ScrapSellValueMultiplier` | float | `1.0` | Scrap/sell value multiplier. Minimum is `0`. |
 | `AutoScaleShopBuyPriceByPlayerCount` | bool | `true` | Player-count scaling for shop buy prices. |
-| `ShopBuyPriceMultiplier` | float | `1.0` | Shop buy price multiplier. Minimum is `0`. |
+| `ShopBuyPriceMultiplier` | float | `1.0` | Maintenance shop and vending-machine kiosk buy price multiplier (`1` = vanilla, `0.1` = 10% of vanilla). Applied when shop items are initialized each maintenance round. Minimum is `0`. |
 | `AutoScaleShopItemsByPlayerCount` | bool | `true` | Player-count scaling for shop item count. |
 | `ShopItemsMultiplier` | float | `1.0` | Number of unique maintenance shop items (`1` = vanilla, `2` = double). Extra items are rolled from vending-machine shop groups on the map. Minimum is `0`. |
 | `ShopDiscountMinPercent` | int | `0` | Minimum discount percentage when a shop discount is rolled (`0`–`100`). Only used when `ShopDiscountChancePercent` is above `0`. |
@@ -165,6 +166,25 @@ Does **not** change saved player balances on load or mid-round currency pickups.
 | `ShopDiscountChancePercent` | int | `0` | Chance per shop item to receive a discount in the min–max range (`0` = vanilla shop discounts, `100` = every item discounted). |
 | `AutoScaleReinforcePriceByPlayerCount` | bool | `true` | Player-count scaling for reinforce costs. |
 | `ReinforcePriceMultiplier` | float | `1.0` | Reinforce price multiplier. Minimum is `0`. |
+
+### Dungeon Time
+
+Host-only. When a dungeon shift starts (all members entered), extends the real shift deadline by `ExtraShiftSecondsPerPlayerAboveBaseline` for each player above `DungeonTimeBaselinePlayerCount`. Applied once per dungeon room; late Join Anytime arrivals do not add more time.
+
+| Key | Type | Default | What it does |
+|-----|------|---------|--------------|
+| `EnableDungeonTime` | bool | `true` | Master toggle for shift extension. |
+| `DungeonTimeBaselinePlayerCount` | int | `4` | No extra shift time at or below this player count. Minimum is `1`. |
+| `ExtraShiftSecondsPerPlayerAboveBaseline` | float | `10.0` | Real seconds added to the shift deadline per player above the baseline. Minimum is `0`. |
+
+Example (Dungeon Time section only):
+
+```toml
+[MimesisPlayerEnhancement]
+EnableDungeonTime = true
+DungeonTimeBaselinePlayerCount = 4
+ExtraShiftSecondsPerPlayerAboveBaseline = 10
+```
 
 Example (money section only):
 

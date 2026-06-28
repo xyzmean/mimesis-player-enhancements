@@ -110,15 +110,6 @@ internal static class MoneyMultiplierApplier
             ? ScaleForType(MoneyType.ScrapSellValue, vanilla, MoneyPlayerCountHelper.ResolveForItemPrices())
             : vanilla;
 
-    internal static int ScaleShopPrice(MaintenanceRoom room, int vanilla)
-    {
-        if (!IsEnabled())
-            return vanilla;
-
-        int playerCount = MoneyPlayerCountHelper.ResolveFromRoom(room);
-        return ScaleForType(MoneyType.ShopBuyPrice, vanilla, playerCount);
-    }
-
     internal static int ScaleReinforcePrice(MaintenanceRoom room, int vanilla)
     {
         if (!IsEnabled())
