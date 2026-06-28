@@ -112,7 +112,7 @@ namespace MimesisPlayerEnhancement.Features.SpectatorTransition
                         return;
                     }
 
-                    var playerActor = PlayerActorField.GetValue(gameConfig);
+                    object playerActor = PlayerActorField.GetValue(gameConfig);
                     if (playerActor == null)
                     {
                         return;
@@ -181,21 +181,20 @@ namespace MimesisPlayerEnhancement.Features.SpectatorTransition
             private static GameMainBase? _instance;
             private static float _blendTime;
             private static float _duration;
-            private static bool _saved;
 
-            internal static bool FieldsAreScaled => _saved;
+            internal static bool FieldsAreScaled { get; private set; }
 
             internal static void Save(GameMainBase instance, float blendTime, float duration)
             {
                 _instance = instance;
                 _blendTime = blendTime;
                 _duration = duration;
-                _saved = true;
+                FieldsAreScaled = true;
             }
 
             internal static void Restore(GameMainBase instance)
             {
-                if (!_saved || _instance != instance)
+                if (!FieldsAreScaled || _instance != instance)
                 {
                     return;
                 }
@@ -208,7 +207,7 @@ namespace MimesisPlayerEnhancement.Features.SpectatorTransition
                         return;
                     }
 
-                    var playerActor = PlayerActorField.GetValue(gameConfig);
+                    object playerActor = PlayerActorField.GetValue(gameConfig);
                     if (playerActor != null)
                     {
                         BlendTimeField.SetValue(playerActor, _blendTime);
@@ -217,7 +216,7 @@ namespace MimesisPlayerEnhancement.Features.SpectatorTransition
                 }
                 finally
                 {
-                    _saved = false;
+                    FieldsAreScaled = false;
                     _instance = null;
                 }
             }

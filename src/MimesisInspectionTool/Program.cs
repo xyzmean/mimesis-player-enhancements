@@ -169,7 +169,7 @@ internal static class CommandLine
         }
         catch (ReflectionTypeLoadException ex)
         {
-            types = ex.Types.Where(t => t != null).Cast<Type>().ToArray();
+            types = [.. ex.Types.Where(t => t != null).Cast<Type>()];
         }
 
         foreach (Type type in types.OrderBy(t => t.FullName, StringComparer.Ordinal))

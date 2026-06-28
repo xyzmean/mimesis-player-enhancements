@@ -207,10 +207,10 @@ namespace MimesisPlayerEnhancement.Features.Persistence.Patches
                     $"Player connected — {VoiceEventStats.DescribePlayer(__instance)} — no persistence data");
             }
 
-            (int pending, int injected, int fallback) counts = SpeechEventPoolManager.GetCounts();
+            (int pending, int injected, _) = SpeechEventPoolManager.GetCounts();
             ModLog.Debug(
                 Feature,
-                $"Archive detail — slot={slotId} time={currentTime:F1} poolState={counts.pending}P/{counts.injected}I/0F " +
+                $"Archive detail — slot={slotId} time={currentTime:F1} poolState={pending}P/{injected}I/0F " +
                 $"disconnectedCache={SpeechEventPoolManager.DisconnectedCacheCount}");
         }
 

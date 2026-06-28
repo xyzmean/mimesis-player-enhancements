@@ -87,12 +87,11 @@ namespace MimesisPlayerEnhancement
                 return SuccessGreen;
             }
 
-            ColorARGB[] onlyColor = segments
+            ColorARGB[] onlyColor = [.. segments
                 .Where(s => s.color.HasValue)
                 .Select(s => s.color!.Value)
                 .Distinct()
-                .Take(2)
-                .ToArray();
+                .Take(2)];
 
             return onlyColor.Length == 1 ? onlyColor[0] : Neutral;
         }

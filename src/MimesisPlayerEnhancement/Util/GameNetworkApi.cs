@@ -62,7 +62,7 @@ namespace MimesisPlayerEnhancement.Util
         // MimicAPI: ServerNetworkAPI.GetServerSocket() → GetSdrServer() ?? GetRudpServer()
         public static object? GetServerSocket()
         {
-            var vworld = GetVWorld();
+            object? vworld = GetVWorld();
             return vworld == null
                 ? null
                 : ReflectionHelper.GetFieldValue(vworld, "_sdrServer")
@@ -91,7 +91,7 @@ namespace MimesisPlayerEnhancement.Util
         // https://github.com/NeoMimicry/MimicAPI/blob/main/MimicAPI/GameAPI/CoreAPI.cs
         private static object? GetVWorld()
         {
-            var hub = GetHub();
+            object? hub = GetHub();
             return hub == null ? null : ReflectionHelper.GetFieldValue(hub, "<VWorld>k__BackingField");
         }
 
@@ -105,7 +105,7 @@ namespace MimesisPlayerEnhancement.Util
         public static object? GetVRoomManager()
         {
             Type? hubType = GetGameAssembly()?.GetType("Hub");
-            var hub = GetHub();
+            object? hub = GetHub();
             return hubType == null || hub == null
                 ? null
                 : (hubType.GetProperty("VRoomManager", BindingFlags.Public | BindingFlags.Instance)?.GetValue(hub));
@@ -136,7 +136,7 @@ namespace MimesisPlayerEnhancement.Util
 
         public static T GetFieldValue<T>(object target, string fieldName)
         {
-            var value = GetFieldValue(target, fieldName);
+            object? value = GetFieldValue(target, fieldName);
             return value == null ? default! : (T)value;
         }
 

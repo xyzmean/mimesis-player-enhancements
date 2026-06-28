@@ -44,7 +44,10 @@ namespace MimesisPlayerEnhancement.Features.MorePlayers
         {
             List<(string label, MethodBase? method)> checks = [];
 
-            void Check(string label, MethodBase? method) => checks.Add((label, method));
+            void Check(string label, MethodBase? method)
+            {
+                checks.Add((label, method));
+            }
 
             Check("CanEnterChannel/IVroom", ResolveRoomMethod("IVroom", "CanEnterChannel"));
             Check("CanEnterChannel/VWaitingRoom", ResolveRoomMethod("VWaitingRoom", "CanEnterChannel"));
@@ -80,7 +83,7 @@ namespace MimesisPlayerEnhancement.Features.MorePlayers
 
             try
             {
-                var socket = GameNetworkApi.GetServerSocket();
+                object? socket = GameNetworkApi.GetServerSocket();
                 if (socket != null)
                 {
                     GameNetworkApi.SetMaximumClients(socket, cap);
@@ -116,7 +119,7 @@ namespace MimesisPlayerEnhancement.Features.MorePlayers
                 return;
             }
 
-            foreach (var room in vrooms.Values)
+            foreach (object? room in vrooms.Values)
             {
                 if (room == null)
                 {
@@ -227,7 +230,7 @@ namespace MimesisPlayerEnhancement.Features.MorePlayers
         private static MethodBase? ResolveServerSocketConstructor()
         {
             Assembly? assembly = GameNetworkApi.GetGameAssembly();
-            foreach (var typeName in new[] { "FishySteamworks.Server.ServerSocket", "FishyNet.Transporting.Server.ServerSocket" })
+            foreach (string? typeName in new[] { "FishySteamworks.Server.ServerSocket", "FishyNet.Transporting.Server.ServerSocket" })
             {
                 Type? type = assembly?.GetType(typeName);
                 ConstructorInfo? ctor = type?.GetConstructors(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic).FirstOrDefault();
@@ -248,7 +251,7 @@ namespace MimesisPlayerEnhancement.Features.MorePlayers
                 yield break;
             }
 
-            foreach (var typeName in new[] { "FishySteamworks.Server.ServerSocket", "FishyNet.Transporting.Server.ServerSocket" })
+            foreach (string? typeName in new[] { "FishySteamworks.Server.ServerSocket", "FishyNet.Transporting.Server.ServerSocket" })
             {
                 Type type = assembly.GetType(typeName);
                 MethodInfo? method = type?.GetMethod(methodName, InstanceMethodFlags);
@@ -446,7 +449,7 @@ namespace MimesisPlayerEnhancement.Features.MorePlayers
                 }
 
                 List<MethodBase> methods = [];
-                foreach (var typeName in new[] { "VWaitingRoom", "MaintenanceRoom", "IVroom" })
+                foreach (string? typeName in new[] { "VWaitingRoom", "MaintenanceRoom", "IVroom" })
                 {
                     MethodInfo? method = assembly.GetType(typeName)?.GetMethod("CanEnterChannel", InstanceMethodFlags);
                     if (method != null && !methods.Contains(method))
@@ -477,14 +480,14 @@ namespace MimesisPlayerEnhancement.Features.MorePlayers
                     IDictionary? vPlayerDict = ReflectionHelper.GetFieldValue(__instance, "_vPlayerDict") as IDictionary;
                     if (vPlayerDict != null)
                     {
-                        foreach (var player in vPlayerDict.Values)
+                        foreach (object? player in vPlayerDict.Values)
                         {
                             if (player == null)
                             {
                                 continue;
                             }
 
-                            var uid = ReflectionHelper.GetFieldValue<long>(player, "UID");
+                            long uid = ReflectionHelper.GetFieldValue<long>(player, "UID");
                             if (uid == 0)
                             {
                                 PropertyInfo uidProp = player.GetType().GetProperty("UID", BindingFlags.Public | BindingFlags.Instance);
@@ -549,7 +552,7 @@ namespace MimesisPlayerEnhancement.Features.MorePlayers
                 }
 
                 List<MethodBase> methods = [];
-                foreach (var name in new[] { "EnterWaitingRoom", "EnterMaintenenceRoom", "EnterMaintenanceRoom" })
+                foreach (string? name in new[] { "EnterWaitingRoom", "EnterMaintenenceRoom", "EnterMaintenanceRoom" })
                 {
                     MethodInfo method = vroomManagerType.GetMethod(name, InstanceMethodFlags);
                     if (method != null)
@@ -702,7 +705,7 @@ namespace MimesisPlayerEnhancement.Features.MorePlayers
                         return true;
                     }
 
-                    var friendsOnly = Enum.ToObject(eLobbyTypeType, 2);
+                    object friendsOnly = Enum.ToObject(eLobbyTypeType, 2);
                     _ = createLobbyMethod.Invoke(null, [friendsOnly, MaxPlayers]);
                     _ = setIntMethod.Invoke(null, ["TempLobbyIsOpen", isOpenForRandomMatch ? 1 : 0]);
                     ModLog.Info(

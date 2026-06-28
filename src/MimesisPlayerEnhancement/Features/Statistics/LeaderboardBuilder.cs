@@ -40,11 +40,10 @@ namespace MimesisPlayerEnhancement.Features.Statistics
                 });
             }
 
-            leaderboard.Entries = leaderboard.Entries
+            leaderboard.Entries = [.. leaderboard.Entries
                 .OrderByDescending(e => e.CurrencyEarned)
                 .ThenByDescending(e => e.MimicEncounterCount)
-                .ThenByDescending(e => e.ItemCarryCount)
-                .ToList();
+                .ThenByDescending(e => e.ItemCarryCount)];
 
             return leaderboard;
         }

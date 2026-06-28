@@ -519,7 +519,7 @@ namespace MimesisPlayerEnhancement.Features.Statistics
 
         internal static IReadOnlyList<PlayerStatisticsDocument> GetCachedPlayerDocuments()
         {
-            return new List<PlayerStatisticsDocument>(_players.Values);
+            return [.. _players.Values];
         }
 
         internal static IReadOnlyCollection<ulong> GetConnectedSteamIds()
@@ -847,8 +847,8 @@ namespace MimesisPlayerEnhancement.Features.Statistics
 
         private static ulong ResolveSteamIdFromArchive(SpeechEventArchive archive)
         {
-            long playerUid = 0;
-            bool isLocal = false;
+            long playerUid;
+            bool isLocal;
             try
             {
                 playerUid = archive.PlayerUID;
@@ -879,8 +879,8 @@ namespace MimesisPlayerEnhancement.Features.Statistics
 
         private static bool IsArchiveIdentityReady(SpeechEventArchive archive)
         {
-            long playerUid = 0;
-            bool isLocal = false;
+            long playerUid;
+            bool isLocal;
             try
             {
                 playerUid = archive.PlayerUID;

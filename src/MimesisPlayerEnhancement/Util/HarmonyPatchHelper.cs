@@ -86,7 +86,7 @@ namespace MimesisPlayerEnhancement.Util
                 return;
             }
 
-            List<MethodBase> patched = harmony.GetPatchedMethods().ToList();
+            List<MethodBase> patched = [.. harmony.GetPatchedMethods()];
             List<(string text, bool ok)> entries = [];
 
             foreach ((string? label, MethodBase? method) in checks)
@@ -103,12 +103,12 @@ namespace MimesisPlayerEnhancement.Util
 
             string stripped = string.Join(", ", entries.Select(e => e.text));
 
-            (ColorARGB? color, string text)[] segments = new (ColorARGB? color, string text)[entries.Count * 2 - 1];
+            (ColorARGB? color, string text)[] segments = new (ColorARGB? color, string text)[(entries.Count * 2) - 1];
             for (int i = 0; i < entries.Count; i++)
             {
                 if (i > 0)
                 {
-                    segments[i * 2 - 1] = (null, ", ");
+                    segments[(i * 2) - 1] = (null, ", ");
                 }
 
                 (string? text, bool ok) = entries[i];

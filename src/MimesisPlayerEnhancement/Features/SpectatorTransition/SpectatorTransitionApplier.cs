@@ -16,7 +16,7 @@ namespace MimesisPlayerEnhancement.Features.SpectatorTransition
                 return vanillaMs;
             }
 
-            var scaled = (long)Math.Round(vanillaMs * ModConfig.DyingWaitTimeMultiplier.Value);
+            long scaled = (long)Math.Round(vanillaMs * ModConfig.DyingWaitTimeMultiplier.Value);
             return scaled < MinDyingWaitTimeMs && vanillaMs > 0 ? MinDyingWaitTimeMs : scaled;
         }
 
@@ -27,7 +27,7 @@ namespace MimesisPlayerEnhancement.Features.SpectatorTransition
                 return vanillaSeconds;
             }
 
-            var scaled = vanillaSeconds * ModConfig.DeadCameraDurationMultiplier.Value;
+            float scaled = vanillaSeconds * ModConfig.DeadCameraDurationMultiplier.Value;
             return scaled < MinDeadCameraSeconds && vanillaSeconds > 0f ? MinDeadCameraSeconds : scaled;
         }
     }

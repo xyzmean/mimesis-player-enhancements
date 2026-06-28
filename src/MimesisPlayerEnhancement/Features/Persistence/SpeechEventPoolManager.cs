@@ -172,7 +172,7 @@ namespace MimesisPlayerEnhancement.Features.Persistence
             }
 
             // Claim all PENDING events for matched player names
-            foreach (var playerName in matchedPlayerNames)
+            foreach (string playerName in matchedPlayerNames)
             {
                 if (!_byPlayerName.TryGetValue(playerName, out List<long>? eventIds))
                 {
@@ -490,10 +490,7 @@ namespace MimesisPlayerEnhancement.Features.Persistence
                 // PlayerId is now available! Update all events
                 foreach (SpeechEvent ev in events)
                 {
-                    if (ev != null)
-                    {
-                        ev.PlayerName = newPlayerId;
-                    }
+                    _ = (ev?.PlayerName = newPlayerId);
                 }
 
                 ModLog.Debug("Persistence", $"Deferred update: {events.Count} events " +
@@ -524,9 +521,9 @@ namespace MimesisPlayerEnhancement.Features.Persistence
         public static (int pending, int injected, int fallback) GetCounts()
         {
             int pending = 0, injected = 0;
-            foreach ((SpeechEvent ev, EventState state, string originalPlayerName) entry in _pool.Values)
+            foreach ((SpeechEvent ev, EventState state, string originalPlayerName) in _pool.Values)
             {
-                switch (entry.state)
+                switch (state)
                 {
                     case EventState.Pending: pending++; break;
                     case EventState.Injected: injected++; break;
@@ -542,11 +539,11 @@ namespace MimesisPlayerEnhancement.Features.Persistence
         public static List<SpeechEvent> GetPendingEvents()
         {
             List<SpeechEvent> pending = [];
-            foreach ((SpeechEvent ev, EventState state, string originalPlayerName) entry in _pool.Values)
+            foreach ((SpeechEvent ev, EventState state, _) in _pool.Values)
             {
-                if (entry.state == EventState.Pending)
+                if (state == EventState.Pending)
                 {
-                    pending.Add(entry.ev);
+                    pending.Add(ev);
                 }
             }
             return pending;
@@ -557,9 +554,9 @@ namespace MimesisPlayerEnhancement.Features.Persistence
         /// </summary>
         public static bool HasPending()
         {
-            foreach ((SpeechEvent ev, EventState state, string originalPlayerName) entry in _pool.Values)
+            foreach ((_, EventState state, _) in _pool.Values)
             {
-                if (entry.state == EventState.Pending)
+                if (state == EventState.Pending)
                 {
                     return true;
                 }
@@ -583,15 +580,9 @@ namespace MimesisPlayerEnhancement.Features.Persistence
         /// </summary>
         public static void FixEventTiming(SpeechEvent ev, float currentTime)
         {
-            if (RecordedTimeField != null)
-            {
-                RecordedTimeField.SetValue(ev, currentTime);
-            }
+            RecordedTimeField?.SetValue(ev, currentTime);
 
-            if (LastPlayedTimeField != null)
-            {
-                LastPlayedTimeField.SetValue(ev, currentTime);
-            }
+            LastPlayedTimeField?.SetValue(ev, currentTime);
         }
 
         /// <summary>
@@ -608,7 +599,7 @@ namespace MimesisPlayerEnhancement.Features.Persistence
                         BindingFlags.Public | BindingFlags.Instance);
                     if (getTickMethod != null)
                     {
-                        return (float)(int)getTickMethod.Invoke(timeutil, null);
+                        return (int)getTickMethod.Invoke(timeutil, null);
                     }
                 }
             }
