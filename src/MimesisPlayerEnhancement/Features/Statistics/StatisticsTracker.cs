@@ -247,7 +247,8 @@ namespace MimesisPlayerEnhancement.Features.Statistics
                 changed = true;
             }
 
-            foreach (ulong steamId in _connectedSince.Keys)
+            List<ulong> connectedSteamIds = [.. _connectedSince.Keys];
+            foreach (ulong steamId in connectedSteamIds)
             {
                 if (!_players.TryGetValue(steamId, out PlayerStatisticsDocument? doc))
                 {
