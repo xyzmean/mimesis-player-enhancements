@@ -27,9 +27,8 @@ namespace MimesisPlayerEnhancement.Features.Persistence.Patches
                 return;
             }
 
-            int slotId = isAutoSave ? 0 : saveSlotID;
-            ModLog.Info(Feature, $"Game save triggered — persisting mimic voices for slot {slotId}.");
-            MimesisSaveManager.SaveMimesisData(slotId);
+            ModLog.Info(Feature, $"Game save triggered — persisting mimic voices for slot {saveSlotID} (auto={isAutoSave}).");
+            MimesisSaveManager.SaveMimesisData(saveSlotID);
         }
     }
 }

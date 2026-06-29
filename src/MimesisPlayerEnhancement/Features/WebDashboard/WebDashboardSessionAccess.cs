@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Reflection;
+using MimesisPlayerEnhancement.Util;
 using ReluProtocol.Enum;
 
 namespace MimesisPlayerEnhancement.Features.WebDashboard
@@ -36,13 +37,13 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
                     return null;
                 }
 
-                object? vworld = MimesisSaveManager.GetHubMember("vworld");
+                VWorld? vworld = GameSessionAccess.TryGetVWorld();
                 if (vworld == null)
                 {
                     return null;
                 }
 
-                FieldInfo? field = vworld.GetType().GetField("_sessionManager", InstanceMemberFlags);
+                FieldInfo? field = typeof(VWorld).GetField("_sessionManager", InstanceMemberFlags);
                 return field?.GetValue(vworld) as SessionManager;
             }
             catch

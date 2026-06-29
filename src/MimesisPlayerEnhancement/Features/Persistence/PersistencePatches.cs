@@ -25,6 +25,7 @@ namespace MimesisPlayerEnhancement.Features.Persistence
             [
                 ("Delete/PlatformMgr", AccessTools.Method(typeof(PlatformMgr), nameof(PlatformMgr.Delete))),
                 ("SaveGameData/MaintenanceRoom", AccessTools.Method(typeof(MaintenanceRoom), nameof(MaintenanceRoom.SaveGameData))),
+                ("ApplyLoadedGameData/GameSessionInfo", AccessTools.Method(typeof(GameSessionInfo), nameof(GameSessionInfo.ApplyLoadedGameData))),
                 ("OnStartClient/SpeechEventArchive", AccessTools.Method(typeof(SpeechEventArchive), "OnStartClient")),
                 ("OnStopClient/SpeechEventArchive", AccessTools.Method(typeof(SpeechEventArchive), nameof(SpeechEventArchive.OnStopClient))),
                 ("GetRandomOtherSpeechEventArchive/VoiceManager", AccessTools.Method(typeof(VoiceManager), "GetRandomOtherSpeechEventArchive")),

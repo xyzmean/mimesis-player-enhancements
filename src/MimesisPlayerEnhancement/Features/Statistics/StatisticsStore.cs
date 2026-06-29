@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using MimesisPlayerEnhancement.Features.Statistics.Models;
+using MimesisPlayerEnhancement.Util;
 
 namespace MimesisPlayerEnhancement.Features.Statistics
 {
@@ -11,8 +12,6 @@ namespace MimesisPlayerEnhancement.Features.Statistics
         private const string StatisticsFolder = "statistics";
         private const string PlayersFolder = "players";
         private const string LeaderboardFile = "leaderboard.json";
-        private const string BackupSuffix = ".bak";
-        private const string TempSuffix = ".tmp";
         private const int MaxRecentSessions = 20;
 
         public static int MaxRecentSessionsPerPlayer => MaxRecentSessions;
@@ -37,63 +36,13 @@ namespace MimesisPlayerEnhancement.Features.Statistics
 
         public static void SafeWriteText(string filePath, string text)
         {
-            string tmpPath = filePath + TempSuffix;
-            string bakPath = filePath + BackupSuffix;
             _ = Directory.CreateDirectory(Path.GetDirectoryName(filePath));
-            File.WriteAllText(tmpPath, text);
-            if (File.Exists(filePath))
-            {
-                try { File.Copy(filePath, bakPath, true); }
-                catch (Exception ex)
-                {
-                    ModLog.Warn(Feature, $"Backup failed for {Path.GetFileName(filePath)}: {ex.Message}");
-                }
-            }
-            if (File.Exists(filePath))
-            {
-                File.Delete(filePath);
-            }
-
-            File.Move(tmpPath, filePath);
+            AtomicFileIO.WriteText(filePath, text, Feature);
         }
 
         public static string? SafeReadText(string filePath)
         {
-            if (File.Exists(filePath))
-            {
-                try
-                {
-                    string text = File.ReadAllText(filePath);
-                    if (!string.IsNullOrEmpty(text))
-                    {
-                        return text;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    ModLog.Warn(Feature, $"Read failed ({Path.GetFileName(filePath)}): {ex.Message}");
-                }
-            }
-
-            string bakPath = filePath + BackupSuffix;
-            if (File.Exists(bakPath))
-            {
-                try
-                {
-                    string text = File.ReadAllText(bakPath);
-                    if (!string.IsNullOrEmpty(text))
-                    {
-                        ModLog.Warn(Feature, $"Recovered from backup: {Path.GetFileName(bakPath)}");
-                        return text;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    ModLog.Error(Feature, $"Backup read failed: {ex.Message}");
-                }
-            }
-
-            return null;
+            return AtomicFileIO.ReadText(filePath, Feature);
         }
 
         public static PlayerStatisticsDocument LoadPlayer(int slotId, ulong steamId)

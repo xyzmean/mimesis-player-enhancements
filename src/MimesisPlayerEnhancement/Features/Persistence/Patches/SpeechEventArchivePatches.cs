@@ -2,14 +2,9 @@ using System;
 using System.Collections.Generic;
 using HarmonyLib;
 using Mimic.Voice.SpeechSystem;
-using FishNet.Object.Synchronizing;
 
 namespace MimesisPlayerEnhancement.Features.Persistence.Patches
 {
-    /// <summary>
-    /// Runs for ALL SpeechEventArchive instances (not just local).
-    /// Uses SpeechEventPoolManager for 3-state event distribution.
-    /// </summary>
     [HarmonyPatch(typeof(SpeechEventArchive), "OnStartClient")]
     public static class SpeechEventArchivePatches
     {
@@ -63,21 +58,7 @@ namespace MimesisPlayerEnhancement.Features.Persistence.Patches
 
         private static void HandlePersistence(SpeechEventArchive __instance, int slotId)
         {
-            if (slotId != _poolLoadedForSlot)
-            {
-                _poolLoadedForSlot = slotId;
-                SpeechEventPoolManager.Reset();
-
-                if (MimesisSaveManager.HasMimesisData(slotId))
-                {
-                    SpeechEventPoolManager.LoadForSlot(slotId);
-                    ModLog.Info(Feature, $"Loaded persisted voice pool for save slot {slotId} ({SpeechEventPoolManager.TotalCount} events).");
-                }
-                else
-                {
-                    ModLog.Debug(Feature, $"No persisted voice data for save slot {slotId}.");
-                }
-            }
+            EnsurePoolLoaded(slotId);
 
             if (__instance.IsLocal)
             {
@@ -108,10 +89,11 @@ namespace MimesisPlayerEnhancement.Features.Persistence.Patches
                 if (hasDataToInject)
                 {
                     SpeechEventPoolManager.RegisterDeferredInjection(__instance);
+                    (int pending, _) = SpeechEventPoolManager.GetCounts();
                     ModLog.Info(
                         Feature,
                         $"Player connecting — {VoiceEventStats.DescribePlayer(__instance)} — " +
-                        $"voice injection deferred (pendingPool={SpeechEventPoolManager.GetCounts().pending}, " +
+                        $"voice injection deferred (pendingPool={pending}, " +
                         $"disconnectedCache={SpeechEventPoolManager.DisconnectedCacheCount})");
                 }
                 else
@@ -124,74 +106,23 @@ namespace MimesisPlayerEnhancement.Features.Persistence.Patches
                 return;
             }
 
-            SyncList<SpeechEvent> eventsList = __instance.events;
-            if (eventsList == null)
+            if (__instance.events == null)
             {
                 ModLog.Warn(Feature, $"Player archive has no event list — {VoiceEventStats.DescribePlayer(__instance)}");
                 return;
             }
 
-            float currentTime = SpeechEventPoolManager.GetCurrentSessionTime();
-            HashSet<long> seenIds = [];
-            for (int i = 0; i < eventsList.Count; i++)
-            {
-                _ = seenIds.Add(eventsList[i].Id);
-            }
+            SpeechEventInjector.RestoreResult result = SpeechEventInjector.RestoreIntoArchive(
+                __instance, playerId, playerUID, isLocal);
 
-            int fromPool = 0;
-            int fromReconnect = 0;
-
-            if (SpeechEventPoolManager.HasPending())
-            {
-                List<SpeechEvent> claimed = SpeechEventPoolManager.ClaimEventsForArchive(
-                    playerId, playerUID, isLocal, __instance);
-                if (claimed != null && claimed.Count > 0)
-                {
-                    foreach (SpeechEvent ev in claimed)
-                    {
-                        if (ev == null || seenIds.Contains(ev.Id))
-                        {
-                            continue;
-                        }
-
-                        SpeechEventPoolManager.FixEventTiming(ev, currentTime);
-                        eventsList.Add(ev);
-                        _ = seenIds.Add(ev.Id);
-                        fromPool++;
-                    }
-                }
-            }
-
-            if (SpeechEventPoolManager.DisconnectedCacheCount > 0)
-            {
-                List<SpeechEvent> reclaimed = SpeechEventPoolManager.ClaimDisconnectedEventsForArchive(
-                    playerId, playerUID, isLocal);
-                if (reclaimed != null && reclaimed.Count > 0)
-                {
-                    foreach (SpeechEvent ev in reclaimed)
-                    {
-                        if (ev == null || seenIds.Contains(ev.Id))
-                        {
-                            continue;
-                        }
-
-                        SpeechEventPoolManager.FixEventTiming(ev, currentTime);
-                        eventsList.Add(ev);
-                        _ = seenIds.Add(ev.Id);
-                        fromReconnect++;
-                    }
-                }
-            }
-
-            int totalAdded = fromPool + fromReconnect;
             int eventsAfter = VoiceEventStats.GetEventCount(__instance);
 
-            if (totalAdded > 0)
+            if (result.TotalAdded > 0)
             {
                 ModLog.Info(
                     Feature,
                     $"Player connected — {VoiceEventStats.DescribePlayer(__instance)} — " +
-                    $"restored {totalAdded} voice events (pool={fromPool}, reconnect={fromReconnect}, " +
+                    $"restored {result.TotalAdded} voice events (pool={result.FromPool}, reconnect={result.FromReconnect}, " +
                     $"before={eventsBefore}, after={eventsAfter})");
             }
             else if (SpeechEventPoolManager.HasPending() || SpeechEventPoolManager.DisconnectedCacheCount > 0)
@@ -207,12 +138,32 @@ namespace MimesisPlayerEnhancement.Features.Persistence.Patches
                     $"Player connected — {VoiceEventStats.DescribePlayer(__instance)} — no persistence data");
             }
 
-            (int pending, int injected, _) = SpeechEventPoolManager.GetCounts();
+            (int pendingCount, int injectedCount) = SpeechEventPoolManager.GetCounts();
             ModLog.Debug(
                 Feature,
-                $"Archive detail — slot={slotId} time={currentTime:F1} poolState={pending}P/{injected}I/0F " +
+                $"Archive detail — slot={slotId} poolState={pendingCount}P/{injectedCount}I " +
                 $"disconnectedCache={SpeechEventPoolManager.DisconnectedCacheCount}");
         }
 
+        internal static void EnsurePoolLoaded(int slotId)
+        {
+            if (slotId == _poolLoadedForSlot)
+            {
+                return;
+            }
+
+            _poolLoadedForSlot = slotId;
+            SpeechEventPoolManager.Reset();
+
+            if (MimesisSaveManager.HasMimesisData(slotId))
+            {
+                SpeechEventPoolManager.LoadForSlot(slotId);
+                ModLog.Info(Feature, $"Loaded persisted voice pool for save slot {slotId} ({SpeechEventPoolManager.TotalCount} events).");
+            }
+            else
+            {
+                ModLog.Debug(Feature, $"No persisted voice data for save slot {slotId}.");
+            }
+        }
     }
 }

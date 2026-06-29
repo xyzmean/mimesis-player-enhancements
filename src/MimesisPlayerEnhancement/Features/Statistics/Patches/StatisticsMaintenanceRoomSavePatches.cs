@@ -25,8 +25,7 @@ namespace MimesisPlayerEnhancement.Features.Statistics.Patches
                 return;
             }
 
-            int slotId = isAutoSave ? 0 : saveSlotID;
-            StatisticsTracker.OnGameSaved(slotId);
+            StatisticsTracker.OnGameSaved(saveSlotID);
         }
     }
 }
