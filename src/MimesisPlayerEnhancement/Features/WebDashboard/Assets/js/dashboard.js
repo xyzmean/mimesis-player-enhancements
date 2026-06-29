@@ -7,6 +7,14 @@ function formatDuration(seconds) {
   return h > 0 ? h + 'h ' + m + 'm' : m + 'm';
 }
 
+function formatCountMap(map, labelPrefix) {
+  if (!map || typeof map !== 'object') return [];
+  return Object.entries(map)
+    .filter(([, count]) => (count ?? 0) > 0)
+    .sort((a, b) => (b[1] ?? 0) - (a[1] ?? 0))
+    .map(([key, count]) => [labelPrefix + ' ' + key, count ?? 0]);
+}
+
 function isValidSteamId(steamId) {
   if (steamId == null || steamId === '') return false;
   const id = String(steamId);
@@ -121,13 +129,18 @@ document.addEventListener('alpine:init', () => {
         ['Currency', c.currencyEarned ?? 0],
         ['Mimic encounters', c.mimicEncounterCount ?? 0],
         ['Items carried', c.itemCarryCount ?? 0],
-        ['Kills', c.kills ?? 0],
-        ['Deaths', c.deaths ?? 0],
+        ['Survival wins', c.survivalWins ?? 0],
+        ['Left behind', c.survivalLeftBehind ?? 0],
+        ['Survival deaths', c.survivalDeaths ?? 0],
+        ['Deathmatch wins', c.deathmatchWins ?? 0],
+        ['Deathmatch deaths', c.deathmatchDeaths ?? 0],
         ['Revives', c.revives ?? 0],
         ['Voice events', c.voiceEvents ?? 0],
         ['Ally damage', c.damageToAlly ?? 0],
         ['Connected time', formatDuration(c.totalConnectedSeconds ?? 0)],
         ['Sessions', this.playerStats.global.sessionsCompleted ?? 0],
+        ...formatCountMap(c.monsterKillsByMasterId, 'Monster kills'),
+        ...formatCountMap(c.deathsByTrapType, 'Trap deaths'),
       ];
     },
 
@@ -137,9 +150,14 @@ document.addEventListener('alpine:init', () => {
       const s = cs.counters;
       return [
         ['Currency', s.currencyEarned ?? 0],
-        ['Kills', s.kills ?? 0],
-        ['Deaths', s.deaths ?? 0],
+        ['Survival deaths', s.survivalDeaths ?? 0],
+        ['Survival wins', s.survivalWins ?? 0],
+        ['Left behind', s.survivalLeftBehind ?? 0],
+        ['Deathmatch wins', s.deathmatchWins ?? 0],
+        ['Deathmatch deaths', s.deathmatchDeaths ?? 0],
         ['Revives', s.revives ?? 0],
+        ...formatCountMap(s.monsterKillsByMasterId, 'Monster kills'),
+        ...formatCountMap(s.deathsByTrapType, 'Trap deaths'),
       ];
     },
 
@@ -393,7 +411,15 @@ document.addEventListener('alpine:init', () => {
       if (!s) return '';
       const parts = [];
       if (s.currencyEarned) parts.push(s.currencyEarned + ' currency');
-      parts.push((s.kills ?? 0) + '/' + (s.deaths ?? 0) + '/' + (s.revives ?? 0) + ' K/D/R');
+      parts.push(
+        (s.survivalWins ?? 0) + 'W/' +
+        (s.survivalDeaths ?? 0) + 'D/' +
+        (s.survivalLeftBehind ?? 0) + 'L'
+      );
+      if (s.deathmatchWins || s.deathmatchDeaths) {
+        parts.push((s.deathmatchWins ?? 0) + '/' + (s.deathmatchDeaths ?? 0) + ' DM W/D');
+      }
+      if (s.revives) parts.push(s.revives + ' revives');
       if (s.totalConnectedSeconds) parts.push(formatDuration(s.totalConnectedSeconds));
       if (s.mimicEncounterCount) parts.push(s.mimicEncounterCount + ' mimics');
       if (s.itemCarryCount) parts.push(s.itemCarryCount + ' items');

@@ -1,4 +1,5 @@
 using HarmonyLib;
+using MimesisPlayerEnhancement.Util;
 
 namespace MimesisPlayerEnhancement.Features.Statistics.Patches
 {
@@ -8,18 +9,22 @@ namespace MimesisPlayerEnhancement.Features.Statistics.Patches
         [HarmonyPostfix]
         public static void Postfix(ulong steamID)
         {
-            if (!ModConfig.EnableStatistics.Value)
+            StatisticsPatchGuard.Run(nameof(VRoomManager.OnRegistPlayer), () =>
             {
-                return;
-            }
+                if (steamID == 0)
+                {
+                    return;
+                }
 
-            if (!MimesisSaveManager.TryGetActiveSaveSlotId(out int slotId)
-                && !StatisticsTracker.TryGetLoadedSlotId(out slotId))
-            {
-                return;
-            }
+                int slotId = GameSessionAccess.GetSaveSlotId();
+                if (!MimesisSaveManager.IsValidSaveSlotId(slotId)
+                    && !StatisticsTracker.TryGetLoadedSlotId(out slotId))
+                {
+                    return;
+                }
 
-            StatisticsTracker.OnPlayerRegistered(steamID, slotId);
+                StatisticsTracker.OnPlayerRegistered(steamID, slotId);
+            });
         }
     }
 }

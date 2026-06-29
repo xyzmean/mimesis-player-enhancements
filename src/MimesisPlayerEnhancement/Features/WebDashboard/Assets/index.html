@@ -248,7 +248,7 @@
                             <th>Currency</th>
                             <th>Mimics</th>
                             <th>Items</th>
-                            <th>K/D/R</th>
+                            <th>D/R</th>
                             <th>Time</th>
                           </tr>
                         </thead>
@@ -259,7 +259,7 @@
                               <td x-text="e.currencyEarned"></td>
                               <td x-text="e.mimicEncounterCount"></td>
                               <td x-text="e.itemCarryCount"></td>
-                              <td x-text="e.kills + '/' + e.deaths + '/' + e.revives"></td>
+                              <td x-text="(e.survivalDeaths + e.deathmatchDeaths) + '/' + e.revives"></td>
                               <td x-text="formatDuration(e.totalConnectedSeconds)"></td>
                             </tr>
                           </template>

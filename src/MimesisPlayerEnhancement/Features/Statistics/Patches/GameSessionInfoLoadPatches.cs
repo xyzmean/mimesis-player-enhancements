@@ -1,5 +1,5 @@
 using HarmonyLib;
-using Mimic.Actors;
+using ReluProtocol;
 
 namespace MimesisPlayerEnhancement.Features.Statistics.Patches
 {
@@ -7,70 +7,23 @@ namespace MimesisPlayerEnhancement.Features.Statistics.Patches
     public static class GameSessionInfoLoadPatches
     {
         [HarmonyPostfix]
-        public static void Postfix()
+        public static void Postfix(MMSaveGameData saveGameData)
         {
-            if (!ModConfig.EnableStatistics.Value)
+            StatisticsPatchGuard.Run(nameof(GameSessionInfo.ApplyLoadedGameData), () =>
             {
-                return;
-            }
+                if (!MimesisSaveManager.IsHost())
+                {
+                    return;
+                }
 
-            if (!MimesisSaveManager.IsHost())
-            {
-                return;
-            }
+                int slotId = saveGameData?.SlotID ?? MimesisSaveManager.GetCurrentSaveSlotId();
+                if (!MimesisSaveManager.IsValidSaveSlotId(slotId))
+                {
+                    return;
+                }
 
-            int slotId = MimesisSaveManager.GetCurrentSaveSlotId();
-            if (!MimesisSaveManager.IsValidSaveSlotId(slotId))
-            {
-                return;
-            }
-
-            StatisticsTracker.LoadForSlot(slotId);
-        }
-    }
-
-    [HarmonyPatch(typeof(GameMainBase), nameof(GameMainBase.OnPlayerDeath))]
-    public static class GameMainDeathPatches
-    {
-        [HarmonyPostfix]
-        public static void Postfix(ProtoActor actor)
-        {
-            if (!ModConfig.EnableStatistics.Value)
-            {
-                return;
-            }
-
-            StatisticsTracker.OnPlayerDeath(actor);
-        }
-    }
-
-    [HarmonyPatch(typeof(GameMainBase), nameof(GameMainBase.OnPlayerRevive))]
-    public static class GameMainRevivePatches
-    {
-        [HarmonyPostfix]
-        public static void Postfix(ProtoActor actor)
-        {
-            if (!ModConfig.EnableStatistics.Value)
-            {
-                return;
-            }
-
-            StatisticsTracker.OnPlayerRevive(actor);
-        }
-    }
-
-    [HarmonyPatch(typeof(GameMainBase), nameof(GameMainBase.OnKillCountChanged))]
-    public static class GameMainKillPatches
-    {
-        [HarmonyPostfix]
-        public static void Postfix(ProtoActor actor, int killCount)
-        {
-            if (!ModConfig.EnableStatistics.Value)
-            {
-                return;
-            }
-
-            StatisticsTracker.OnKillCountChanged(actor, killCount);
+                StatisticsTracker.LoadForSlot(slotId);
+            });
         }
     }
 }

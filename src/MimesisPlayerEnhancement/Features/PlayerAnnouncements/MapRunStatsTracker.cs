@@ -13,9 +13,11 @@ namespace MimesisPlayerEnhancement.Features.PlayerAnnouncements
             public long DamageToAlly;
             public long MimicEncounterCount;
             public long TimeInStartingVolumeMs;
-            public long Kills;
-            public long Deaths;
+            public long SurvivalDeaths;
+            public long SurvivalWins;
+            public long SurvivalLeftBehind;
             public long Revives;
+            public Dictionary<string, long> MonsterKillsByMasterId = [];
         }
 
         private static readonly Dictionary<ulong, MapRunSnapshot> Baselines = [];
@@ -75,7 +77,7 @@ namespace MimesisPlayerEnhancement.Features.PlayerAnnouncements
         private static bool ShouldShowDeathStats()
         {
             return ModConfig.ShowPlayerAnnouncements.Value
-            && ModConfig.EnableStatistics.Value;
+                   && ModConfig.EnableStatistics.Value;
         }
 
         private static MapRunSnapshot CaptureCurrent(ulong steamId)
@@ -89,11 +91,14 @@ namespace MimesisPlayerEnhancement.Features.PlayerAnnouncements
                 snapshot.MimicEncounterCount = report.TotalMimicEncounterCount;
                 snapshot.TimeInStartingVolumeMs = report.TotalTimeInStartingVolume;
             }
+
             if (StatisticsTracker.TryGetSessionCounters(steamId, out StatCounters counters))
             {
-                snapshot.Kills = counters.Kills;
-                snapshot.Deaths = counters.Deaths;
+                snapshot.SurvivalDeaths = counters.SurvivalDeaths;
+                snapshot.SurvivalWins = counters.SurvivalWins;
+                snapshot.SurvivalLeftBehind = counters.SurvivalLeftBehind;
                 snapshot.Revives = counters.Revives;
+                snapshot.MonsterKillsByMasterId = new Dictionary<string, long>(counters.MonsterKillsByMasterId ?? []);
             }
 
             return snapshot;
@@ -107,29 +112,65 @@ namespace MimesisPlayerEnhancement.Features.PlayerAnnouncements
                 DamageToAlly = current.DamageToAlly - baseline.DamageToAlly,
                 MimicEncounterCount = current.MimicEncounterCount - baseline.MimicEncounterCount,
                 TimeInStartingVolumeMs = current.TimeInStartingVolumeMs - baseline.TimeInStartingVolumeMs,
-                Kills = current.Kills - baseline.Kills,
-                Deaths = current.Deaths - baseline.Deaths,
+                SurvivalDeaths = current.SurvivalDeaths - baseline.SurvivalDeaths,
+                SurvivalWins = current.SurvivalWins - baseline.SurvivalWins,
+                SurvivalLeftBehind = current.SurvivalLeftBehind - baseline.SurvivalLeftBehind,
                 Revives = current.Revives - baseline.Revives,
+                MonsterKillsByMasterId = SubtractDictionary(current.MonsterKillsByMasterId, baseline.MonsterKillsByMasterId),
             };
+        }
+
+        private static Dictionary<string, long> SubtractDictionary(
+            Dictionary<string, long> current,
+            Dictionary<string, long> baseline)
+        {
+            Dictionary<string, long> delta = [];
+            foreach (KeyValuePair<string, long> kvp in current)
+            {
+                _ = baseline.TryGetValue(kvp.Key, out long baseValue);
+                long diff = kvp.Value - baseValue;
+                if (diff > 0)
+                {
+                    delta[kvp.Key] = diff;
+                }
+            }
+
+            return delta;
         }
 
         private static string FormatMapRunStats(MapRunSnapshot stats)
         {
             List<string> parts = [];
 
-            if (stats.Kills > 0)
+            if (stats.SurvivalDeaths > 0)
             {
-                parts.Add($"{stats.Kills} kill{(stats.Kills == 1 ? "" : "s")}");
+                parts.Add($"{stats.SurvivalDeaths} death{(stats.SurvivalDeaths == 1 ? "" : "s")}");
             }
 
-            if (stats.Deaths > 0)
+            if (stats.SurvivalWins > 0)
             {
-                parts.Add($"{stats.Deaths} death{(stats.Deaths == 1 ? "" : "s")}");
+                parts.Add($"{stats.SurvivalWins} win{(stats.SurvivalWins == 1 ? "" : "s")}");
+            }
+
+            if (stats.SurvivalLeftBehind > 0)
+            {
+                parts.Add($"{stats.SurvivalLeftBehind} left behind");
             }
 
             if (stats.Revives > 0)
             {
                 parts.Add($"{stats.Revives} revive{(stats.Revives == 1 ? "" : "s")}");
+            }
+
+            long monsterKills = 0;
+            foreach (long count in stats.MonsterKillsByMasterId.Values)
+            {
+                monsterKills += count;
+            }
+
+            if (monsterKills > 0)
+            {
+                parts.Add($"{monsterKills} monster kill{(monsterKills == 1 ? "" : "s")}");
             }
 
             if (stats.ItemCarryCount > 0)

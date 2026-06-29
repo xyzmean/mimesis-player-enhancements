@@ -72,14 +72,14 @@ namespace MimesisPlayerEnhancement.Features.Statistics
             TryShowGlobalStats(steamId, displayName, doc, isJoin: false);
         }
 
-        internal static void OnCycleCompleted(int cycleNumber)
+        internal static void OnDungeonCompleted(int cycleNumber)
         {
             if (!ShouldShow())
             {
                 return;
             }
 
-            InGameMessageHelper.ShowModMessage($"Cycle {cycleNumber} recorded.");
+            InGameMessageHelper.ShowModMessage($"Dungeon run recorded (cycle {cycleNumber}).");
         }
 
         internal static void OnGamePlayerInfoShown(string userName, bool isEntering)
@@ -238,8 +238,11 @@ namespace MimesisPlayerEnhancement.Features.Statistics
 
             StatCounters c = global.Counters;
             return c.CyclesCompleted > 0
-                   || c.Deaths > 0
-                   || c.Kills > 0
+                   || c.SurvivalDeaths > 0
+                   || c.SurvivalWins > 0
+                   || c.SurvivalLeftBehind > 0
+                   || c.DeathmatchDeaths > 0
+                   || c.DeathmatchWins > 0
                    || c.Revives > 0
                    || c.VoiceEvents > 0
                    || c.CurrencyEarned > 0
@@ -247,7 +250,27 @@ namespace MimesisPlayerEnhancement.Features.Statistics
                    || c.DamageToAlly > 0
                    || c.MimicEncounterCount > 0
                    || c.TimeInStartingVolumeMs > 0
-                   || c.TotalConnectedSeconds > 0;
+                   || c.TotalConnectedSeconds > 0
+                   || HasDictionaryCounts(c.MonsterKillsByMasterId)
+                   || HasDictionaryCounts(c.DeathsByTrapType);
+        }
+
+        private static bool HasDictionaryCounts(Dictionary<string, long>? counts)
+        {
+            if (counts == null)
+            {
+                return false;
+            }
+
+            foreach (long value in counts.Values)
+            {
+                if (value > 0)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         internal static string FormatGlobalStats(string displayName, GlobalStats global)
@@ -265,14 +288,29 @@ namespace MimesisPlayerEnhancement.Features.Statistics
                 parts.Add($"{c.CyclesCompleted} cycles");
             }
 
-            if (c.Kills > 0)
+            if (c.SurvivalWins > 0)
             {
-                parts.Add($"{c.Kills} kills");
+                parts.Add($"{c.SurvivalWins} survival wins");
             }
 
-            if (c.Deaths > 0)
+            if (c.SurvivalLeftBehind > 0)
             {
-                parts.Add($"{c.Deaths} deaths");
+                parts.Add($"{c.SurvivalLeftBehind} left behind");
+            }
+
+            if (c.SurvivalDeaths > 0)
+            {
+                parts.Add($"{c.SurvivalDeaths} survival deaths");
+            }
+
+            if (c.DeathmatchWins > 0)
+            {
+                parts.Add($"{c.DeathmatchWins} deathmatch wins");
+            }
+
+            if (c.DeathmatchDeaths > 0)
+            {
+                parts.Add($"{c.DeathmatchDeaths} deathmatch deaths");
             }
 
             if (c.Revives > 0)

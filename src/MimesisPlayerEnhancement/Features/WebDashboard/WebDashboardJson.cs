@@ -178,14 +178,19 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
             return new SessionStatsApiDto
             {
                 CurrencyEarned = stats.CurrencyEarned,
-                Kills = stats.Kills,
-                Deaths = stats.Deaths,
+                SurvivalDeaths = stats.SurvivalDeaths,
+                SurvivalWins = stats.SurvivalWins,
+                SurvivalLeftBehind = stats.SurvivalLeftBehind,
+                DeathmatchDeaths = stats.DeathmatchDeaths,
+                DeathmatchWins = stats.DeathmatchWins,
                 Revives = stats.Revives,
                 MimicEncounterCount = stats.MimicEncounterCount,
                 ItemCarryCount = stats.ItemCarryCount,
                 VoiceEvents = stats.VoiceEvents,
                 DamageToAlly = stats.DamageToAlly,
                 TotalConnectedSeconds = stats.TotalConnectedSeconds,
+                MonsterKillsByMasterId = stats.MonsterKillsByMasterId,
+                DeathsByTrapType = stats.DeathsByTrapType,
             };
         }
 
@@ -201,9 +206,12 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
                 TimeInStartingVolumeMs = entry.TimeInStartingVolumeMs,
                 CurrencyEarned = entry.CurrencyEarned,
                 VoiceEvents = entry.VoiceEvents,
-                Deaths = entry.Deaths,
+                SurvivalDeaths = entry.SurvivalDeaths,
+                SurvivalWins = entry.SurvivalWins,
+                SurvivalLeftBehind = entry.SurvivalLeftBehind,
+                DeathmatchDeaths = entry.DeathmatchDeaths,
+                DeathmatchWins = entry.DeathmatchWins,
                 Revives = entry.Revives,
-                Kills = entry.Kills,
                 TotalConnectedSeconds = entry.TotalConnectedSeconds,
                 SessionsCompleted = entry.SessionsCompleted,
             };
@@ -254,14 +262,19 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
         private sealed class SessionStatsApiDto
         {
             public long CurrencyEarned;
-            public long Kills;
-            public long Deaths;
+            public long SurvivalDeaths;
+            public long SurvivalWins;
+            public long SurvivalLeftBehind;
+            public long DeathmatchDeaths;
+            public long DeathmatchWins;
             public long Revives;
             public long MimicEncounterCount;
             public long ItemCarryCount;
             public long VoiceEvents;
             public long DamageToAlly;
             public long TotalConnectedSeconds;
+            public Dictionary<string, long> MonsterKillsByMasterId = [];
+            public Dictionary<string, long> DeathsByTrapType = [];
         }
 
         private sealed class LeaderboardApiResponse
@@ -282,9 +295,12 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
             public long TimeInStartingVolumeMs;
             public long CurrencyEarned;
             public long VoiceEvents;
-            public long Deaths;
+            public long SurvivalDeaths;
+            public long SurvivalWins;
+            public long SurvivalLeftBehind;
+            public long DeathmatchDeaths;
+            public long DeathmatchWins;
             public long Revives;
-            public long Kills;
             public long TotalConnectedSeconds;
             public int SessionsCompleted;
         }

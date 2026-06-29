@@ -69,6 +69,25 @@ namespace MimesisPlayerEnhancement.Features.Statistics
             doc.SteamId = steamId;
             doc.RecentSessions ??= [];
             doc.Global ??= new GlobalStats();
+            doc.Global.Counters ??= new StatCounters();
+            EnsureCounterDictionaries(doc.Global.Counters);
+            if (doc.CurrentSession != null)
+            {
+                doc.CurrentSession.Counters ??= new StatCounters();
+                EnsureCounterDictionaries(doc.CurrentSession.Counters);
+            }
+
+            foreach (SessionStats session in doc.RecentSessions)
+            {
+                session.Counters ??= new StatCounters();
+                EnsureCounterDictionaries(session.Counters);
+            }
+
+            if (doc.Version < PlayerStatisticsDocument.CurrentVersion)
+            {
+                doc.Version = PlayerStatisticsDocument.CurrentVersion;
+            }
+
             return doc;
         }
 
@@ -127,7 +146,14 @@ namespace MimesisPlayerEnhancement.Features.Statistics
                     continue;
                 }
 
-                cache[steamId] = LoadPlayer(slotId, steamId);
+                try
+                {
+                    cache[steamId] = LoadPlayer(slotId, steamId);
+                }
+                catch (Exception ex)
+                {
+                    ModLog.Warn(Feature, $"Skipping player statistics file {Path.GetFileName(file)} — {ex.Message}");
+                }
             }
         }
 
@@ -158,6 +184,17 @@ namespace MimesisPlayerEnhancement.Features.Statistics
                 Global = new GlobalStats(),
                 RecentSessions = [],
             };
+        }
+
+        private static void EnsureCounterDictionaries(StatCounters? counters)
+        {
+            if (counters == null)
+            {
+                return;
+            }
+
+            counters.MonsterKillsByMasterId ??= [];
+            counters.DeathsByTrapType ??= [];
         }
 
         private static void TrimRecentSessions(PlayerStatisticsDocument doc)

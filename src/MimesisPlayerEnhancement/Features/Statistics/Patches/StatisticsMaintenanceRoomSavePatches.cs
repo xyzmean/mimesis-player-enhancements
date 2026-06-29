@@ -10,22 +10,15 @@ namespace MimesisPlayerEnhancement.Features.Statistics.Patches
         [HarmonyPostfix]
         public static void Postfix(int saveSlotID, List<string> playerNames, bool isAutoSave, MsgErrorCode __result)
         {
-            if (!ModConfig.EnableStatistics.Value)
+            StatisticsPatchGuard.Run(nameof(MaintenanceRoom.SaveGameData), () =>
             {
-                return;
-            }
+                if (__result != MsgErrorCode.Success || !MimesisSaveManager.IsHost())
+                {
+                    return;
+                }
 
-            if (__result != MsgErrorCode.Success)
-            {
-                return;
-            }
-
-            if (!MimesisSaveManager.IsHost())
-            {
-                return;
-            }
-
-            StatisticsTracker.OnGameSaved(saveSlotID);
+                StatisticsTracker.OnGameSaved(saveSlotID);
+            });
         }
     }
 }

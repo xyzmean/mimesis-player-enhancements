@@ -129,5 +129,15 @@ namespace MimesisPlayerEnhancement.Util
                 return 0;
             }
         }
+
+        internal static GameSessionInfo? TryGetGameSessionInfo()
+        {
+            return TryGetVWorld()?.VRoomManager?.GetGameSessionInfo();
+        }
+
+        internal static PlayReportManager? TryGetPlayReportManager()
+        {
+            return TryGetGameSessionInfo()?.PlayReportManager;
+        }
     }
 }

@@ -17,14 +17,19 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard.Models
     internal sealed class WebDashboardSessionStatsDto
     {
         public long CurrencyEarned;
-        public long Kills;
-        public long Deaths;
+        public long SurvivalDeaths;
+        public long SurvivalWins;
+        public long SurvivalLeftBehind;
+        public long DeathmatchDeaths;
+        public long DeathmatchWins;
         public long Revives;
         public long MimicEncounterCount;
         public long ItemCarryCount;
         public long VoiceEvents;
         public long DamageToAlly;
         public long TotalConnectedSeconds;
+        public Dictionary<string, long> MonsterKillsByMasterId = [];
+        public Dictionary<string, long> DeathsByTrapType = [];
     }
 
     internal sealed class WebDashboardPlayerDto

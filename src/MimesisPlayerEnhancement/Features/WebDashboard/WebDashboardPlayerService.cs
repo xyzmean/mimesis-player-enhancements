@@ -576,14 +576,19 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
             return new WebDashboardSessionStatsDto
             {
                 CurrencyEarned = c.CurrencyEarned,
-                Kills = c.Kills,
-                Deaths = c.Deaths,
+                SurvivalDeaths = c.SurvivalDeaths,
+                SurvivalWins = c.SurvivalWins,
+                SurvivalLeftBehind = c.SurvivalLeftBehind,
+                DeathmatchDeaths = c.DeathmatchDeaths,
+                DeathmatchWins = c.DeathmatchWins,
                 Revives = c.Revives,
                 MimicEncounterCount = c.MimicEncounterCount,
                 ItemCarryCount = c.ItemCarryCount,
                 VoiceEvents = c.VoiceEvents,
                 DamageToAlly = c.DamageToAlly,
                 TotalConnectedSeconds = c.TotalConnectedSeconds,
+                MonsterKillsByMasterId = new Dictionary<string, long>(c.MonsterKillsByMasterId ?? []),
+                DeathsByTrapType = new Dictionary<string, long>(c.DeathsByTrapType ?? []),
             };
         }
 
