@@ -10,7 +10,7 @@ namespace MimesisPlayerEnhancement.Features.Persistence
     /// <summary>
     /// Manages persistence of Mimesis data per save slot. Only the host saves.
     /// Data stored under Save/{SteamID}/MimesisData/Slot{N}/ where N is the campaign slot
-    /// (1..3 during gameplay; 0 only for legacy autosave sidecar data).
+    /// (1..99 manual slots when extended save slots are enabled; 0 for autosave sidecar data).
     /// </summary>
     public static class MimesisSaveManager
     {

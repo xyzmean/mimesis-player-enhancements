@@ -129,6 +129,9 @@ namespace MimesisPlayerEnhancement
 
         public static MelonPreferences_Entry<bool> EnableDebugLogging { get; private set; } = null!;
 
+        public static MelonPreferences_Entry<bool> EnableExtendedSaveSlots { get; private set; } = null!;
+        public static MelonPreferences_Entry<int> MaxManualSaveSlots { get; private set; } = null!;
+
 
         private static MelonPreferences_Category _mainCategory = null!;
         private static MelonPreferences_Category _morePlayersCategory = null!;
@@ -144,6 +147,7 @@ namespace MimesisPlayerEnhancement
         private static MelonPreferences_Category _spectatorTransitionCategory = null!;
         private static MelonPreferences_Category _dungeonRandomizerCategory = null!;
         private static MelonPreferences_Category _webDashboardCategory = null!;
+        private static MelonPreferences_Category _extendedSaveSlotsCategory = null!;
 
         private static readonly List<MelonPreferences_Entry<float>> FloatEntries = [];
 
@@ -167,6 +171,7 @@ namespace MimesisPlayerEnhancement
             _spectatorTransitionCategory = CreateCategory("MimesisPlayerEnhancement_SpectatorTransition", "Spectator Transition");
             _dungeonRandomizerCategory = CreateCategory("MimesisPlayerEnhancement_DungeonRandomizer", "Dungeon Randomizer");
             _webDashboardCategory = CreateCategory("MimesisPlayerEnhancement_WebDashboard", "Web Dashboard");
+            _extendedSaveSlotsCategory = CreateCategory("MimesisPlayerEnhancement_ExtendedSaveSlots", "Extended Save Slots");
 
             ModToastDurationSeconds = CreateTrackedEntry(_mainCategory, 
                 "ModToastDurationSeconds",
@@ -257,6 +262,18 @@ namespace MimesisPlayerEnhancement
                 30,
                 "Join Connection Grace Seconds",
                 "When a player connects, block tram departure for this many seconds. Players who fail to finish loading are kicked (host is never kicked).");
+
+            EnableExtendedSaveSlots = CreateTrackedEntry(_extendedSaveSlotsCategory,
+                "EnableExtendedSaveSlots",
+                false,
+                "Enable Extended Save Slots",
+                "When enabled, replaces the separate New/Load Tram menus with a unified save picker (up to MaxManualSaveSlots manual slots). When disabled, vanilla New/Load Tram behavior is used.");
+
+            MaxManualSaveSlots = CreateTrackedEntry(_extendedSaveSlotsCategory,
+                "MaxManualSaveSlots",
+                99,
+                "Max Manual Save Slots",
+                "Highest manual campaign save slot index (1..99). Slot 0 remains autosave.");
 
             EnableSpawnScaling = CreateTrackedEntry(_spawnScalingCategory, 
                 "EnableSpawnScaling",
@@ -708,6 +725,8 @@ namespace MimesisPlayerEnhancement
                 JoinConnectionGraceSeconds.Value = 1;
             }
 
+            ClampMaxManualSaveSlots(logger);
+
             SanitizeShopDiscountPercents(logger);
             OnDungeonPickPoolModeChanged(logger, DungeonPickPoolMode.Value);
 
@@ -790,6 +809,9 @@ namespace MimesisPlayerEnhancement
                 NotifyChanged();
             });
             EnableJoinAnytime.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
+
+            EnableExtendedSaveSlots.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
+            MaxManualSaveSlots.OnEntryValueChanged.Subscribe((_, value) => ClampMaxManualSaveSlots(logger, value));
 
             JoinConnectionGraceSeconds.OnEntryValueChanged.Subscribe((_, value) =>
             {
@@ -945,6 +967,31 @@ namespace MimesisPlayerEnhancement
         internal static void SanitizeFloatEntries()
         {
             ModConfigFloatHelper.SanitizeAll(FloatEntries);
+        }
+
+        private static void ClampMaxManualSaveSlots(MelonLogger.Instance logger, int? value = null)
+        {
+            int current = value ?? MaxManualSaveSlots.Value;
+            if (current < Features.ExtendedSaveSlots.SaveSlotLimits.MinConfigurableManualSlots)
+            {
+                logger.Warning(
+                    $"MaxManualSaveSlots must be at least {Features.ExtendedSaveSlots.SaveSlotLimits.MinConfigurableManualSlots}; resetting.");
+                MaxManualSaveSlots.Value = Features.ExtendedSaveSlots.SaveSlotLimits.MinConfigurableManualSlots;
+                return;
+            }
+
+            if (current > Features.ExtendedSaveSlots.SaveSlotLimits.AbsoluteMaxManualSlotId)
+            {
+                logger.Warning(
+                    $"MaxManualSaveSlots must be at most {Features.ExtendedSaveSlots.SaveSlotLimits.AbsoluteMaxManualSlotId}; resetting.");
+                MaxManualSaveSlots.Value = Features.ExtendedSaveSlots.SaveSlotLimits.AbsoluteMaxManualSlotId;
+                return;
+            }
+
+            if (value.HasValue)
+            {
+                NotifyChanged();
+            }
         }
 
         private static void RegisterFloatEntries()

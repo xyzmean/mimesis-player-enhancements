@@ -10,6 +10,7 @@ using MimesisPlayerEnhancement.Features.MoreVoices;
 using MimesisPlayerEnhancement.Features.PlayerAnnouncements;
 using MimesisPlayerEnhancement.Features.SpawnScaling;
 using MimesisPlayerEnhancement.Features.SpectatorTransition;
+using MimesisPlayerEnhancement.Features.ExtendedSaveSlots;
 using MimesisPlayerEnhancement.Features.WebDashboard;
 using MimesisPlayerEnhancement.ModVersionDisplay;
 
@@ -101,6 +102,7 @@ namespace MimesisPlayerEnhancement.Util
                 syncFromConfig: WebDashboardServer.SyncFromConfig,
                 onUpdate: WebDashboardServer.OnUpdate),
             new FeatureModule("ModVersionDisplay", ModVersionDisplayPatches.Apply),
+            new FeatureModule("ExtendedSaveSlots", ExtendedSaveSlotsPatches.Apply),
         ];
     }
 }

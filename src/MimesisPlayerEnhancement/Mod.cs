@@ -136,7 +136,11 @@ namespace MimesisPlayerEnhancement
                 $"DungeonTime={ModConfig.EnableDungeonTime.Value}, " +
                 $"SpectatorTransition={ModConfig.EnableSpectatorTransition.Value}, " +
                 $"DungeonRandomizer={ModConfig.EnableDungeonRandomizer.Value}, " +
-                $"WebDashboard={ModConfig.EnableWebDashboard.Value}" +
+                $"ExtendedSaveSlots={ModConfig.EnableExtendedSaveSlots.Value}" +
+                (ModConfig.EnableExtendedSaveSlots.Value
+                    ? $" (max manual {ModConfig.MaxManualSaveSlots.Value})"
+                    : "") +
+                $", WebDashboard={ModConfig.EnableWebDashboard.Value}" +
                 (ModConfig.EnableWebDashboard.Value
                     ? $" ({ModConfig.WebDashboardListenAddress.Value}:{ModConfig.WebDashboardListenPort.Value})"
                     : "") +
@@ -163,7 +167,11 @@ namespace MimesisPlayerEnhancement
                 $"DungeonTime={ModConfig.EnableDungeonTime.Value}, " +
                 $"SpectatorTransition={ModConfig.EnableSpectatorTransition.Value}, " +
                 $"DungeonRandomizer={ModConfig.EnableDungeonRandomizer.Value}, " +
-                $"WebDashboard={ModConfig.EnableWebDashboard.Value}" +
+                $"ExtendedSaveSlots={ModConfig.EnableExtendedSaveSlots.Value}" +
+                (ModConfig.EnableExtendedSaveSlots.Value
+                    ? $" (max manual {ModConfig.MaxManualSaveSlots.Value})"
+                    : "") +
+                $", WebDashboard={ModConfig.EnableWebDashboard.Value}" +
                 (ModConfig.EnableWebDashboard.Value
                     ? $" ({ModConfig.WebDashboardListenAddress.Value}:{ModConfig.WebDashboardListenPort.Value})"
                     : "") +
