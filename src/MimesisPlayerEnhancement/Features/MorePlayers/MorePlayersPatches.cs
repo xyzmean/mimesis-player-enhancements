@@ -27,7 +27,8 @@ namespace MimesisPlayerEnhancement.Features.MorePlayers
         public static void Apply(HarmonyLib.Harmony harmony)
         {
             IEnumerable<Type> patchTypes = HarmonyPatchHelper.GetNestedPatchTypes(typeof(MorePlayersPatches))
-                .Concat(HarmonyPatchHelper.GetNestedPatchTypes(typeof(SurvivalResultPatches)));
+                .Concat(HarmonyPatchHelper.GetNestedPatchTypes(typeof(SurvivalResultPatches)))
+                .Concat(HarmonyPatchHelper.GetNestedPatchTypes(typeof(InGameMenuPatches)));
 
             HarmonyPatchHelper.PatchApplyResult result = HarmonyPatchHelper.ApplyPatchTypes(
                 harmony,
@@ -54,6 +55,9 @@ namespace MimesisPlayerEnhancement.Features.MorePlayers
                 ("SetRoomList/UIPrefab_PublicRoomList", AccessTools.Method(typeof(UIPrefab_PublicRoomList), nameof(UIPrefab_PublicRoomList.SetRoomList))),
                 ("SetRoomData/UiPrefab_RoomCard", AccessTools.Method(typeof(UiPrefab_RoomCard), "SetRoomData")),
                 ("PatchParameter/UIPrefab_SurvivalResult", AccessTools.Method(AccessTools.TypeByName("UIPrefab_SurvivalResult"), "PatchParameter")),
+                ("SetRemoteVolumeController_v2/UIPrefab_InGameMenu", AccessTools.Method(typeof(UIPrefab_InGameMenu), nameof(UIPrefab_InGameMenu.SetRemoteVolumeController_v2))),
+                ("SetPingImage/UIPrefab_InGameMenu", AccessTools.Method(typeof(UIPrefab_InGameMenu), nameof(UIPrefab_InGameMenu.SetPingImage))),
+                ("OnEnable/UIPrefab_InGameMenu", AccessTools.Method(typeof(UIPrefab_InGameMenu), "OnEnable")),
             ]);
         }
 
