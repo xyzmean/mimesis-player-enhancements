@@ -14,7 +14,7 @@ namespace MimesisPlayerEnhancement
     {
         private HarmonyLib.Harmony? _harmony;
         private bool _statisticsWasEnabled;
-        private float _nextFixedRespawnProcessTime;
+        private float _nextEncounterSpawnProcessTime;
 
         public override void OnInitializeMelon()
         {
@@ -67,9 +67,9 @@ namespace MimesisPlayerEnhancement
             }
 
             if ((ModConfig.EnableSpawnScaling.Value || ModConfig.EnableLootMultiplicator.Value)
-                && Time.time >= _nextFixedRespawnProcessTime)
+                && Time.time >= _nextEncounterSpawnProcessTime)
             {
-                _nextFixedRespawnProcessTime = Time.time + FixedRespawnTiming.RetryIntervalSeconds;
+                _nextEncounterSpawnProcessTime = Time.time + EncounterSpawnTiming.RetryIntervalSeconds;
 
                 foreach (IFeatureModule module in FeatureModules.All)
                 {

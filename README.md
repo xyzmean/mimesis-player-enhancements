@@ -154,24 +154,26 @@ Late joiners cannot be dropped straight into an active dungeon (the game has no 
 
 ### Spawn Scaling — `[MimesisPlayerEnhancement_SpawnScaling]`
 
-Host-only. Scale dungeon monster and trap spawn budgets by type. Map-placed mimics, bosses, jakos, specials, and traps use unused markers first, then respawn at the same marker when all markers are in use.
+Host-only. Scale dungeon monster and trap spawn budgets by type. Periodic jakos and mimics use native threat/count budgets plus faster spawn windows. Map-placed bosses, specials, and traps activate unused alternate markers for extra concurrent slots, then schedule bonus encounters one-at-a-time after a kill (never duplicate spawns at load).
+
+Upgrading from older configs: legacy `FixedSpawnRespawn*` keys are copied once automatically to the `MapPlacedEncounter*` keys below.
 
 | Key | Type | Default | What it does |
 |-----|------|---------|--------------|
 | `EnableSpawnScaling` | bool | `true` | Master toggle for all spawn scaling below. |
 | `AutoScaleMimicSpawnsByPlayerCount` | bool | `true` | Player-count scaling for mimic spawns (stacks with `MimicSpawnMultiplier`). |
-| `MimicSpawnMultiplier` | float | `1.0` | Mimic spawn budget multiplier (`1` = vanilla, `2` = double). Minimum is `0`. |
+| `MimicSpawnMultiplier` | float | `1.0` | Total mimic spawn budget across the run, including periodic spawns (`1` = vanilla, `2` = double). Minimum is `0`. |
 | `AutoScaleBossSpawnsByPlayerCount` | bool | `true` | Player-count scaling for boss spawns (stacks with `BossSpawnMultiplier`). |
-| `BossSpawnMultiplier` | float | `1.0` | Boss spawn budget multiplier (`1` = vanilla, `2` = double). Minimum is `0`. |
+| `BossSpawnMultiplier` | float | `1.0` | Map-placed bosses: unused alternate markers plus bonus encounters after kill (`1` = vanilla, `2` = double). Minimum is `0`. |
 | `AutoScaleJakoSpawnsByPlayerCount` | bool | `true` | Player-count scaling for jako spawns (stacks with `JakoSpawnMultiplier`). |
-| `JakoSpawnMultiplier` | float | `1.0` | Jako (normal monster) spawn budget multiplier (`1` = vanilla, `2` = double). Minimum is `0`. |
+| `JakoSpawnMultiplier` | float | `1.0` | Total normal-monster threat budget for ambient dungeon spawns (`1` = vanilla, `2` = double). Minimum is `0`. |
 | `AutoScaleSpecialSpawnsByPlayerCount` | bool | `true` | Player-count scaling for special spawns (stacks with `SpecialSpawnMultiplier`). |
-| `SpecialSpawnMultiplier` | float | `1.0` | Special monster spawn budget multiplier (`1` = vanilla, `2` = double). Minimum is `0`. |
+| `SpecialSpawnMultiplier` | float | `1.0` | Special monster budget for periodic spawns and map-placed specials (`1` = vanilla, `2` = double). Minimum is `0`. |
 | `AutoScaleTrapSpawnsByPlayerCount` | bool | `true` | Player-count scaling for trap spawns (stacks with `TrapSpawnMultiplier`). |
-| `TrapSpawnMultiplier` | float | `1.0` | Trap/hazard spawn multiplier for map-placed spawns (`1` = vanilla, `2` = double). Minimum is `0`. |
-| `FixedSpawnRespawnDelayMinSeconds` | float | `5.0` | Minimum random delay (seconds) before a map-placed monster or trap respawns at the same marker when all markers are in use. Minimum is `0`. |
-| `FixedSpawnRespawnDelayMaxSeconds` | float | `30.0` | Maximum random delay (seconds) before a map-placed monster or trap respawns at the same marker when all markers are in use. Must be ≥ `FixedSpawnRespawnDelayMinSeconds`. |
-| `FixedSpawnRespawnMinPlayerDistanceMeters` | float | `10.0` | After the respawn delay, wait until no players are within this distance (meters) before spawning at the marker. Set to `0` to respawn immediately. Minimum is `0`. |
+| `TrapSpawnMultiplier` | float | `1.0` | Map-placed traps: unused alternate markers plus bonus encounters after trigger/kill (`1` = vanilla, `2` = double). Minimum is `0`. |
+| `MapPlacedEncounterDelayMinSeconds` | float | `5.0` | Shortest wait (seconds) after a map-placed enemy/trap dies before the next bonus encounter can spawn at that marker. Minimum is `0`. |
+| `MapPlacedEncounterDelayMaxSeconds` | float | `30.0` | Longest wait for that random delay. Actual delay is picked between min and max. Must be ≥ `MapPlacedEncounterDelayMinSeconds`. |
+| `MapPlacedEncounterMinPlayerDistanceMeters` | float | `10.0` | After the delay, hold the spawn until no living players are within this radius (meters) of the marker. Set to `0` to spawn as soon as the delay elapses. Minimum is `0`. |
 | `AutoScaleOtherSpawnsByPlayerCount` | bool | `true` | Player-count scaling for other spawns (stacks with `OtherSpawnMultiplier`). |
 | `OtherSpawnMultiplier` | float | `1.0` | Spawn multiplier for other entities (not mimic/boss/jako/special/trap). Minimum is `0`. |
 
@@ -183,7 +185,7 @@ Host-only. Each setting is a **source × item type** pair. The multiplier (`1` =
 
 | Prefix | Source | What it affects |
 |--------|--------|-----------------|
-| **Map** | Map spawn points | Loot placed when a dungeon room loads. **Fixed** loot (specific item at a marker): activates unused loot markers of the same item, scales consumable stack size and `MaxRespawnCount`, and may respawn at the same marker when picked up (uses `FixedSpawnRespawnDelay*` from Spawn Scaling). **Random** loot pools (weighted mix from the dungeon table): scales the dungeon misc budget so more markers fill with **random picks from the pool** — not clones of the same item. |
+| **Map** | Map spawn points | Loot placed when a dungeon room loads. **Fixed** loot (specific item at a marker): activates unused loot markers of the same item, scales consumable stack size and `MaxRespawnCount`, and may respawn at the same marker when picked up (uses `MapPlacedEncounterDelay*` and `MapPlacedEncounterMinPlayerDistanceMeters` from Spawn Scaling). **Random** loot pools (weighted mix from the dungeon table): scales the dungeon misc budget so more markers fill with **random picks from the pool** — not clones of the same item. |
 | **Drop** | Enemy death drops | Items from enemy death tables when a monster is killed, plus inventory items dropped on death. Adds extra **weighted re-rolls** from the same drop table (more separate drops, not same-item clones). Consumable stack count is also scaled when the item spawns (`ActorDying`). Mimics often drop **fake** decoy items from inventory — see `ConvertFakeActorDyingDropChancePercent`. Monster drop-table loot is already real; many monsters have `drop_id = 0` (no table drops). |
 | **Trigger** | Map events / trigger volumes | Items spawned by map events (`EventAction`). Adds extra **weighted picks** from the event item table. Consumable stack count is scaled when the item appears. |
 

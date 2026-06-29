@@ -4,30 +4,38 @@ using UnityEngine;
 
 namespace MimesisPlayerEnhancement.Features.SpawnScaling
 {
-    internal static class FixedSpawnProximity
+    internal static class MapPlacedEncounterProximity
     {
         private static readonly Dictionary<SpawnedActorData, CachedBlockResult> CreatureBlockCache = [];
         private static readonly Dictionary<SpawnedActorData, CachedBlockResult> LootBlockCache = [];
 
-        internal static bool ShouldBlockFixedCreatureRespawn(
+        internal static bool ShouldBlockBonusEncounterSpawn(
             DungeonRoom? room,
             SpawnedActorData? spawnData,
             bool throttle = true)
         {
-            return ModConfig.FixedSpawnRespawnMinPlayerDistanceMeters.Value > 0f && room != null && spawnData != null && IsFixedCreatureRespawn(spawnData) && IsPlayerBlockingRespawnCached(room, spawnData, CreatureBlockCache, throttle);
+            return ModConfig.MapPlacedEncounterMinPlayerDistanceMeters.Value > 0f
+                && room != null
+                && spawnData != null
+                && IsBonusCreatureEncounter(spawnData)
+                && IsPlayerBlockingSpawnCached(room, spawnData, CreatureBlockCache, throttle);
         }
 
-        internal static bool ShouldBlockFixedLootRespawn(
+        internal static bool ShouldBlockBonusLootRespawn(
             DungeonRoom? room,
             SpawnedActorData? spawnData,
             bool throttle = true)
         {
-            return ModConfig.FixedSpawnRespawnMinPlayerDistanceMeters.Value > 0f && room != null && spawnData != null && IsFixedLootRespawn(spawnData) && IsPlayerBlockingRespawnCached(room, spawnData, LootBlockCache, throttle);
+            return ModConfig.MapPlacedEncounterMinPlayerDistanceMeters.Value > 0f
+                && room != null
+                && spawnData != null
+                && IsBonusLootRespawn(spawnData)
+                && IsPlayerBlockingSpawnCached(room, spawnData, LootBlockCache, throttle);
         }
 
-        internal static bool IsPlayerBlockingRespawn(DungeonRoom room, Vector3 spawnPos)
+        internal static bool IsPlayerBlockingSpawn(DungeonRoom room, Vector3 spawnPos)
         {
-            float minDistance = ModConfig.FixedSpawnRespawnMinPlayerDistanceMeters.Value;
+            float minDistance = ModConfig.MapPlacedEncounterMinPlayerDistanceMeters.Value;
             if (minDistance <= 0f)
             {
                 return false;
@@ -52,7 +60,7 @@ namespace MimesisPlayerEnhancement.Features.SpawnScaling
             return false;
         }
 
-        private static bool IsPlayerBlockingRespawnCached(
+        private static bool IsPlayerBlockingSpawnCached(
             DungeonRoom room,
             SpawnedActorData spawnData,
             Dictionary<SpawnedActorData, CachedBlockResult> cache,
@@ -67,10 +75,10 @@ namespace MimesisPlayerEnhancement.Features.SpawnScaling
                 return cached.Blocked;
             }
 
-            bool blocked = IsPlayerBlockingRespawn(room, spawnData.PosVector);
+            bool blocked = IsPlayerBlockingSpawn(room, spawnData.PosVector);
             if (throttle)
             {
-                cache[spawnData] = new CachedBlockResult(blocked, now + FixedRespawnTiming.RetryIntervalSeconds);
+                cache[spawnData] = new CachedBlockResult(blocked, now + EncounterSpawnTiming.RetryIntervalSeconds);
             }
 
             return blocked;
@@ -89,22 +97,22 @@ namespace MimesisPlayerEnhancement.Features.SpawnScaling
             internal float NextCheckAt { get; }
         }
 
-        private static bool IsFixedCreatureRespawn(SpawnedActorData spawnData)
+        private static bool IsBonusCreatureEncounter(SpawnedActorData spawnData)
         {
             return spawnData is FixedSpawnedActorData
-            && (spawnData.MarkerType.Equals(MapMarkerType.Creature)
-                || spawnData.MarkerType.Equals(MapMarkerType.SpecialMonster))
-            && spawnData.ActorID == 0
-            && spawnData.CurrentSpawnCount > 0;
+                && (spawnData.MarkerType.Equals(MapMarkerType.Creature)
+                    || spawnData.MarkerType.Equals(MapMarkerType.SpecialMonster))
+                && spawnData.ActorID == 0
+                && spawnData.CurrentSpawnCount > 0;
         }
 
-        private static bool IsFixedLootRespawn(SpawnedActorData spawnData)
+        private static bool IsBonusLootRespawn(SpawnedActorData spawnData)
         {
             return spawnData is FixedSpawnedActorData
-            && spawnData.MarkerType.Equals(MapMarkerType.LootingObject)
-            && spawnData.MasterID > 0
-            && spawnData.ActorID == 0
-            && spawnData.CurrentSpawnCount > 0;
+                && spawnData.MarkerType.Equals(MapMarkerType.LootingObject)
+                && spawnData.MasterID > 0
+                && spawnData.ActorID == 0
+                && spawnData.CurrentSpawnCount > 0;
         }
     }
 }

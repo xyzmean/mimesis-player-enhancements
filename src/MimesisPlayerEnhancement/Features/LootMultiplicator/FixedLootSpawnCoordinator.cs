@@ -229,14 +229,14 @@ namespace MimesisPlayerEnhancement.Features.LootMultiplicator
                     continue;
                 }
 
-                if (FixedSpawnProximity.ShouldBlockFixedLootRespawn(pending.Room, pending.Data, throttle: false))
+                if (MapPlacedEncounterProximity.ShouldBlockBonusLootRespawn(pending.Room, pending.Data, throttle: false))
                 {
                     if (ModConfig.EnableDebugLogging.Value)
                     {
                         ModLog.Debug(
                             Feature,
                             $"Fixed loot respawn waiting — master={pending.MasterId}, marker={pending.Data.Index}, " +
-                            $"players within {ModConfig.FixedSpawnRespawnMinPlayerDistanceMeters.Value:0.#}m");
+                            $"players within {ModConfig.MapPlacedEncounterMinPlayerDistanceMeters.Value:0.#}m");
                     }
 
                     DeferNextAttempt(i, pending, now);
@@ -263,7 +263,7 @@ namespace MimesisPlayerEnhancement.Features.LootMultiplicator
                         continue;
                     }
 
-                    if (FixedSpawnProximity.ShouldBlockFixedLootRespawn(pending.Room, pending.Data, throttle: false))
+                    if (MapPlacedEncounterProximity.ShouldBlockBonusLootRespawn(pending.Room, pending.Data, throttle: false))
                     {
                         DeferNextAttempt(i, pending, now);
                         continue;
@@ -372,7 +372,7 @@ namespace MimesisPlayerEnhancement.Features.LootMultiplicator
                 return false;
             }
 
-            if (isRespawn && FixedSpawnProximity.ShouldBlockFixedLootRespawn(room, spawnData, throttle: false))
+            if (isRespawn && MapPlacedEncounterProximity.ShouldBlockBonusLootRespawn(room, spawnData, throttle: false))
             {
                 return false;
             }
@@ -460,8 +460,8 @@ namespace MimesisPlayerEnhancement.Features.LootMultiplicator
                 }
             }
 
-            float minDelay = ModConfig.FixedSpawnRespawnDelayMinSeconds.Value;
-            float maxDelay = ModConfig.FixedSpawnRespawnDelayMaxSeconds.Value;
+            float minDelay = ModConfig.MapPlacedEncounterDelayMinSeconds.Value;
+            float maxDelay = ModConfig.MapPlacedEncounterDelayMaxSeconds.Value;
             float delay = minDelay >= maxDelay ? minDelay : UnityEngine.Random.Range(minDelay, maxDelay);
             long spawnWaitMs = spawnData.SpawnWaitTime;
             if (spawnWaitMs > 0)
@@ -485,7 +485,7 @@ namespace MimesisPlayerEnhancement.Features.LootMultiplicator
 
         private static void DeferNextAttempt(int index, PendingRespawn pending, float now)
         {
-            PendingRespawns[index] = pending.WithNextAttemptAt(now + FixedRespawnTiming.RetryIntervalSeconds);
+            PendingRespawns[index] = pending.WithNextAttemptAt(now + EncounterSpawnTiming.RetryIntervalSeconds);
         }
 
         private static bool TryFindRoomState(SpawnedActorData spawnData, out RoomState state, out DungeonRoom room)

@@ -90,7 +90,7 @@ namespace MimesisPlayerEnhancement.Util
             new FeatureModule("JoinAnytime", JoinAnytimePatches.Apply, onUpdate: JoinAnytimeRuntime.OnUpdate),
             new FeatureModule("SpawnScaling", SpawnScalingPatches.Apply, onUpdate: () =>
             {
-                if (ModConfig.EnableSpawnScaling.Value) { FixedSpawnCoordinator.ProcessPendingRespawns(); } }, throttledUpdate: true),
+                if (ModConfig.EnableSpawnScaling.Value) { MapPlacedEncounterScheduler.ProcessPendingEncounters(); } }, throttledUpdate: true),
             new FeatureModule("LootMultiplicator", LootMultiplicatorPatches.Apply, onUpdate: () =>
             {
                 if (ModConfig.EnableLootMultiplicator.Value) { FixedLootSpawnCoordinator.ProcessPendingRespawns(); } }, throttledUpdate: true),

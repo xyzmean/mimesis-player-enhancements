@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Reflection;
 using MimesisPlayerEnhancement.Util;
 
 namespace MimesisPlayerEnhancement.Features.SpawnScaling
@@ -9,55 +8,6 @@ namespace MimesisPlayerEnhancement.Features.SpawnScaling
     internal static class SpawnScalingApplier
     {
         private const string Feature = "SpawnScaling";
-
-        private const BindingFlags InstanceFlags =
-            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
-
-        private static readonly Type SpecialMonsterSpawnGroupType =
-            typeof(DungeonRoom).GetNestedType("SpecialMonsterSpawnGroup", InstanceFlags)
-            ?? throw new InvalidOperationException("DungeonRoom.SpecialMonsterSpawnGroup not found");
-
-        private static readonly FieldInfo MimicSpawnCountMaxField =
-            AccessToolsField(typeof(DungeonRoom), "_mimicSpawnCountMax");
-
-        private static readonly FieldInfo MimicSpawnCountRemainField =
-            AccessToolsField(typeof(DungeonRoom), "_mimicSpawnCountRemain");
-
-        private static readonly FieldInfo NormalMonsterThreatLimitField =
-            AccessToolsField(typeof(DungeonRoom), "_normalMonsterThreatLimit");
-
-        private static readonly FieldInfo NormalMonsterThreatRemainField =
-            AccessToolsField(typeof(DungeonRoom), "_normalMonsterThreatRemain");
-
-        private static readonly FieldInfo NormalMonsterSpawnThreatMinThresholdField =
-            AccessToolsField(typeof(DungeonRoom), "_normalMonsterSpawnThreatMinThreshold");
-
-        private static readonly FieldInfo SpecialMonsterSpawnGroupsField =
-            AccessToolsField(typeof(DungeonRoom), "_specialMonsterSpawnGroups");
-
-        private static readonly FieldInfo SpawnedActorDatasField =
-            AccessToolsField(typeof(DungeonRoom), "_spawnedActorDatas");
-
-        private static readonly FieldInfo GroupSpawnDatasField =
-            AccessToolsField(typeof(DungeonRoom), "_groupSpawnDatas");
-
-        private static readonly FieldInfo SpecialGroupInfoField =
-            AccessToolsField(SpecialMonsterSpawnGroupType, "Info");
-
-        private static readonly FieldInfo SpecialGroupSpawnCountMaxField =
-            AccessToolsField(SpecialMonsterSpawnGroupType, "SpawnCountMax");
-
-        private static readonly FieldInfo SpecialGroupSpawnCountRemainField =
-            AccessToolsField(SpecialMonsterSpawnGroupType, "SpawnCountRemain");
-
-        private static readonly FieldInfo SpecialSpawnInfoSpawnCountMinField =
-            AccessToolsField(typeof(SpecialMonsterSpawnInfo), "SpawnCountMin");
-
-        private static readonly FieldInfo SpecialSpawnInfoSpawnCountMaxField =
-            AccessToolsField(typeof(SpecialMonsterSpawnInfo), "SpawnCountMax");
-
-        private static readonly FieldInfo GroupSpawnCountBackingField =
-            AccessToolsField(typeof(GroupSpawnData), "<GroupSpawnCount>k__BackingField");
 
         private static readonly HashSet<DungeonRoom> AppliedRooms = [];
         private static readonly HashSet<DungeonRoom> SkippedClientRooms = [];
@@ -114,30 +64,36 @@ namespace MimesisPlayerEnhancement.Features.SpawnScaling
             float mimicMultiplier = SpawnMultiplierResolver.GetEffectiveMultiplier(SpawnCategory.Mimic, playerCount);
             float jakoMultiplier = SpawnMultiplierResolver.GetEffectiveMultiplier(SpawnCategory.Jako, playerCount);
 
-            int mimicMax = ScaleField(room, MimicSpawnCountMaxField, mimicMultiplier, "mimicSpawnCountMax");
-            int mimicRemain = ScaleField(room, MimicSpawnCountRemainField, mimicMultiplier, "mimicSpawnCountRemain");
-            int threatLimit = ScaleField(room, NormalMonsterThreatLimitField, jakoMultiplier, "normalMonsterThreatLimit");
-            int threatRemain = ScaleField(room, NormalMonsterThreatRemainField, jakoMultiplier, "normalMonsterThreatRemain");
+            int mimicMax = ScaleField(room, SpawnScalingFields.MimicSpawnCountMaxField, mimicMultiplier, "mimicSpawnCountMax");
+            int mimicRemain = ScaleField(room, SpawnScalingFields.MimicSpawnCountRemainField, mimicMultiplier, "mimicSpawnCountRemain");
+            int threatLimit = ScaleField(room, SpawnScalingFields.NormalMonsterThreatLimitField, jakoMultiplier, "normalMonsterThreatLimit");
+            int threatRemain = ScaleField(room, SpawnScalingFields.NormalMonsterThreatRemainField, jakoMultiplier, "normalMonsterThreatRemain");
             int threatMin = ScaleField(
                 room,
-                NormalMonsterSpawnThreatMinThresholdField,
+                SpawnScalingFields.NormalMonsterSpawnThreatMinThresholdField,
                 jakoMultiplier,
                 "normalMonsterSpawnThreatMinThreshold");
 
             int specialGroups = ScaleSpecialGroups(room, playerCount);
             int spawnPoints = ScaleSpawnPointDatas(room, playerCount);
-            int groupSpawns = ScaleGroupSpawnDatas(room, playerCount);
+            int bonusGroupWaves = ConfigureBonusGroupWaves(room, playerCount);
+
+            RoomSpawnScalingState state = RoomSpawnScalingRegistry.GetOrCreate(room);
+            if (SpawnScalingFields.DungeonMasterInfoField.GetValue(room) is DungeonMasterInfo dungeonInfo)
+            {
+                SpawnTimingOverrideApplier.ConfigureTimingOverrides(room, state, dungeonInfo, jakoMultiplier, mimicMultiplier);
+            }
 
             ModLog.Info(
                 Feature,
                 $"Spawn budgets updated — mimic {mimicMultiplier:0.##}× (max={mimicMax}, remain={mimicRemain}), " +
                 $"jako {jakoMultiplier:0.##}× (limit={threatLimit}, remain={threatRemain}, min={threatMin}), " +
-                $"specialGroups={specialGroups}, spawnPoints={spawnPoints}, groupSpawns={groupSpawns}");
+                $"specialGroups={specialGroups}, spawnPoints={spawnPoints}, bonusGroupWaves={bonusGroupWaves}");
         }
 
         private static int ScaleSpecialGroups(DungeonRoom room, int playerCount)
         {
-            if (SpecialMonsterSpawnGroupsField.GetValue(room) is not IList groups)
+            if (SpawnScalingFields.SpecialMonsterSpawnGroupsField.GetValue(room) is not IList groups)
             {
                 return 0;
             }
@@ -150,7 +106,7 @@ namespace MimesisPlayerEnhancement.Features.SpawnScaling
                     continue;
                 }
 
-                object? info = SpecialGroupInfoField.GetValue(group);
+                object? info = SpawnScalingFields.SpecialGroupInfoField.GetValue(group);
                 if (info is not SpecialMonsterSpawnInfo spawnInfo)
                 {
                     continue;
@@ -160,10 +116,10 @@ namespace MimesisPlayerEnhancement.Features.SpawnScaling
                 SpawnCategory category = SpawnCategoryLookup.GetCategory(spawnInfo.MasterID);
                 string entityName = MonsterTypeLookup.GetDisplayName(spawnInfo.MasterID);
 
-                int max = ScaleField(group, SpecialGroupSpawnCountMaxField, multiplier, $"specialGroup[{spawnInfo.MasterID}].spawnCountMax");
-                int remain = ScaleField(group, SpecialGroupSpawnCountRemainField, multiplier, $"specialGroup[{spawnInfo.MasterID}].spawnCountRemain");
-                _ = ScaleField(spawnInfo, SpecialSpawnInfoSpawnCountMinField, multiplier, $"specialGroup[{spawnInfo.MasterID}].spawnCountMin");
-                _ = ScaleField(spawnInfo, SpecialSpawnInfoSpawnCountMaxField, multiplier, $"specialGroup[{spawnInfo.MasterID}].spawnCountMaxInfo");
+                int max = ScaleField(group, SpawnScalingFields.SpecialGroupSpawnCountMaxField, multiplier, $"specialGroup[{spawnInfo.MasterID}].spawnCountMax");
+                int remain = ScaleField(group, SpawnScalingFields.SpecialGroupSpawnCountRemainField, multiplier, $"specialGroup[{spawnInfo.MasterID}].spawnCountRemain");
+                _ = ScaleField(spawnInfo, SpawnScalingFields.SpecialSpawnInfoSpawnCountMinField, multiplier, $"specialGroup[{spawnInfo.MasterID}].spawnCountMin");
+                _ = ScaleField(spawnInfo, SpawnScalingFields.SpecialSpawnInfoSpawnCountMaxField, multiplier, $"specialGroup[{spawnInfo.MasterID}].spawnCountMaxInfo");
 
                 scaled++;
                 ModLog.Debug(
@@ -177,7 +133,7 @@ namespace MimesisPlayerEnhancement.Features.SpawnScaling
 
         private static int ScaleSpawnPointDatas(DungeonRoom room, int playerCount)
         {
-            if (SpawnedActorDatasField.GetValue(room) is not IDictionary datas)
+            if (SpawnScalingFields.SpawnedActorDatasField.GetValue(room) is not IDictionary datas)
             {
                 return 0;
             }
@@ -196,14 +152,16 @@ namespace MimesisPlayerEnhancement.Features.SpawnScaling
             return scaled;
         }
 
-        private static int ScaleGroupSpawnDatas(DungeonRoom room, int playerCount)
+        private static int ConfigureBonusGroupWaves(DungeonRoom room, int playerCount)
         {
-            if (GroupSpawnDatasField.GetValue(room) is not IDictionary datas)
+            if (SpawnScalingFields.GroupSpawnDatasField.GetValue(room) is not IDictionary datas)
             {
                 return 0;
             }
 
-            int scaled = 0;
+            RoomSpawnScalingState state = RoomSpawnScalingRegistry.GetOrCreate(room);
+            int configured = 0;
+
             foreach (DictionaryEntry entry in datas)
             {
                 if (entry.Value is not GroupSpawnData groupData)
@@ -230,24 +188,27 @@ namespace MimesisPlayerEnhancement.Features.SpawnScaling
                     continue;
                 }
 
-                int before = (int)(GroupSpawnCountBackingField.GetValue(groupData) ?? 0);
-                int after = SpawnMultiplierResolver.ScaleCount(before, groupMultiplier.Value);
-                GroupSpawnCountBackingField.SetValue(groupData, after);
-                scaled++;
+                int bonusWaves = Math.Max(0, SpawnMultiplierResolver.ScaleCount(1, groupMultiplier.Value) - 1);
+                state.SetBonusGroupWaves(groupData.GroupID, bonusWaves);
+                configured++;
 
                 ModLog.Debug(
                     Feature,
                     $"Group spawn configured — category={SpawnCategoryLookup.Format(category)}, name={entityName ?? "unknown"}, " +
-                    $"id={groupData.GroupID}, {groupMultiplier.Value:0.##}× (count {before} -> {after})");
+                    $"id={groupData.GroupID}, {groupMultiplier.Value:0.##}× (bonusWaves={bonusWaves})");
             }
 
-            return scaled;
+            if (configured > 0)
+            {
+                RoomSpawnScalingRegistry.Register(room, state);
+            }
+
+            return configured;
         }
 
         private static bool ScaleSpawnDataObject(object spawnData, int playerCount)
         {
-            FieldInfo? masterIdField = ReflectionFieldCache.GetField(spawnData, "MasterID");
-            if (masterIdField == null)
+            if (ReflectionFieldCache.GetField(spawnData, "MasterID") == null)
             {
                 return false;
             }
@@ -257,15 +218,19 @@ namespace MimesisPlayerEnhancement.Features.SpawnScaling
                 return false;
             }
 
-            int masterId = (int)(masterIdField.GetValue(spawnData) ?? 0);
+            int masterId = spawnData is SpawnedActorData actorData ? actorData.MasterID : 0;
+            if (masterId == 0 && ReflectionFieldCache.GetField(spawnData, "MasterID")?.GetValue(spawnData) is int reflectedMasterId)
+            {
+                masterId = reflectedMasterId;
+            }
+
             SpawnCategory category = SpawnCategoryLookup.GetCategory(masterId);
             float multiplier = SpawnMultiplierResolver.GetEffectiveMultiplier(category, playerCount);
             string entityName = MonsterTypeLookup.GetDisplayName(masterId);
 
             bool scaled = false;
 
-            FieldInfo? stackCountField = ReflectionFieldCache.GetField(spawnData, "StackCount");
-            if (stackCountField != null)
+            if (ReflectionFieldCache.GetField(spawnData, "StackCount") is { } stackCountField)
             {
                 int stackBefore = (int)(stackCountField.GetValue(spawnData) ?? 0);
                 int stackAfter = SpawnMultiplierResolver.ScaleCountWithImplicitBase(stackBefore, multiplier, implicitWhenZero: 1);
@@ -278,8 +243,7 @@ namespace MimesisPlayerEnhancement.Features.SpawnScaling
                 scaled = true;
             }
 
-            FieldInfo? maxRespawnField = ReflectionFieldCache.GetField(spawnData, "MaxRespawnCount");
-            if (maxRespawnField != null)
+            if (ReflectionFieldCache.GetField(spawnData, "MaxRespawnCount") is { } maxRespawnField)
             {
                 int respawnBefore = (int)(maxRespawnField.GetValue(spawnData) ?? 0);
                 if (respawnBefore > 0)
@@ -306,19 +270,13 @@ namespace MimesisPlayerEnhancement.Features.SpawnScaling
             return scaled;
         }
 
-        private static int ScaleField(object target, FieldInfo field, float multiplier, string label)
+        private static int ScaleField(object target, System.Reflection.FieldInfo field, float multiplier, string label)
         {
             int before = (int)(field.GetValue(target) ?? 0);
             int after = SpawnMultiplierResolver.ScaleCount(before, multiplier);
             field.SetValue(target, after);
             SpawnScalingLog.DebugFieldScaled(label, before, after, multiplier);
             return after;
-        }
-
-        private static FieldInfo AccessToolsField(Type type, string name)
-        {
-            FieldInfo field = type.GetField(name, InstanceFlags);
-            return field ?? throw new InvalidOperationException($"{type.Name}.{name} not found");
         }
     }
 }

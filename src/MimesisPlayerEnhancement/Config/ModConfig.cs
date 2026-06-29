@@ -58,9 +58,9 @@ namespace MimesisPlayerEnhancement
         public static MelonPreferences_Entry<float> SpecialSpawnMultiplier { get; private set; } = null!;
         public static MelonPreferences_Entry<bool> AutoScaleTrapSpawnsByPlayerCount { get; private set; } = null!;
         public static MelonPreferences_Entry<float> TrapSpawnMultiplier { get; private set; } = null!;
-        public static MelonPreferences_Entry<float> FixedSpawnRespawnDelayMinSeconds { get; private set; } = null!;
-        public static MelonPreferences_Entry<float> FixedSpawnRespawnDelayMaxSeconds { get; private set; } = null!;
-        public static MelonPreferences_Entry<float> FixedSpawnRespawnMinPlayerDistanceMeters { get; private set; } = null!;
+        public static MelonPreferences_Entry<float> MapPlacedEncounterDelayMinSeconds { get; private set; } = null!;
+        public static MelonPreferences_Entry<float> MapPlacedEncounterDelayMaxSeconds { get; private set; } = null!;
+        public static MelonPreferences_Entry<float> MapPlacedEncounterMinPlayerDistanceMeters { get; private set; } = null!;
         public static MelonPreferences_Entry<bool> AutoScaleOtherSpawnsByPlayerCount { get; private set; } = null!;
         public static MelonPreferences_Entry<float> OtherSpawnMultiplier { get; private set; } = null!;
 
@@ -291,7 +291,7 @@ namespace MimesisPlayerEnhancement
                 "MimicSpawnMultiplier",
                 1f,
                 "Mimic Spawn Multiplier",
-                "Mimic spawn budget multiplier (1 = vanilla, 2 = double).");
+                "Total mimic spawn budget across the run, including periodic spawns (1 = vanilla, 2 = double).");
 
             AutoScaleBossSpawnsByPlayerCount = CreateTrackedEntry(_spawnScalingCategory, 
                 "AutoScaleBossSpawnsByPlayerCount",
@@ -303,7 +303,7 @@ namespace MimesisPlayerEnhancement
                 "BossSpawnMultiplier",
                 1f,
                 "Boss Spawn Multiplier",
-                "Boss spawn budget multiplier (1 = vanilla, 2 = double).");
+                "Map-placed bosses: activates unused alternate markers and schedules bonus encounters after kill (1 = vanilla, 2 = double).");
 
             AutoScaleJakoSpawnsByPlayerCount = CreateTrackedEntry(_spawnScalingCategory, 
                 "AutoScaleJakoSpawnsByPlayerCount",
@@ -315,7 +315,7 @@ namespace MimesisPlayerEnhancement
                 "JakoSpawnMultiplier",
                 1f,
                 "Jako Spawn Multiplier",
-                "Jako (normal monster) spawn budget multiplier (1 = vanilla, 2 = double).");
+                "Total normal-monster threat budget for ambient dungeon spawns (1 = vanilla, 2 = double).");
 
             AutoScaleSpecialSpawnsByPlayerCount = CreateTrackedEntry(_spawnScalingCategory, 
                 "AutoScaleSpecialSpawnsByPlayerCount",
@@ -327,7 +327,7 @@ namespace MimesisPlayerEnhancement
                 "SpecialSpawnMultiplier",
                 1f,
                 "Special Spawn Multiplier",
-                "Special monster spawn budget multiplier (1 = vanilla, 2 = double).");
+                "Special monster budget for periodic spawns and map-placed specials (1 = vanilla, 2 = double).");
 
             AutoScaleTrapSpawnsByPlayerCount = CreateTrackedEntry(_spawnScalingCategory, 
                 "AutoScaleTrapSpawnsByPlayerCount",
@@ -339,25 +339,25 @@ namespace MimesisPlayerEnhancement
                 "TrapSpawnMultiplier",
                 1f,
                 "Trap Spawn Multiplier",
-                "Trap spawn multiplier (1 = vanilla, 2 = double). Map-placed traps use unused markers first, then respawn at the same marker when gone.");
+                "Map-placed traps: activates unused alternate markers and schedules bonus encounters after trigger/kill (1 = vanilla, 2 = double).");
 
-            FixedSpawnRespawnDelayMinSeconds = CreateTrackedEntry(_spawnScalingCategory, 
-                "FixedSpawnRespawnDelayMinSeconds",
+            MapPlacedEncounterDelayMinSeconds = CreateTrackedEntry(_spawnScalingCategory, 
+                "MapPlacedEncounterDelayMinSeconds",
                 5f,
-                "Fixed Spawn Respawn Delay Min Seconds",
-                "Minimum random delay before a map-placed monster or trap respawns at the same marker when no unused markers remain.");
+                "Map-Placed Encounter Delay Min (seconds)",
+                "Shortest wait after a map-placed enemy, trap, or loot marker is cleared before the next bonus encounter from scaling can appear there.");
 
-            FixedSpawnRespawnDelayMaxSeconds = CreateTrackedEntry(_spawnScalingCategory, 
-                "FixedSpawnRespawnDelayMaxSeconds",
+            MapPlacedEncounterDelayMaxSeconds = CreateTrackedEntry(_spawnScalingCategory, 
+                "MapPlacedEncounterDelayMaxSeconds",
                 30f,
-                "Fixed Spawn Respawn Delay Max Seconds",
-                "Maximum random delay before a map-placed monster or trap respawns at the same marker when no unused markers remain.");
+                "Map-Placed Encounter Delay Max (seconds)",
+                "Longest wait for that random delay. Actual delay is picked between min and max.");
 
-            FixedSpawnRespawnMinPlayerDistanceMeters = CreateTrackedEntry(_spawnScalingCategory, 
-                "FixedSpawnRespawnMinPlayerDistanceMeters",
+            MapPlacedEncounterMinPlayerDistanceMeters = CreateTrackedEntry(_spawnScalingCategory, 
+                "MapPlacedEncounterMinPlayerDistanceMeters",
                 10f,
-                "Fixed Spawn Respawn Min Player Distance Meters",
-                "After the respawn delay, wait until no players are within this distance (meters) before spawning at the marker. Set to 0 to respawn immediately.");
+                "Map-Placed Encounter Min Player Distance (m)",
+                "After the delay, hold the spawn until no living players are within this radius of the marker. 0 = spawn as soon as the delay elapses.");
 
             AutoScaleOtherSpawnsByPlayerCount = CreateTrackedEntry(_spawnScalingCategory, 
                 "AutoScaleOtherSpawnsByPlayerCount",
@@ -830,9 +830,9 @@ namespace MimesisPlayerEnhancement
             AutoScaleJakoSpawnsByPlayerCount.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
             AutoScaleSpecialSpawnsByPlayerCount.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
             AutoScaleTrapSpawnsByPlayerCount.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
-            FixedSpawnRespawnDelayMinSeconds.OnEntryValueChanged.Subscribe((_, value) => OnFixedSpawnRespawnDelayChanged(logger, value, FixedSpawnRespawnDelayMinSeconds));
-            FixedSpawnRespawnDelayMaxSeconds.OnEntryValueChanged.Subscribe((_, value) => OnFixedSpawnRespawnDelayChanged(logger, value, FixedSpawnRespawnDelayMaxSeconds));
-            FixedSpawnRespawnMinPlayerDistanceMeters.OnEntryValueChanged.Subscribe((_, value) => OnFixedSpawnRespawnMinPlayerDistanceChanged(logger, value));
+            MapPlacedEncounterDelayMinSeconds.OnEntryValueChanged.Subscribe((_, value) => OnMapPlacedEncounterDelayChanged(logger, value, MapPlacedEncounterDelayMinSeconds));
+            MapPlacedEncounterDelayMaxSeconds.OnEntryValueChanged.Subscribe((_, value) => OnMapPlacedEncounterDelayChanged(logger, value, MapPlacedEncounterDelayMaxSeconds));
+            MapPlacedEncounterMinPlayerDistanceMeters.OnEntryValueChanged.Subscribe((_, value) => OnMapPlacedEncounterMinPlayerDistanceChanged(logger, value));
             AutoScaleOtherSpawnsByPlayerCount.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
 
             EnableLootMultiplicator.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
@@ -934,6 +934,7 @@ namespace MimesisPlayerEnhancement
             EnableDebugLogging.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
 
             RegisterFloatEntries();
+            MigrateLegacyMapPlacedEncounterKeys(logger);
             ModConfigFloatHelper.SanitizeAll(FloatEntries);
             NormalizeSavedFloats();
             ModConfigRegistry.Rebuild();
@@ -1003,9 +1004,9 @@ namespace MimesisPlayerEnhancement
                 JakoSpawnMultiplier,
                 SpecialSpawnMultiplier,
                 TrapSpawnMultiplier,
-                FixedSpawnRespawnDelayMinSeconds,
-                FixedSpawnRespawnDelayMaxSeconds,
-                FixedSpawnRespawnMinPlayerDistanceMeters,
+                MapPlacedEncounterDelayMinSeconds,
+                MapPlacedEncounterDelayMaxSeconds,
+                MapPlacedEncounterMinPlayerDistanceMeters,
                 OtherSpawnMultiplier,
                 MapConsumableLootMultiplier,
                 MapEquipmentLootMultiplier,
@@ -1041,7 +1042,34 @@ namespace MimesisPlayerEnhancement
             NotifyChanged();
         }
 
-        private static void OnFixedSpawnRespawnDelayChanged(MelonLogger.Instance logger, float value, MelonPreferences_Entry<float> entry)
+        private static void MigrateLegacyMapPlacedEncounterKeys(MelonLogger.Instance logger)
+        {
+            bool migrated = false;
+            migrated |= TryMigrateLegacyFloatKey("FixedSpawnRespawnDelayMinSeconds", MapPlacedEncounterDelayMinSeconds);
+            migrated |= TryMigrateLegacyFloatKey("FixedSpawnRespawnDelayMaxSeconds", MapPlacedEncounterDelayMaxSeconds);
+            migrated |= TryMigrateLegacyFloatKey("FixedSpawnRespawnMinPlayerDistanceMeters", MapPlacedEncounterMinPlayerDistanceMeters);
+
+            if (migrated)
+            {
+                logger.Msg(
+                    "Spawn Scaling config migrated — FixedSpawnRespawn* keys copied to MapPlacedEncounter* keys.");
+            }
+        }
+
+        private static bool TryMigrateLegacyFloatKey(
+            string legacyKey,
+            MelonPreferences_Entry<float> targetEntry)
+        {
+            if (_spawnScalingCategory.GetEntry<float>(legacyKey) is not MelonPreferences_Entry<float> legacyEntry)
+            {
+                return false;
+            }
+
+            targetEntry.Value = legacyEntry.Value;
+            return true;
+        }
+
+        private static void OnMapPlacedEncounterDelayChanged(MelonLogger.Instance logger, float value, MelonPreferences_Entry<float> entry)
         {
             if (value < 0f)
             {
@@ -1050,28 +1078,28 @@ namespace MimesisPlayerEnhancement
                 return;
             }
 
-            float min = FixedSpawnRespawnDelayMinSeconds.Value;
-            float max = FixedSpawnRespawnDelayMaxSeconds.Value;
+            float min = MapPlacedEncounterDelayMinSeconds.Value;
+            float max = MapPlacedEncounterDelayMaxSeconds.Value;
             if (max < min)
             {
-                logger.Warning("FixedSpawnRespawnDelayMaxSeconds must be >= FixedSpawnRespawnDelayMinSeconds; syncing max to min.");
-                FixedSpawnRespawnDelayMaxSeconds.Value = min;
+                logger.Warning("MapPlacedEncounterDelayMaxSeconds must be >= MapPlacedEncounterDelayMinSeconds; syncing max to min.");
+                MapPlacedEncounterDelayMaxSeconds.Value = min;
             }
 
             ModConfigFloatHelper.SanitizeEntry(entry);
             NotifyChanged();
         }
 
-        private static void OnFixedSpawnRespawnMinPlayerDistanceChanged(MelonLogger.Instance logger, float value)
+        private static void OnMapPlacedEncounterMinPlayerDistanceChanged(MelonLogger.Instance logger, float value)
         {
             if (value < 0f)
             {
-                logger.Warning("FixedSpawnRespawnMinPlayerDistanceMeters must be >= 0; resetting to 0.");
-                FixedSpawnRespawnMinPlayerDistanceMeters.Value = 0f;
+                logger.Warning("MapPlacedEncounterMinPlayerDistanceMeters must be >= 0; resetting to 0.");
+                MapPlacedEncounterMinPlayerDistanceMeters.Value = 0f;
                 return;
             }
 
-            ModConfigFloatHelper.SanitizeEntry(FixedSpawnRespawnMinPlayerDistanceMeters);
+            ModConfigFloatHelper.SanitizeEntry(MapPlacedEncounterMinPlayerDistanceMeters);
             NotifyChanged();
         }
 

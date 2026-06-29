@@ -48,7 +48,9 @@ namespace MimesisPlayerEnhancement.Features.SpawnScaling
             HarmonyPatchHelper.LogPatchAudit(Feature, harmony,
             [
                 ("InitSpawn/DungeonRoom", AccessTools.Method(typeof(DungeonRoom), "InitSpawn")),
+                ("ManageSpawnData/DungeonRoom", AccessTools.Method(typeof(DungeonRoom), "ManageSpawnData")),
                 ("OnActorDead/SpawnedActorData", AccessTools.Method(typeof(SpawnedActorData), "OnActorDead")),
+                ("OnMemberDead/GroupSpawnData", AccessTools.Method(typeof(GroupSpawnData), "OnMemberDead", [typeof(int)])),
                 ("SpawnMonster/IVroom", ResolveSpawnMonsterMethod()),
             ]);
         }
@@ -62,11 +64,41 @@ namespace MimesisPlayerEnhancement.Features.SpawnScaling
                 try
                 {
                     SpawnScalingApplier.EnsureApplied(__instance);
-                    FixedSpawnCoordinator.ApplyAfterInit(__instance);
+                    MapPlacedEncounterScheduler.ApplyAfterInit(__instance);
                 }
                 catch (Exception ex)
                 {
                     ModLog.Warn(Feature, $"InitSpawn postfix failed — {ex.Message}");
+                }
+            }
+        }
+
+        [HarmonyPatch(typeof(DungeonRoom), "ManageSpawnData")]
+        public static class DungeonRoomManageSpawnDataPatch
+        {
+            [HarmonyPrefix]
+            public static void Prefix(DungeonRoom __instance)
+            {
+                try
+                {
+                    SpawnTimingOverrideApplier.BeginManageSpawnData(__instance);
+                }
+                catch (Exception ex)
+                {
+                    ModLog.Warn(Feature, $"ManageSpawnData prefix failed — {ex.Message}");
+                }
+            }
+
+            [HarmonyFinalizer]
+            public static void Finalizer(DungeonRoom __instance)
+            {
+                try
+                {
+                    SpawnTimingOverrideApplier.EndManageSpawnData(__instance);
+                }
+                catch (Exception ex)
+                {
+                    ModLog.Warn(Feature, $"ManageSpawnData finalizer failed — {ex.Message}");
                 }
             }
         }
@@ -79,11 +111,28 @@ namespace MimesisPlayerEnhancement.Features.SpawnScaling
             {
                 try
                 {
-                    FixedSpawnCoordinator.OnActorDead(__instance);
+                    MapPlacedEncounterScheduler.OnActorDead(__instance);
                 }
                 catch (Exception ex)
                 {
-                    ModLog.Warn(Feature, $"OnActorDead fixed spawn scaling failed — {ex.Message}");
+                    ModLog.Warn(Feature, $"OnActorDead map-placed encounter scaling failed — {ex.Message}");
+                }
+            }
+        }
+
+        [HarmonyPatch(typeof(GroupSpawnData), "OnMemberDead")]
+        public static class GroupSpawnDataOnMemberDeadPatch
+        {
+            [HarmonyPostfix]
+            public static void Postfix(GroupSpawnData __instance, int actorID, bool __result)
+            {
+                try
+                {
+                    GroupSpawnBonusWaveApplier.OnMemberDead(__instance, __result);
+                }
+                catch (Exception ex)
+                {
+                    ModLog.Warn(Feature, $"OnMemberDead group bonus wave failed — {ex.Message}");
                 }
             }
         }
@@ -107,7 +156,7 @@ namespace MimesisPlayerEnhancement.Features.SpawnScaling
                     return true;
                 }
 
-                if (FixedSpawnProximity.ShouldBlockFixedCreatureRespawn(dungeonRoom, spawnData))
+                if (MapPlacedEncounterProximity.ShouldBlockBonusEncounterSpawn(dungeonRoom, spawnData))
                 {
                     __result = false;
                     return false;
