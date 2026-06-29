@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Linq;
 using System.Reflection;
 
@@ -73,18 +72,6 @@ namespace MimesisPlayerEnhancement.Util
         public static void SetMaximumClients(object serverSocket, int value)
         {
             ReflectionHelper.SetFieldValue(serverSocket, "_maximumClients", value);
-        }
-
-        // MimicAPI: ServerNetworkAPI.GetRoomPlayerCount()
-        public static int GetRoomPlayerCount(object? room)
-        {
-            if (room == null)
-            {
-                return 0;
-            }
-
-            IDictionary? dict = ReflectionHelper.GetFieldValue(room, "_vPlayerDict") as IDictionary;
-            return dict?.Count ?? 0;
         }
 
         // MimicAPI: CoreAPI.GetVWorld() via ServerNetworkAPI.GetVWorld()
