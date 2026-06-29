@@ -1,7 +1,7 @@
 using System;
-using System.Reflection;
 using HarmonyLib;
 using Mimic.Voice.SpeechSystem;
+using MimesisPlayerEnhancement.Features.Persistence;
 using MimesisPlayerEnhancement.Util;
 
 namespace MimesisPlayerEnhancement.Features.MoreVoices
@@ -10,23 +10,16 @@ namespace MimesisPlayerEnhancement.Features.MoreVoices
     {
         private const string Feature = "MoreVoices";
 
-        private const BindingFlags InstanceFieldFlags =
-            BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
-
-        private static readonly FieldInfo? MaxEventsField =
-            typeof(SpeechEventArchive).GetField("maxEvents", InstanceFieldFlags);
-
-        private static readonly FieldInfo? MaxDeathMatchEventsField =
-            typeof(SpeechEventArchive).GetField("maxDeathMatchEvents", InstanceFieldFlags);
-
-        private static readonly FieldInfo? MaxOutDoorEventsField =
-            typeof(SpeechEventArchive).GetField("maxOutDoorEvents", InstanceFieldFlags);
-
         public static void Apply(HarmonyLib.Harmony harmony)
         {
-            if (MaxEventsField == null || MaxDeathMatchEventsField == null || MaxOutDoorEventsField == null)
+            if (!SpeechEventArchiveLimits.FieldsAvailable)
             {
-                ModLog.Warn(Feature, "One or more SpeechEventArchive limit fields not found — voice cap patches may not apply");
+                ModLog.Warn(Feature, "SpeechEventArchive limit fields not found — voice cap patches may not apply");
+            }
+
+            if (AccessTools.Method(typeof(SpeechEventArchive), "RemoveLowerValueEventsIfExceeded") == null)
+            {
+                ModLog.Warn(Feature, "RemoveLowerValueEventsIfExceeded not found — re-trim may not apply");
             }
 
             HarmonyPatchHelper.PatchApplyResult result = HarmonyPatchHelper.ApplyPatchTypes(
@@ -46,11 +39,13 @@ namespace MimesisPlayerEnhancement.Features.MoreVoices
                 return;
             }
 
-            int maxIndoor = ModConfig.MaxIndoorVoiceEvents.Value;
-            int maxDeathMatch = ModConfig.MaxDeathMatchVoiceEvents.Value;
-            int maxOutdoor = ModConfig.MaxOutdoorVoiceEvents.Value;
-            int updated = 0;
+            SpeechEventArchiveLimits.PoolLimits? limits = SpeechEventArchiveLimits.ResolveFromConfig();
+            if (limits == null)
+            {
+                return;
+            }
 
+            int updated = 0;
             foreach (SpeechEventArchive archive in SpeechEventArchiveRegistry.EnumerateActive())
             {
                 if (archive == null)
@@ -58,20 +53,21 @@ namespace MimesisPlayerEnhancement.Features.MoreVoices
                     continue;
                 }
 
-                if (ApplyLimitsToArchive(archive, maxIndoor, maxDeathMatch, maxOutdoor))
+                if (SpeechEventArchiveLimits.TryApply(archive, retrimOnDecrease: true))
                 {
                     updated++;
                 }
             }
 
-            string limits = FormatLimits(maxIndoor, maxDeathMatch, maxOutdoor);
+            string caps = SpeechEventArchiveLimits.FormatEffectiveCaps(
+                SpeechEventArchiveLimits.ToEffectiveCaps(limits.Value));
             if (updated > 0)
             {
-                ModLog.Info(Feature, $"Refreshed voice limits on {updated} archive(s) — {limits}.");
+                ModLog.Info(Feature, $"Refreshed voice limits on {updated} archive(s) — {caps}.");
             }
             else
             {
-                ModLog.Debug(Feature, $"Voice limit refresh complete — {limits}, no active archives.");
+                ModLog.Debug(Feature, $"Voice limit refresh complete — {caps}, no active archives.");
             }
         }
 
@@ -80,14 +76,17 @@ namespace MimesisPlayerEnhancement.Features.MoreVoices
             HarmonyPatchHelper.LogPatchAudit(Feature, harmony,
             [
                 ("OnStartClient/SpeechEventArchive", AccessTools.Method(typeof(SpeechEventArchive), "OnStartClient")),
+                ("RemoveLowerValueEventsIfExceeded/SpeechEventArchive",
+                    AccessTools.Method(typeof(SpeechEventArchive), "RemoveLowerValueEventsIfExceeded")),
             ]);
         }
 
         [HarmonyPatch(typeof(SpeechEventArchive), "OnStartClient")]
-        public static class SpeechEventArchiveLimitsPatch
+        [HarmonyPriority(-100)]
+        internal static class SpeechEventArchiveOnStartClientPatch
         {
-            [HarmonyPostfix]
-            public static void Postfix(SpeechEventArchive __instance)
+            [HarmonyPrefix]
+            public static void Prefix(SpeechEventArchive __instance)
             {
                 if (!ModConfig.EnableMoreVoices.Value || __instance == null)
                 {
@@ -96,81 +95,49 @@ namespace MimesisPlayerEnhancement.Features.MoreVoices
 
                 try
                 {
-                    int maxIndoor = ModConfig.MaxIndoorVoiceEvents.Value;
-                    int maxDeathMatch = ModConfig.MaxDeathMatchVoiceEvents.Value;
-                    int maxOutdoor = ModConfig.MaxOutdoorVoiceEvents.Value;
-
-                    if (ApplyLimitsToArchive(__instance, maxIndoor, maxDeathMatch, maxOutdoor))
+                    if (!SpeechEventArchiveLimits.TryApply(__instance, retrimOnDecrease: false))
                     {
-                        ModLog.Info(
-                            Feature,
-                            $"Voice archive started — {FormatLimits(maxIndoor, maxDeathMatch, maxOutdoor)}, " +
-                            $"{VoiceEventStats.DescribePlayer(__instance)}");
+                        return;
                     }
 
-                    ModLog.Debug(
+                    SpeechEventArchiveLimits.PoolLimits? limits = SpeechEventArchiveLimits.ResolveFromConfig();
+                    if (limits == null)
+                    {
+                        return;
+                    }
+
+                    ModLog.Info(
                         Feature,
-                        $"Voice archive detail — maxEvents={GetFieldValue(__instance, MaxEventsField)}, " +
-                        $"maxDeathMatch={GetFieldValue(__instance, MaxDeathMatchEventsField)}, " +
-                        $"maxOutdoor={GetFieldValue(__instance, MaxOutDoorEventsField)}, " +
-                        $"{VoiceEventStats.DescribePlayerVerbose(__instance)}");
+                        $"Voice archive started — {SpeechEventArchiveLimits.FormatEffectiveCaps(SpeechEventArchiveLimits.ToEffectiveCaps(limits.Value))}, " +
+                        $"{VoiceEventStats.DescribePlayer(__instance)}");
                 }
                 catch (Exception ex)
                 {
-                    ModLog.Warn(Feature, $"Voice archive postfix failed: {ex.Message}");
+                    ModLog.Warn(Feature, $"Voice archive prefix failed: {ex.Message}");
                 }
             }
         }
 
-        private static bool ApplyLimitsToArchive(
-            SpeechEventArchive archive,
-            int maxIndoor,
-            int maxDeathMatch,
-            int maxOutdoor)
+        [HarmonyPatch(typeof(SpeechEventArchive), "RemoveLowerValueEventsIfExceeded")]
+        internal static class RemoveLowerValueEventsIfExceededPrefix
         {
-            try
+            [HarmonyPrefix]
+            public static void Prefix(SpeechEventArchive __instance)
             {
-                int oldMaxEvents = GetFieldValue(archive, MaxEventsField);
-                int oldMaxDeathMatch = GetFieldValue(archive, MaxDeathMatchEventsField);
-                int oldMaxOutdoor = GetFieldValue(archive, MaxOutDoorEventsField);
+                if (!ModConfig.EnableMoreVoices.Value || __instance == null)
+                {
+                    return;
+                }
 
-                SetFieldValue(archive, MaxEventsField, maxIndoor);
-                SetFieldValue(archive, MaxDeathMatchEventsField, maxDeathMatch);
-                SetFieldValue(archive, MaxOutDoorEventsField, maxOutdoor);
-
-                ModLog.Debug(
-                    Feature,
-                    $"Applied instance limits -> {FormatLimits(maxIndoor, maxDeathMatch, maxOutdoor)} " +
-                    $"(was maxEvents={oldMaxEvents}, maxDeathMatch={oldMaxDeathMatch}, maxOutdoor={oldMaxOutdoor}).");
-                return true;
+                try
+                {
+                    _ = SpeechEventArchiveLimits.TryApplyFields(__instance);
+                }
+                catch (Exception ex)
+                {
+                    ModLog.Warn(Feature, $"Voice limit prefix before eviction failed: {ex.Message}");
+                }
             }
-            catch (Exception ex)
-            {
-                ModLog.Warn(Feature, $"Failed to set voice limit fields: {ex.Message}");
-                return false;
-            }
-        }
-
-        private static string FormatLimits(int maxIndoor, int maxDeathMatch, int maxOutdoor)
-        {
-            return $"indoor={maxIndoor}, deathmatch={maxDeathMatch}, outdoor={maxOutdoor}";
-        }
-
-        private static int GetFieldValue(SpeechEventArchive archive, FieldInfo? field)
-        {
-            return field == null
-                ? throw new MissingFieldException(typeof(SpeechEventArchive).FullName, "voice limit field")
-                : (int)field.GetValue(archive);
-        }
-
-        private static void SetFieldValue(SpeechEventArchive archive, FieldInfo? field, int value)
-        {
-            if (field == null)
-            {
-                throw new MissingFieldException(typeof(SpeechEventArchive).FullName, "voice limit field");
-            }
-
-            field.SetValue(archive, value);
         }
     }
 }
