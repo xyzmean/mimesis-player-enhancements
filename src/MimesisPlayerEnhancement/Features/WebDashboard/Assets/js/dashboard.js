@@ -49,6 +49,8 @@ document.addEventListener('alpine:init', () => {
     settings: null,
     settingsQuery: '',
     route: 'waiting',
+    routeBeforeDonation: 'waiting',
+    routeBeforeDonationSteamId: null,
     steamId: null,
     toastMessage: '',
     toastVisible: false,
@@ -70,6 +72,20 @@ document.addEventListener('alpine:init', () => {
     minimapAreaId: '',
     minimapLastLayoutVersion: -1,
     minimapLastActiveAreaId: '',
+
+    get donationBackHref() {
+      if (!this.status.isConnected) {
+        return '#/waiting';
+      }
+      const route = this.routeBeforeDonation;
+      if (route === 'player' && this.routeBeforeDonationSteamId) {
+        return '#/player/' + this.routeBeforeDonationSteamId;
+      }
+      if (!route || route === 'donation' || route === 'waiting') {
+        return '#/players';
+      }
+      return '#/' + route;
+    },
 
     get subtitle() {
       if (this.apiError) {
@@ -126,6 +142,7 @@ document.addEventListener('alpine:init', () => {
       this.minimapAreaId = localStorage.getItem('minimapAreaId') || '';
       window.addEventListener('hashchange', () => this.onHashChange());
       this.parseRoute();
+      this.setConnectedMode();
       this.eventSource = Sse.connect(
         (payload) => {
           this.applySnapshot(payload);
@@ -150,7 +167,7 @@ document.addEventListener('alpine:init', () => {
     },
 
     ensureDefaultRoute() {
-      if (!this.status.isConnected && this.route !== 'waiting') {
+      if (!this.status.isConnected && this.route !== 'waiting' && this.route !== 'donation') {
         location.hash = '#/waiting';
         this.parseRoute();
       } else if (
@@ -163,7 +180,8 @@ document.addEventListener('alpine:init', () => {
     },
 
     setConnectedMode() {
-      document.body.classList.toggle('waiting', !this.status.isConnected);
+      const waitingLayout = !this.status.isConnected && this.route !== 'donation';
+      document.body.classList.toggle('waiting', waitingLayout);
       document.body.classList.toggle('connected', this.status.isConnected);
     },
 
@@ -171,6 +189,11 @@ document.addEventListener('alpine:init', () => {
       const prevRoute = this.lastRoute;
       const prevSteam = this.lastSteamId;
       this.parseRoute();
+      if (this.route === 'donation' && prevRoute !== 'donation') {
+        this.routeBeforeDonation = prevRoute || (this.status.isConnected ? 'players' : 'waiting');
+        this.routeBeforeDonationSteamId = prevRoute === 'player' ? prevSteam : null;
+      }
+      this.setConnectedMode();
       if (this.route !== prevRoute || this.steamId !== prevSteam) {
         this.loadPageData(true);
       }

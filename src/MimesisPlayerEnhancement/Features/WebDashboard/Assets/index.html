@@ -15,9 +15,13 @@
     <header class="app-header">
       <div class="app-header-inner">
         <div class="app-brand">
-          <h1>Mimesis Player Dashboard</h1>
+          <h1>
+            <a class="app-brand-title" :href="status.isConnected ? '#/players' : '#/waiting'">Mimesis Player Dashboard</a>
+          </h1>
           <p class="app-subtitle" x-text="subtitle"></p>
         </div>
+        <a class="app-header-link" href="#/donation" x-show="route !== 'donation'">Donation</a>
+        <a class="app-header-link app-header-link-back" :href="donationBackHref" x-show="route === 'donation'">&larr; Back</a>
       </div>
     </header>
 
@@ -42,8 +46,47 @@
       <div class="app-content">
         <section id="view" aria-live="polite">
 
+          <!-- Donation -->
+          <div x-show="route === 'donation'" x-cloak>
+            <h2 class="page-heading">Donation</h2>
+            <div class="donation-panel surface-card">
+              <p class="donation-lead">
+                Please support my work with a small donation if you can. Maintaining this mod takes a lot of dedicated time.
+              </p>
+              <p>
+                Mimesis Player Enhancement is not a quick patch — it merges several community mods into one maintained package
+                and adds original work on top: Harmony patches across the game, this web dashboard, session statistics,
+                spawn/loot/money scaling, dungeon tweaks, and ongoing compatibility testing with new MIMESIS releases.
+              </p>
+              <p>
+                If you enjoy playing with it and want to say thanks, a small donation is genuinely appreciated
+                <strong>but never required</strong>.
+              </p>
+              <p class="donation-action">
+                <a class="donation-button"
+                   href="https://www.paypal.com/donate/?hosted_button_id=C2AVYKGVP9TRG"
+                   target="_blank"
+                   rel="noopener noreferrer">
+                  <img src="https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif"
+                       alt="Donate with PayPal"
+                       width="147"
+                       height="47"
+                       loading="lazy"
+                       decoding="async">
+                </a>
+              </p>
+              <p class="donation-footnote">
+                The mod stays free and open source either way. Please also support the original mod authors listed in the
+                <a class="external-link"
+                   href="https://github.com/Kandru/mimesis-player-enhancements"
+                   target="_blank"
+                   rel="noopener noreferrer">GitHub README</a>.
+              </p>
+            </div>
+          </div>
+
           <!-- Waiting -->
-          <div x-show="!status.isConnected" class="waiting-panel">
+          <div x-show="!status.isConnected && route !== 'donation'" class="waiting-panel">
             <div class="waiting-card">
               <div class="spinner" role="progressbar" aria-label="Waiting for game"></div>
               <h2>Not connected</h2>
