@@ -184,7 +184,7 @@ Host-only. Each setting is a **source × item type** pair. The multiplier (`1` =
 | Prefix | Source | What it affects |
 |--------|--------|-----------------|
 | **Map** | Map spawn points | Loot placed when a dungeon room loads. **Fixed** loot (specific item at a marker): activates unused loot markers of the same item, scales consumable stack size and `MaxRespawnCount`, and may respawn at the same marker when picked up (uses `FixedSpawnRespawnDelay*` from Spawn Scaling). **Random** loot pools (weighted mix from the dungeon table): scales the dungeon misc budget so more markers fill with **random picks from the pool** — not clones of the same item. |
-| **Drop** | Enemy death drops | Items from enemy death tables when a monster is killed, plus inventory items dropped on death. Adds extra **weighted re-rolls** from the same drop table (more separate drops, not same-item clones). Consumable stack count is also scaled when the item spawns (`ActorDying`). Mimics often drop **fake** decoy items from inventory — see `ConvertFakeActorDyingDropsToReal`. Monster drop-table loot is already real; many monsters have `drop_id = 0` (no table drops). |
+| **Drop** | Enemy death drops | Items from enemy death tables when a monster is killed, plus inventory items dropped on death. Adds extra **weighted re-rolls** from the same drop table (more separate drops, not same-item clones). Consumable stack count is also scaled when the item spawns (`ActorDying`). Mimics often drop **fake** decoy items from inventory — see `ConvertFakeActorDyingDropChancePercent`. Monster drop-table loot is already real; many monsters have `drop_id = 0` (no table drops). |
 | **Trigger** | Map events / trigger volumes | Items spawned by map events (`EventAction`). Adds extra **weighted picks** from the event item table. Consumable stack count is scaled when the item appears. |
 
 **Item types** — from the game's item data (`Consumable`, `Equipment`, `Miscellany`):
@@ -221,7 +221,7 @@ Each source has three multiplier + auto-scale pairs (Consumable, Equipment, Misc
 | `LootItemFilterMode` | string | `All` | `All`, `AllowlistOnly`, or `BlocklistOnly` — restrict which item master IDs are scaled. |
 | `LootAllowlist` | string | `""` | Comma-separated item master IDs (e.g. `12345,67890`). Used when `LootItemFilterMode` is `AllowlistOnly`. |
 | `LootBlocklist` | string | `""` | Comma-separated item master IDs to exclude. Used when `LootItemFilterMode` is `BlocklistOnly`. |
-| `ConvertFakeActorDyingDropsToReal` | bool | `false` | When enabled, fake items dropped on enemy death (`ActorDying`, e.g. mimic inventory decoys) become real pickup loot instead of vanishing on grab. |
+| `ConvertFakeActorDyingDropChancePercent` | int | `30` | Chance (0–100) that fake items dropped on enemy death (`ActorDying`, e.g. mimic inventory decoys) become real pickup loot. `0` = vanilla (vanish on grab), `100` = always real. |
 
 Does **not** scale: items you release from inventory, shop purchases, admin/cheat spawns, creature/monster spawns, or other spawn reasons (e.g. `Release`, `Buying`, `Admin`, `Skill`). Map loot budgets and spawn data are scaled once at room load; drop/trigger extras use table re-rolls at spawn time.
 

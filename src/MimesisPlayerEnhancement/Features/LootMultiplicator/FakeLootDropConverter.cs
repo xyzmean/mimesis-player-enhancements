@@ -13,11 +13,16 @@ namespace MimesisPlayerEnhancement.Features.LootMultiplicator
     {
         internal static void TryConvertActorDyingDrop(IVroom? vroom, ref ItemElement? element, ReasonOfSpawn reasonOfSpawn)
         {
-            if (!ModConfig.ConvertFakeActorDyingDropsToReal.Value
-                || vroom == null
+            if (vroom == null
                 || element == null
                 || !element.IsFake
                 || !reasonOfSpawn.Equals(ReasonOfSpawn.ActorDying))
+            {
+                return;
+            }
+
+            int chancePercent = ModConfig.ConvertFakeActorDyingDropChancePercent.Value;
+            if (chancePercent <= 0 || !RollConversion(chancePercent))
             {
                 return;
             }
@@ -39,8 +44,18 @@ namespace MimesisPlayerEnhancement.Features.LootMultiplicator
             {
                 ModLog.Debug(
                     "LootMultiplicator",
-                    $"Converted fake ActorDying drop to real — master={real.ItemMasterID}, type={real.ItemType}");
+                    $"Converted fake ActorDying drop to real — master={real.ItemMasterID}, type={real.ItemType}, chance={chancePercent}%");
             }
+        }
+
+        private static bool RollConversion(int chancePercent)
+        {
+            if (chancePercent >= 100)
+            {
+                return true;
+            }
+
+            return SimpleRandUtil.Next(0, 10000) < chancePercent * 100;
         }
 
         private static ItemElement? CreateRealCopy(IVroom vroom, ItemElement template)

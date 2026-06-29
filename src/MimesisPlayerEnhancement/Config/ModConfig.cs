@@ -86,7 +86,7 @@ namespace MimesisPlayerEnhancement
         public static MelonPreferences_Entry<string> LootItemFilterMode { get; private set; } = null!;
         public static MelonPreferences_Entry<string> LootAllowlist { get; private set; } = null!;
         public static MelonPreferences_Entry<string> LootBlocklist { get; private set; } = null!;
-        public static MelonPreferences_Entry<bool> ConvertFakeActorDyingDropsToReal { get; private set; } = null!;
+        public static MelonPreferences_Entry<int> ConvertFakeActorDyingDropChancePercent { get; private set; } = null!;
 
         public static MelonPreferences_Entry<bool> EnableMoneyMultiplier { get; private set; } = null!;
         public static MelonPreferences_Entry<bool> AutoScaleStartupMoneyByPlayerCount { get; private set; } = null!;
@@ -486,11 +486,11 @@ namespace MimesisPlayerEnhancement
                 "Loot Blocklist",
                 "Comma-separated item master IDs to exclude from scaling. Used when LootItemFilterMode is BlocklistOnly.");
 
-            ConvertFakeActorDyingDropsToReal = CreateTrackedEntry(_lootMultiplicatorCategory,
-                "ConvertFakeActorDyingDropsToReal",
-                false,
-                "Convert Fake Death Drops To Real",
-                "Mimics and other AI often drop fake decoy items from their inventory on death (ActorDying). Vanilla destroys these on pickup. When enabled, those ground drops become real loot. Monster drop-table loot is already real; many monsters have no drop table at all.");
+            ConvertFakeActorDyingDropChancePercent = CreateTrackedEntry(_lootMultiplicatorCategory,
+                "ConvertFakeActorDyingDropChancePercent",
+                30,
+                "Convert Fake Death Drops To Real Chance",
+                "Chance (0-100) that fake items dropped on enemy death (ActorDying, e.g. mimic inventory decoys) become real pickup loot. 0 = vanilla (fake items vanish on grab), 100 = always real. Monster drop-table loot is already real.");
 
             EnableMoneyMultiplier = CreateTrackedEntry(_moneyMultiplierCategory, 
                 "EnableMoneyMultiplier",
@@ -843,7 +843,8 @@ namespace MimesisPlayerEnhancement
             LootItemFilterMode.OnEntryValueChanged.Subscribe((_, value) => OnLootItemFilterModeChanged(logger, value));
             LootAllowlist.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
             LootBlocklist.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
-            ConvertFakeActorDyingDropsToReal.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
+            ConvertFakeActorDyingDropChancePercent.OnEntryValueChanged.Subscribe((_, value) =>
+                OnFakeActorDyingDropChancePercentChanged(logger, value));
 
             EnableMoneyMultiplier.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
             AutoScaleStartupMoneyByPlayerCount.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
@@ -1079,6 +1080,18 @@ namespace MimesisPlayerEnhancement
             {
                 logger.Warning("DungeonPickPoolMode must be WidenVanilla or AllActiveUniform; resetting to WidenVanilla.");
                 DungeonPickPoolMode.Value = "WidenVanilla";
+                return;
+            }
+
+            NotifyChanged();
+        }
+
+        private static void OnFakeActorDyingDropChancePercentChanged(MelonLogger.Instance logger, int value)
+        {
+            if (value is < 0 or > 100)
+            {
+                logger.Warning("ConvertFakeActorDyingDropChancePercent must be 0-100; resetting to 30.");
+                ConvertFakeActorDyingDropChancePercent.Value = 30;
                 return;
             }
 
