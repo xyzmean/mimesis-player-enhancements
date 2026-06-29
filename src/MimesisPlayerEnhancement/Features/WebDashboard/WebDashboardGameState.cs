@@ -1,3 +1,6 @@
+using MimesisPlayerEnhancement.Features.JoinAnytime;
+using Steamworks;
+
 namespace MimesisPlayerEnhancement.Features.WebDashboard
 {
     internal static class WebDashboardGameState
@@ -21,6 +24,31 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
             }
 
             return MimesisSaveManager.TryGetActiveSaveSlotId(out int slotId) ? slotId : -1;
+        }
+
+        internal static string GetLobbyName()
+        {
+            SteamInviteDispatcher? dispatcher = JoinAnytimeHub.GetSteamInviteDispatcher();
+            if (dispatcher == null)
+            {
+                return string.Empty;
+            }
+
+            CSteamID lobbyId = dispatcher.joinedLobbyID;
+            if (lobbyId == CSteamID.Nil)
+            {
+                return string.Empty;
+            }
+
+            string fromSteam = SteamMatchmaking.GetLobbyData(lobbyId, SteamInviteDispatcher.LOBBY_NAME_KEY);
+            if (!string.IsNullOrWhiteSpace(fromSteam))
+            {
+                return fromSteam.Trim();
+            }
+
+            return string.IsNullOrWhiteSpace(dispatcher.lobbyName)
+                ? string.Empty
+                : dispatcher.lobbyName.Trim();
         }
     }
 }

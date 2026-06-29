@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0d1117">
-  <title>Mimesis Player Dashboard</title>
+  <title>Mimesis Player Enhancement</title>
   <link rel="stylesheet" href="/css/dashboard.css">
 </head>
 <body class="waiting" x-data="dashboard()" x-init="init()">
@@ -16,7 +16,7 @@
       <div class="app-header-inner">
         <div class="app-brand">
           <h1>
-            <a class="app-brand-title" :href="status.isConnected ? '#/players' : '#/waiting'">Mimesis Player Dashboard</a>
+            <a class="app-brand-title" :href="status.isConnected ? '#/players' : '#/waiting'" x-text="pageTitle"></a>
           </h1>
           <p class="app-subtitle" x-text="subtitle"></p>
         </div>

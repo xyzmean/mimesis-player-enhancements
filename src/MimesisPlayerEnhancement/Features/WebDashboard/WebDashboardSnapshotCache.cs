@@ -63,6 +63,20 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
                 return;
             }
 
+            long idleNowMs = UtcNowMs();
+            string lobbyName = WebDashboardGameState.GetLobbyName();
+            if (!string.IsNullOrEmpty(lobbyName))
+            {
+                if (lobbyName != _snapshot.Status.LobbyName)
+                {
+                    _dirty = true;
+                }
+                else if (idleNowMs - _lastFullRefreshMs >= FullRefreshIntervalMs)
+                {
+                    _dirty = true;
+                }
+            }
+
             if (!_dirty)
             {
                 return;
@@ -70,7 +84,7 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
 
             Refresh(listenUrl);
             _dirty = false;
-            _lastFullRefreshMs = UtcNowMs();
+            _lastFullRefreshMs = idleNowMs;
             _minimapFingerprint = "";
         }
 
@@ -130,6 +144,7 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
                     IsConnected = connected,
                     IsHost = isHost,
                     SaveSlotId = saveSlotId,
+                    LobbyName = WebDashboardGameState.GetLobbyName(),
                     ModVersion = VersionInfo.ModuleVersion,
                     ListenUrl = listenUrl,
                     SnapshotVersion = Version,

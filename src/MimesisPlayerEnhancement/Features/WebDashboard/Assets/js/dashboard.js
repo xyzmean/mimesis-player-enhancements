@@ -39,6 +39,7 @@ document.addEventListener('alpine:init', () => {
       isConnected: false,
       isHost: false,
       saveSlotId: -1,
+      lobbyName: '',
       modVersion: '',
       snapshotVersion: 0,
       configVersion: 0,
@@ -85,6 +86,11 @@ document.addEventListener('alpine:init', () => {
         return '#/players';
       }
       return '#/' + route;
+    },
+
+    get pageTitle() {
+      const name = (this.status.lobbyName || '').trim();
+      return name || 'Mimesis Player Enhancement';
     },
 
     get subtitle() {
@@ -143,6 +149,7 @@ document.addEventListener('alpine:init', () => {
       window.addEventListener('hashchange', () => this.onHashChange());
       this.parseRoute();
       this.setConnectedMode();
+      this.syncDocumentTitle();
       this.eventSource = Sse.connect(
         (payload) => {
           this.applySnapshot(payload);
@@ -183,6 +190,13 @@ document.addEventListener('alpine:init', () => {
       const waitingLayout = !this.status.isConnected && this.route !== 'donation';
       document.body.classList.toggle('waiting', waitingLayout);
       document.body.classList.toggle('connected', this.status.isConnected);
+    },
+
+    syncDocumentTitle() {
+      const title = this.pageTitle;
+      if (document.title !== title) {
+        document.title = title;
+      }
     },
 
     onHashChange() {
@@ -240,6 +254,7 @@ document.addEventListener('alpine:init', () => {
       }
 
       this.ensureDefaultRoute();
+      this.syncDocumentTitle();
       return wasConnected !== this.status.isConnected;
     },
 

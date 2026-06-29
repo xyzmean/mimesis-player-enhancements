@@ -7,6 +7,7 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard.Models
         public bool IsConnected;
         public bool IsHost;
         public int SaveSlotId = -1;
+        public string LobbyName = "";
         public string ModVersion = "";
         public string ListenUrl = "";
         public int SnapshotVersion;

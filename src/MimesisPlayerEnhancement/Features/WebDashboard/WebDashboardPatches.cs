@@ -93,5 +93,23 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
                 WebDashboardSnapshotCache.MarkDirty();
             }
         }
+
+        [HarmonyPatch(typeof(SteamInviteDispatcher), nameof(SteamInviteDispatcher.SetLobbyName))]
+        internal static class SetLobbyNameSnapshotPatch
+        {
+            private static void Postfix()
+            {
+                WebDashboardSnapshotCache.MarkDirty();
+            }
+        }
+
+        [HarmonyPatch(typeof(SteamInviteDispatcher), nameof(SteamInviteDispatcher.LeaveLobby))]
+        internal static class LeaveLobbySnapshotPatch
+        {
+            private static void Postfix()
+            {
+                WebDashboardSnapshotCache.MarkDirty();
+            }
+        }
     }
 }
