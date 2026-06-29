@@ -277,7 +277,7 @@ namespace MimesisPlayerEnhancement.Features.MoneyMultiplier
                         continue;
                     }
 
-                    codes.Insert(i + 1, new CodeInstruction(OpCodes.Ldloc, maintenanceRoomLocal));
+                    codes.Insert(i + 1, new CodeInstruction(OpCodes.Ldloc, maintenanceRoomLocal.LocalIndex));
                     codes.Insert(i + 2, new CodeInstruction(OpCodes.Call, ScaleReinforceCostMethod));
                     i += 2;
                 }
