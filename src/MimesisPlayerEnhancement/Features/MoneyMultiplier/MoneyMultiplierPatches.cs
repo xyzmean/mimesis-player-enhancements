@@ -1,4 +1,7 @@
 using System;
+using System.Collections.Generic;
+using System.Reflection;
+using System.Reflection.Emit;
 using Bifrost.Cooked;
 using HarmonyLib;
 using MimesisPlayerEnhancement.Util;
@@ -9,11 +12,19 @@ namespace MimesisPlayerEnhancement.Features.MoneyMultiplier
     {
         private const string Feature = "MoneyMultiplier";
 
+        private static readonly FieldInfo UpgradeCostField =
+            AccessTools.Field(typeof(ItemEquipmentInfo), nameof(ItemEquipmentInfo.UpgradeCost))
+            ?? throw new InvalidOperationException("ItemEquipmentInfo.UpgradeCost not found");
+
+        private static readonly MethodInfo ScaleReinforceCostMethod =
+            AccessTools.Method(typeof(MoneyMultiplierApplier), nameof(MoneyMultiplierApplier.ScaleReinforceCost))
+            ?? throw new InvalidOperationException("MoneyMultiplierApplier.ScaleReinforceCost not found");
+
         public static void Apply(HarmonyLib.Harmony harmony)
         {
             _ = GameNetworkApi.GetGameAssembly();
 
-            ModConfig.Changed += ShopBuyPriceState.NotifyConfigChanged;
+            ModConfig.Changed += MaintenanceShopApplier.NotifyConfigChanged;
 
             HarmonyPatchHelper.PatchApplyResult result = HarmonyPatchHelper.ApplyPatchTypes(
                 harmony,
@@ -32,13 +43,13 @@ namespace MimesisPlayerEnhancement.Features.MoneyMultiplier
                 ("RefreshTargetCurrency/GameSessionInfo", AccessTools.Method(typeof(GameSessionInfo), nameof(GameSessionInfo.RefreshTargetCurrency))),
                 ("ClampTargetCurrencyToMin/GameSessionInfo", AccessTools.Method(typeof(GameSessionInfo), "ClampTargetCurrencyToMin")),
                 ("InitMaintenenceRoom/VRoomManager", AccessTools.Method(typeof(VRoomManager), nameof(VRoomManager.InitMaintenenceRoom))),
-                ("GetPrice/ItemMasterInfo", AccessTools.Method(typeof(ItemMasterInfo), nameof(ItemMasterInfo.GetPrice))),
+                ("FinalPrice/ItemElement", AccessTools.PropertyGetter(typeof(ItemElement), nameof(ItemElement.FinalPrice))),
                 ("GetMeanPrice/ItemMasterInfo", AccessTools.Method(typeof(ItemMasterInfo), nameof(ItemMasterInfo.GetMeanPrice))),
                 ("TryGetShopItemPrice/MaintenanceRoom", AccessTools.Method(typeof(MaintenanceRoom), nameof(MaintenanceRoom.TryGetShopItemPrice))),
                 ("InitShopItems/MaintenanceRoom", AccessTools.Method(typeof(MaintenanceRoom), nameof(MaintenanceRoom.InitShopItems))),
                 ("ApplyLoadedGameData/MaintenanceRoom", AccessTools.Method(typeof(MaintenanceRoom), nameof(MaintenanceRoom.ApplyLoadedGameData))),
                 ("OnEnterChannel/MaintenanceRoom", AccessTools.Method(typeof(MaintenanceRoom), nameof(MaintenanceRoom.OnEnterChannel))),
-                ("ReinforceItem/MaintenanceRoom", AccessTools.Method(typeof(MaintenanceRoom), nameof(MaintenanceRoom.ReinforceItem))),
+                ("HandleReinforceItem/VPlayer", AccessTools.Method(typeof(VPlayer), nameof(VPlayer.HandleReinforceItem))),
             ]);
         }
 
@@ -117,24 +128,24 @@ namespace MimesisPlayerEnhancement.Features.MoneyMultiplier
             }
         }
 
-        [HarmonyPatch(typeof(ItemMasterInfo), nameof(ItemMasterInfo.GetPrice))]
-        public static class ItemMasterInfoGetPricePatch
+        [HarmonyPatch(typeof(ItemElement), nameof(ItemElement.FinalPrice), MethodType.Getter)]
+        public static class ItemElementFinalPricePatch
         {
             [HarmonyPostfix]
             public static void Postfix(ref int __result)
             {
-                if (!ModConfig.EnableMoneyMultiplier.Value)
-                {
-                    return;
-                }
-
                 try
                 {
+                    if (!MoneyMultiplierApplier.IsEnabled())
+                    {
+                        return;
+                    }
+
                     __result = MoneyMultiplierApplier.ScaleScrapValue(__result);
                 }
                 catch (Exception ex)
                 {
-                    ModLog.Warn(Feature, $"GetPrice postfix failed — {ex.Message}");
+                    ModLog.Warn(Feature, $"FinalPrice postfix failed — {ex.Message}");
                 }
             }
         }
@@ -145,13 +156,13 @@ namespace MimesisPlayerEnhancement.Features.MoneyMultiplier
             [HarmonyPostfix]
             public static void Postfix(ref int __result)
             {
-                if (!ModConfig.EnableMoneyMultiplier.Value)
-                {
-                    return;
-                }
-
                 try
                 {
+                    if (!MoneyMultiplierApplier.IsEnabled())
+                    {
+                        return;
+                    }
+
                     __result = MoneyMultiplierApplier.ScaleScrapValue(__result);
                 }
                 catch (Exception ex)
@@ -169,7 +180,7 @@ namespace MimesisPlayerEnhancement.Features.MoneyMultiplier
             {
                 try
                 {
-                    ShopBuyPriceState.EnsureApplied(__instance);
+                    MaintenanceShopApplier.EnsureApplied(__instance);
                 }
                 catch (Exception ex)
                 {
@@ -186,8 +197,7 @@ namespace MimesisPlayerEnhancement.Features.MoneyMultiplier
             {
                 try
                 {
-                    ShopBuyPriceState.MarkDirty(__instance);
-                    ShopBuyPriceApplier.ClearVanillaPrices(__instance);
+                    MaintenanceShopApplier.PrepareForShopInit(__instance);
                 }
                 catch (Exception ex)
                 {
@@ -200,10 +210,7 @@ namespace MimesisPlayerEnhancement.Features.MoneyMultiplier
             {
                 try
                 {
-                    MoneyMultiplierApplier.ApplyShopItems(__instance);
-                    ShopDiscountApplier.Apply(__instance);
-                    ShopBuyPriceApplier.ApplyInPlace(__instance);
-                    ShopBuyPriceState.MarkApplied(__instance);
+                    MaintenanceShopApplier.ApplyAfterShopInit(__instance);
                 }
                 catch (Exception ex)
                 {
@@ -220,11 +227,7 @@ namespace MimesisPlayerEnhancement.Features.MoneyMultiplier
             {
                 try
                 {
-                    ShopBuyPriceState.MarkDirty(__instance);
-                    ShopBuyPriceApplier.ClearVanillaPrices(__instance);
-                    ShopDiscountApplier.Apply(__instance);
-                    ShopBuyPriceApplier.ApplyInPlace(__instance);
-                    ShopBuyPriceState.MarkApplied(__instance);
+                    MaintenanceShopApplier.ApplyAfterLoad(__instance);
                 }
                 catch (Exception ex)
                 {
@@ -241,7 +244,7 @@ namespace MimesisPlayerEnhancement.Features.MoneyMultiplier
             {
                 try
                 {
-                    ShopBuyPriceState.EnsureApplied(__instance);
+                    MaintenanceShopApplier.EnsureApplied(__instance);
                 }
                 catch (Exception ex)
                 {
@@ -250,20 +253,55 @@ namespace MimesisPlayerEnhancement.Features.MoneyMultiplier
             }
         }
 
-        [HarmonyPatch(typeof(MaintenanceRoom), nameof(MaintenanceRoom.ReinforceItem))]
-        public static class MaintenanceRoomReinforceItemPatch
+        [HarmonyPatch(typeof(VPlayer), nameof(VPlayer.HandleReinforceItem))]
+        public static class VPlayerHandleReinforceItemPatch
         {
-            [HarmonyPrefix]
-            public static void Prefix(MaintenanceRoom __instance, ref int price)
+            [HarmonyTranspiler]
+            public static IEnumerable<CodeInstruction> Transpiler(
+                IEnumerable<CodeInstruction> instructions,
+                MethodBase original)
             {
-                try
+                LocalVariableInfo? maintenanceRoomLocal = FindMaintenanceRoomLocal(original);
+                if (maintenanceRoomLocal == null)
                 {
-                    price = MoneyMultiplierApplier.ScaleReinforcePrice(__instance, price);
+                    ModLog.Warn(Feature, "HandleReinforceItem transpiler skipped — MaintenanceRoom local not found");
+                    return instructions;
                 }
-                catch (Exception ex)
+
+                List<CodeInstruction> codes = [.. instructions];
+                for (int i = 0; i < codes.Count; i++)
                 {
-                    ModLog.Warn(Feature, $"ReinforceItem prefix failed — {ex.Message}");
+                    if (codes[i].opcode != OpCodes.Ldfld
+                        || !ReferenceEquals(codes[i].operand, UpgradeCostField))
+                    {
+                        continue;
+                    }
+
+                    codes.Insert(i + 1, new CodeInstruction(OpCodes.Ldloc, maintenanceRoomLocal));
+                    codes.Insert(i + 2, new CodeInstruction(OpCodes.Call, ScaleReinforceCostMethod));
+                    i += 2;
                 }
+
+                return codes;
+            }
+
+            private static LocalVariableInfo? FindMaintenanceRoomLocal(MethodBase method)
+            {
+                MethodBody? body = method.GetMethodBody();
+                if (body == null)
+                {
+                    return null;
+                }
+
+                foreach (LocalVariableInfo local in body.LocalVariables)
+                {
+                    if (local.LocalType == typeof(MaintenanceRoom))
+                    {
+                        return local;
+                    }
+                }
+
+                return null;
             }
         }
     }

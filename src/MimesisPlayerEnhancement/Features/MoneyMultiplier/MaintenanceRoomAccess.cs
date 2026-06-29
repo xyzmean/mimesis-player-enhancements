@@ -7,13 +7,22 @@ using ReluProtocol;
 
 namespace MimesisPlayerEnhancement.Features.MoneyMultiplier
 {
-    internal static class MaintenanceShopPriceSync
+    internal static class MaintenanceRoomAccess
     {
+        private static readonly FieldInfo PriceForItemsField =
+            AccessTools.Field(typeof(MaintenanceRoom), "_priceForItems")
+            ?? throw new InvalidOperationException("MaintenanceRoom._priceForItems not found");
+
         private static readonly FieldInfo LevelObjectsField =
             AccessTools.Field(typeof(IVroom), "_levelObjects")
             ?? throw new InvalidOperationException("IVroom._levelObjects not found");
 
-        internal static void SyncVendingMachineLevelObjects(
+        internal static Dictionary<int, ShopItemPriceInfo>? GetPriceForItems(MaintenanceRoom room)
+        {
+            return PriceForItemsField.GetValue(room) as Dictionary<int, ShopItemPriceInfo>;
+        }
+
+        internal static void SyncVendingMachines(
             MaintenanceRoom room,
             Dictionary<int, ShopItemPriceInfo> priceForItems)
         {
