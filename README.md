@@ -39,7 +39,6 @@ Tested with **MIMESIS 0.3.0** and **MelonLoader 0.7.3**.
 | **Money Multiplier** | Scale startup money, round goal, scrap/sell values, shop buy prices, shop item count, and reinforce costs | No — host only |
 | **Dungeon Time** | Extend dungeon shift length by real seconds per player above a baseline (default: +10s per player above 4) | No — host only |
 | **Dungeon Randomizer** | Randomize tram dungeon pick, layout flow, map variant, and procedural seed | No — host only |
-| **Spectator Transition** | Shorten downed time and dead-camera duration before spectator mode | No — host for down time; dead camera on each machine with the mod |
 
 Inspired by community mods like [MorePlayers from NeoMimicry](https://github.com/NeoMimicry/MorePlayers), [MoreVoices from Risikus](https://thunderstore.io/c/mimesis/p/Risikus/More_Voices/), [MimesisPersistence from JoanR](https://github.com/JoanRLopez/MimesisPersistence), and [MimesisJoinAnytime from Shlygly](https://github.com/Shlygly/MimesisJoinAnytime). Thanks for your ideas and initial work :)
 
@@ -307,18 +306,6 @@ Host-only. Randomizes dungeon selection at four independent layers when enabled.
 | `RandomizeMapVariant` | bool | `true` | Pick map variants uniformly from each dungeon's `MapIDs`. |
 | `RandomizeDungeonSeed` | bool | `true` | Replace the procedural dungeon seed when a dungeon is chosen. |
 
-### Spectator Transition — `[MimesisPlayerEnhancement_SpectatorTransition]`
-
-Shortens how long players stay downed before spectator mode and how long the local dead-camera transition runs. Multipliers use the same scale as spawn/loot settings: `1` = vanilla, `0.5` = half, `0` = instant.
-
-`DyingWaitTimeMultiplier` is **host only** (server-authoritative down time). It also shortens the window teammates have to revive you. `DeadCameraDurationMultiplier` applies on each machine that has the mod loaded — for a consistent feel, use the same values on host and clients.
-
-| Key | Type | Default | What it does |
-|-----|------|---------|--------------|
-| `EnableSpectatorTransition` | bool | `true` | Master toggle for shorter death-to-spectator timing. |
-| `DyingWaitTimeMultiplier` | float | `1.0` | Scales server down/dying time before spectator (`0` = instant). Host only. Also shortens the teammate revive window. Minimum is `0`. |
-| `DeadCameraDurationMultiplier` | float | `1.0` | Scales local dead-camera blend and duration before spectator (`0` = instant). Minimum is `0`. |
-
 ### Web Dashboard — `[MimesisPlayerEnhancement_WebDashboard]`
 
 Host-only. Serves a local HTTP dashboard from the game process while a session is active. Open `http://<ListenAddress>:<ListenPort>/` in a browser (default: `http://127.0.0.1:8001/`). Off by default — set `EnableWebDashboard = true` to turn it on.
@@ -399,11 +386,6 @@ ExtraShiftSecondsPerPlayerAboveBaseline = 10.0
 EnableDungeonRandomizer = false
 RandomizeDungeonPick = true
 DungeonPickPoolMode = "WidenVanilla"
-
-[MimesisPlayerEnhancement_SpectatorTransition]
-EnableSpectatorTransition = true
-DyingWaitTimeMultiplier = 1.0
-DeadCameraDurationMultiplier = 1.0
 
 [MimesisPlayerEnhancement_WebDashboard]
 EnableWebDashboard = false

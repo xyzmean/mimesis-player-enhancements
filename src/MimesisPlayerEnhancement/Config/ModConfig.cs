@@ -109,10 +109,6 @@ namespace MimesisPlayerEnhancement
         public static MelonPreferences_Entry<int> DungeonTimeBaselinePlayerCount { get; private set; } = null!;
         public static MelonPreferences_Entry<float> ExtraShiftSecondsPerPlayerAboveBaseline { get; private set; } = null!;
 
-        public static MelonPreferences_Entry<bool> EnableSpectatorTransition { get; private set; } = null!;
-        public static MelonPreferences_Entry<float> DyingWaitTimeMultiplier { get; private set; } = null!;
-        public static MelonPreferences_Entry<float> DeadCameraDurationMultiplier { get; private set; } = null!;
-
         public static MelonPreferences_Entry<bool> EnableDungeonRandomizer { get; private set; } = null!;
         public static MelonPreferences_Entry<bool> RandomizeDungeonPick { get; private set; } = null!;
         public static MelonPreferences_Entry<string> DungeonPickPoolMode { get; private set; } = null!;
@@ -144,7 +140,6 @@ namespace MimesisPlayerEnhancement
         private static MelonPreferences_Category _lootMultiplicatorCategory = null!;
         private static MelonPreferences_Category _moneyMultiplierCategory = null!;
         private static MelonPreferences_Category _dungeonTimeCategory = null!;
-        private static MelonPreferences_Category _spectatorTransitionCategory = null!;
         private static MelonPreferences_Category _dungeonRandomizerCategory = null!;
         private static MelonPreferences_Category _webDashboardCategory = null!;
         private static MelonPreferences_Category _extendedSaveSlotsCategory = null!;
@@ -168,7 +163,6 @@ namespace MimesisPlayerEnhancement
             _lootMultiplicatorCategory = CreateCategory("MimesisPlayerEnhancement_LootMultiplicator", "Loot Multiplicator");
             _moneyMultiplierCategory = CreateCategory("MimesisPlayerEnhancement_MoneyMultiplier", "Money Multiplier");
             _dungeonTimeCategory = CreateCategory("MimesisPlayerEnhancement_DungeonTime", "Dungeon Time");
-            _spectatorTransitionCategory = CreateCategory("MimesisPlayerEnhancement_SpectatorTransition", "Spectator Transition");
             _dungeonRandomizerCategory = CreateCategory("MimesisPlayerEnhancement_DungeonRandomizer", "Dungeon Randomizer");
             _webDashboardCategory = CreateCategory("MimesisPlayerEnhancement_WebDashboard", "Web Dashboard");
             _extendedSaveSlotsCategory = CreateCategory("MimesisPlayerEnhancement_ExtendedSaveSlots", "Extended Save Slots");
@@ -623,24 +617,6 @@ namespace MimesisPlayerEnhancement
                 "Extra Shift Seconds Per Player Above Baseline",
                 "Real seconds added to the shift deadline for each player above the baseline. Minimum is 0.");
 
-            EnableSpectatorTransition = CreateTrackedEntry(_spectatorTransitionCategory, 
-                "EnableSpectatorTransition",
-                true,
-                "Enable Spectator Transition",
-                "Shorten downed time and dead-camera duration before entering spectator mode.");
-
-            DyingWaitTimeMultiplier = CreateTrackedEntry(_spectatorTransitionCategory, 
-                "DyingWaitTimeMultiplier",
-                1f,
-                "Dying Wait Time Multiplier",
-                "Scales server down/dying time before spectator (1 = vanilla, 0 = instant). Also shortens the teammate revive window. Host only.");
-
-            DeadCameraDurationMultiplier = CreateTrackedEntry(_spectatorTransitionCategory, 
-                "DeadCameraDurationMultiplier",
-                1f,
-                "Dead Camera Duration Multiplier",
-                "Scales local dead-camera transition time before spectator (1 = vanilla, 0 = instant). Applies on each machine with the mod loaded.");
-
             EnableDungeonRandomizer = CreateTrackedEntry(_dungeonRandomizerCategory, 
                 "EnableDungeonRandomizer",
                 false,
@@ -901,12 +877,6 @@ namespace MimesisPlayerEnhancement
             ExtraShiftSecondsPerPlayerAboveBaseline.OnEntryValueChanged.Subscribe((_, value) =>
                 OnExtraShiftSecondsPerPlayerChanged(logger, value));
 
-            EnableSpectatorTransition.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
-            DyingWaitTimeMultiplier.OnEntryValueChanged.Subscribe((_, value) =>
-                OnSpawnMultiplierChanged(logger, value, DyingWaitTimeMultiplier));
-            DeadCameraDurationMultiplier.OnEntryValueChanged.Subscribe((_, value) =>
-                OnSpawnMultiplierChanged(logger, value, DeadCameraDurationMultiplier));
-
             EnableDungeonRandomizer.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
             RandomizeDungeonPick.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
             DungeonPickPoolMode.OnEntryValueChanged.Subscribe((_, value) => OnDungeonPickPoolModeChanged(logger, value));
@@ -1024,8 +994,6 @@ namespace MimesisPlayerEnhancement
                 ShopItemsMultiplier,
                 ReinforcePriceMultiplier,
                 ExtraShiftSecondsPerPlayerAboveBaseline,
-                DyingWaitTimeMultiplier,
-                DeadCameraDurationMultiplier,
             ]);
         }
 

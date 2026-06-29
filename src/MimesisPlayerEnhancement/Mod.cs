@@ -134,7 +134,6 @@ namespace MimesisPlayerEnhancement
                 $"LootMultiplicator={ModConfig.EnableLootMultiplicator.Value}, " +
                 $"MoneyMultiplier={ModConfig.EnableMoneyMultiplier.Value}, " +
                 $"DungeonTime={ModConfig.EnableDungeonTime.Value}, " +
-                $"SpectatorTransition={ModConfig.EnableSpectatorTransition.Value}, " +
                 $"DungeonRandomizer={ModConfig.EnableDungeonRandomizer.Value}, " +
                 $"ExtendedSaveSlots={ModConfig.EnableExtendedSaveSlots.Value}" +
                 (ModConfig.EnableExtendedSaveSlots.Value
@@ -165,7 +164,6 @@ namespace MimesisPlayerEnhancement
                 $"LootMultiplicator={ModConfig.EnableLootMultiplicator.Value}, " +
                 $"MoneyMultiplier={ModConfig.EnableMoneyMultiplier.Value}, " +
                 $"DungeonTime={ModConfig.EnableDungeonTime.Value}, " +
-                $"SpectatorTransition={ModConfig.EnableSpectatorTransition.Value}, " +
                 $"DungeonRandomizer={ModConfig.EnableDungeonRandomizer.Value}, " +
                 $"ExtendedSaveSlots={ModConfig.EnableExtendedSaveSlots.Value}" +
                 (ModConfig.EnableExtendedSaveSlots.Value

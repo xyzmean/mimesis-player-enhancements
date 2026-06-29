@@ -9,7 +9,6 @@ using MimesisPlayerEnhancement.Features.MorePlayers;
 using MimesisPlayerEnhancement.Features.MoreVoices;
 using MimesisPlayerEnhancement.Features.PlayerAnnouncements;
 using MimesisPlayerEnhancement.Features.SpawnScaling;
-using MimesisPlayerEnhancement.Features.SpectatorTransition;
 using MimesisPlayerEnhancement.Features.ExtendedSaveSlots;
 using MimesisPlayerEnhancement.Features.WebDashboard;
 using MimesisPlayerEnhancement.ModVersionDisplay;
@@ -96,7 +95,6 @@ namespace MimesisPlayerEnhancement.Util
                 if (ModConfig.EnableLootMultiplicator.Value) { FixedLootSpawnCoordinator.ProcessPendingRespawns(); } }, throttledUpdate: true),
             new FeatureModule("MoneyMultiplier", MoneyMultiplierPatches.Apply),
             new FeatureModule("DungeonTime", DungeonTimePatches.Apply),
-            new FeatureModule("SpectatorTransition", SpectatorTransitionPatches.Apply),
             new FeatureModule("DungeonRandomizer", DungeonRandomizerPatches.Apply),
             new FeatureModule("WebDashboard", WebDashboardServer.Apply,
                 syncFromConfig: WebDashboardServer.SyncFromConfig,
