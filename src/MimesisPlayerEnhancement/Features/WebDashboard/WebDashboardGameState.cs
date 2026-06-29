@@ -3,6 +3,7 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
     internal static class WebDashboardGameState
     {
         private static bool _sessionSticky;
+        private static bool _hostSticky;
         private static int _cachedSaveSlotId = -1;
 
         internal static bool IsInSession()
@@ -10,12 +11,14 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
             Hub.PersistentData? pdata = JoinAnytimeHub.GetPdata();
             if (pdata == null)
             {
+                _hostSticky = false;
                 return _sessionSticky = false;
             }
 
             if (!pdata.SessionJoined)
             {
                 _cachedSaveSlotId = -1;
+                _hostSticky = false;
                 return _sessionSticky = false;
             }
 
@@ -33,7 +36,13 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
 
         internal static bool IsHost()
         {
-            return MimesisSaveManager.IsHost();
+            if (MimesisSaveManager.IsHost())
+            {
+                return _hostSticky = true;
+            }
+
+            // Between maps host detection can fail while SessionJoined stays true.
+            return _sessionSticky && _hostSticky;
         }
 
         internal static int GetSaveSlotId()

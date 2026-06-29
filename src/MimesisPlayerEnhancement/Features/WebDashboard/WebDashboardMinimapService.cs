@@ -88,7 +88,7 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
                         AreaId = areaId,
                         TileId = tileId,
                         IsAlive = !actor.dead,
-                        IsHost = MimesisSaveManager.IsHost() && LocalPlayerHelper.IsLocalSteamId(steamId),
+                        IsHost = WebDashboardGameState.IsHost() && LocalPlayerHelper.IsLocalSteamId(steamId),
                         IsLocal = LocalPlayerHelper.IsLocalSteamId(steamId),
                     });
                 }
