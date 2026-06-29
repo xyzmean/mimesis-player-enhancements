@@ -34,19 +34,25 @@ namespace MimesisPlayerEnhancement.Features.DungeonRandomizer
             ]);
         }
 
+        private static bool ShouldApply =>
+            HostApplyGate.ShouldApplyHostOnlyFeature(() => ModConfig.EnableDungeonRandomizer.Value);
+
         [HarmonyPatch(typeof(VWaitingRoom), nameof(VWaitingRoom.RollDiceDungeon))]
         public static class VWaitingRoomRollDiceDungeonPatch
         {
+            internal static bool ClearFirstPickExcludes { get; set; }
+
             [HarmonyPrefix]
             public static void Prefix(bool reroll)
             {
-                DungeonPickRollContext.BeginRoll(reroll);
+                ClearFirstPickExcludes = reroll && ShouldIgnoreRerollExcludes();
             }
 
-            [HarmonyPostfix]
-            public static void Postfix()
+            [HarmonyFinalizer]
+            public static Exception? Finalizer(Exception? __exception)
             {
-                DungeonPickRollContext.EndRoll();
+                ClearFirstPickExcludes = false;
+                return __exception;
             }
         }
 
@@ -60,15 +66,15 @@ namespace MimesisPlayerEnhancement.Features.DungeonRandomizer
             {
                 try
                 {
-                    bool clearRerollExcludes = DungeonPickRollContext.ShouldClearRerollExcludes();
-                    _excludeIdsForResolve = clearRerollExcludes ? Array.Empty<int>() : excludeDungeonIDs;
-
-                    if (!clearRerollExcludes)
+                    if (VWaitingRoomRollDiceDungeonPatch.ClearFirstPickExcludes)
                     {
+                        _excludeIdsForResolve = Array.Empty<int>();
+                        excludeDungeonIDs = [];
+                        VWaitingRoomRollDiceDungeonPatch.ClearFirstPickExcludes = false;
                         return;
                     }
 
-                    excludeDungeonIDs = [];
+                    _excludeIdsForResolve = excludeDungeonIDs;
                 }
                 catch (Exception ex)
                 {
@@ -81,12 +87,7 @@ namespace MimesisPlayerEnhancement.Features.DungeonRandomizer
             {
                 try
                 {
-                    if (DungeonPickRollContext.InRollDiceDungeon)
-                    {
-                        DungeonPickRollContext.AdvancePick();
-                    }
-
-                    if (!HostApplyGate.ShouldApplyHostOnlyFeature(() => ModConfig.EnableDungeonRandomizer.Value) || !ModConfig.RandomizeDungeonPick.Value)
+                    if (!ShouldApply || !ModConfig.RandomizeDungeonPick.Value)
                     {
                         return;
                     }
@@ -112,7 +113,7 @@ namespace MimesisPlayerEnhancement.Features.DungeonRandomizer
             {
                 try
                 {
-                    if (!HostApplyGate.ShouldApplyHostOnlyFeature(() => ModConfig.EnableDungeonRandomizer.Value))
+                    if (!ShouldApply)
                     {
                         return;
                     }
@@ -138,7 +139,7 @@ namespace MimesisPlayerEnhancement.Features.DungeonRandomizer
             {
                 try
                 {
-                    if (!HostApplyGate.ShouldApplyHostOnlyFeature(() => ModConfig.EnableDungeonRandomizer.Value))
+                    if (!ShouldApply)
                     {
                         return;
                     }
@@ -164,7 +165,7 @@ namespace MimesisPlayerEnhancement.Features.DungeonRandomizer
             {
                 try
                 {
-                    if (!HostApplyGate.ShouldApplyHostOnlyFeature(() => ModConfig.EnableDungeonRandomizer.Value))
+                    if (!ShouldApply)
                     {
                         return;
                     }
@@ -176,6 +177,14 @@ namespace MimesisPlayerEnhancement.Features.DungeonRandomizer
                     DungeonRandomizerLog.Warn($"SetNextDungeonMasterID prefix failed — {ex.Message}");
                 }
             }
+        }
+
+        private static bool ShouldIgnoreRerollExcludes()
+        {
+            return ShouldApply
+                   && ModConfig.RandomizeDungeonPick.Value
+                   && ModConfig.IgnoreDungeonExcludeList.Value
+                   && DungeonIdListParser.ParsePoolMode(ModConfig.DungeonPickPoolMode.Value) == DungeonPickPoolMode.WidenVanilla;
         }
     }
 }

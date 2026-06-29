@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using System.Reflection;
 
 namespace MimesisPlayerEnhancement.Features.DungeonRandomizer
@@ -12,36 +13,32 @@ namespace MimesisPlayerEnhancement.Features.DungeonRandomizer
         private static readonly PropertyInfo? HubDatamanProperty =
             typeof(Hub).GetProperty("dataman", InstanceFlags);
 
-        internal static bool TryGetExcelDataManager(out ExcelDataManager excel)
+        internal static ExcelDataManager? Excel
         {
-            excel = null!;
-            if (Hub.s == null)
+            get
             {
-                return false;
-            }
+                if (Hub.s == null || HubDatamanProperty?.GetValue(Hub.s) is not DataManager dataman)
+                {
+                    return null;
+                }
 
-            if (HubDatamanProperty?.GetValue(Hub.s) is not DataManager dataman)
-            {
-                return false;
+                return dataman.ExcelDataManager;
             }
-
-            excel = dataman.ExcelDataManager;
-            return excel != null;
         }
 
         internal static List<int> GetFilteredActiveDungeonIds(HashSet<int> allowlist, HashSet<int> blocklist)
         {
             List<int> pool = [];
-            if (!TryGetExcelDataManager(out ExcelDataManager excel))
+            ExcelDataManager? excel = Excel;
+            if (excel == null)
             {
                 return pool;
             }
 
-            ImmutableDictionary<int, DungeonMasterInfo> dict = excel.DungeonInfoDict;
-            foreach (KeyValuePair<int, DungeonMasterInfo> entry in dict)
+            foreach (KeyValuePair<int, DungeonMasterInfo> entry in excel.DungeonInfoDict)
             {
                 DungeonMasterInfo info = entry.Value;
-                if (info == null || !info.IsActive)
+                if (info is not { IsActive: true })
                 {
                     continue;
                 }
@@ -65,11 +62,6 @@ namespace MimesisPlayerEnhancement.Features.DungeonRandomizer
 
         internal static bool IsExcluded(int dungeonId, IReadOnlyList<int> excludeIds)
         {
-            if (excludeIds == null || excludeIds.Count == 0)
-            {
-                return false;
-            }
-
             for (int i = 0; i < excludeIds.Count; i++)
             {
                 if (excludeIds[i] == dungeonId)
@@ -83,7 +75,7 @@ namespace MimesisPlayerEnhancement.Features.DungeonRandomizer
 
         internal static List<int> FilterExcluded(IReadOnlyList<int> pool, IReadOnlyList<int> excludeIds)
         {
-            if (excludeIds == null || excludeIds.Count == 0)
+            if (excludeIds.Count == 0)
             {
                 return [.. pool];
             }
@@ -109,8 +101,7 @@ namespace MimesisPlayerEnhancement.Features.DungeonRandomizer
                 return false;
             }
 
-            int index = UnityEngine.Random.Range(0, pool.Count);
-            dungeonId = pool[index];
+            dungeonId = pool[UnityEngine.Random.Range(0, pool.Count)];
             return true;
         }
 
@@ -118,35 +109,25 @@ namespace MimesisPlayerEnhancement.Features.DungeonRandomizer
         {
             flowName = string.Empty;
             ImmutableDictionary<string, int> candidates = info.DungenCandidates;
-            if (candidates == null || candidates.Count == 0)
+            if (candidates.Count == 0)
             {
                 return false;
             }
 
-            int index = UnityEngine.Random.Range(0, candidates.Count);
-            foreach (string key in candidates.Keys)
-            {
-                if (index-- == 0)
-                {
-                    flowName = key;
-                    return true;
-                }
-            }
-
-            return false;
+            flowName = candidates.Keys.ElementAt(UnityEngine.Random.Range(0, candidates.Count));
+            return true;
         }
 
         internal static bool TryPickUniformMapId(DungeonMasterInfo info, out int mapId)
         {
             mapId = 0;
             ImmutableArray<int> mapIds = info.MapIDs;
-            if (mapIds.IsDefaultOrEmpty)
+            if (mapIds.Length == 0)
             {
                 return false;
             }
 
-            int index = UnityEngine.Random.Range(0, mapIds.Length);
-            mapId = mapIds[index];
+            mapId = mapIds[UnityEngine.Random.Range(0, mapIds.Length)];
             return true;
         }
     }
