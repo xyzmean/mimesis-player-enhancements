@@ -1,10 +1,13 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
 using HarmonyLib;
 using Mimic.Actors;
 using MimesisPlayerEnhancement.Util;
+using UnityEngine;
+using UnityEngine.UI;
 
 namespace MimesisPlayerEnhancement.Features.MimicTuning
 {
@@ -18,14 +21,14 @@ namespace MimesisPlayerEnhancement.Features.MimicTuning
         private static readonly FieldInfo? PossessionCooltimeField =
             AccessTools.Field(typeof(Bifrost.ConstEnum.DataConsts), nameof(Bifrost.ConstEnum.DataConsts.C_PossessionCooltime));
 
+        private static readonly MethodInfo? PossessionProgressbarCoMethod =
+            AccessTools.Method(typeof(ProtoActor), "PossessionProgressbarCo");
+
         private static readonly MethodInfo RollPossessionDurationMsMethod =
             AccessTools.Method(typeof(MimicTuningResolver), nameof(MimicTuningResolver.RollPossessionDurationMs));
 
         private static readonly MethodInfo ScalePossessionCooltimeMsMethod =
             AccessTools.Method(typeof(MimicTuningResolver), nameof(MimicTuningResolver.ScalePossessionCooltimeMs));
-
-        private static readonly MethodInfo GetProgressBarTotalSecondsMethod =
-            AccessTools.Method(typeof(MimicTuningResolver), nameof(MimicTuningResolver.GetProgressBarTotalSeconds));
 
         public static void Apply(HarmonyLib.Harmony harmony)
         {
@@ -93,50 +96,44 @@ namespace MimesisPlayerEnhancement.Features.MimicTuning
         }
 
         [HarmonyPatch(typeof(ProtoActor), nameof(ProtoActor.UpdatePossessionProgressbar))]
-        internal static class UpdatePossessionProgressbarTranspiler
+        internal static class UpdatePossessionProgressbarPrefix
         {
-            [HarmonyTranspiler]
-            internal static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+            [HarmonyPrefix]
+            internal static bool Prefix(
+                ProtoActor __instance,
+                float inServerLeftTime,
+                ref Coroutine ____progressCoroutine,
+                Image ____possessionProgressbar)
             {
-                if (PossessionDurationField == null || GetProgressBarTotalSecondsMethod == null)
+                if (!ModConfig.EnableMimicTuning.Value || PossessionProgressbarCoMethod == null)
                 {
-                    return instructions;
+                    return true;
                 }
 
-                List<CodeInstruction> codes = [.. instructions];
-                for (int i = 0; i < codes.Count; i++)
+                try
                 {
-                    if (codes[i].opcode != OpCodes.Ldfld
-                        || !ReferenceEquals(codes[i].operand, PossessionDurationField))
+                    if (____progressCoroutine != null)
                     {
-                        continue;
+                        __instance.StopCoroutine(____progressCoroutine);
                     }
 
-                    // Replace: load duration ms + conv to float + * 0.001f
-                    // With: GetProgressBarTotalSeconds(this.ActorID, inServerLeftTime)
-                    int removeThrough = i;
-                    while (removeThrough + 1 < codes.Count)
-                    {
-                        OpCode next = codes[removeThrough + 1].opcode;
-                        if (next != OpCodes.Conv_R4 && next != OpCodes.Ldc_R4 && next != OpCodes.Mul)
-                        {
-                            break;
-                        }
+                    float totalSeconds = MimicTuningResolver.GetProgressBarTotalSeconds(
+                        __instance.ActorID,
+                        inServerLeftTime);
+                    float targetLeftTime = inServerLeftTime * 0.001f;
+                    float currentLeftTime = ____possessionProgressbar.fillAmount * totalSeconds;
 
-                        removeThrough++;
-                    }
-
-                    codes.RemoveRange(i, removeThrough - i + 1);
-                    codes.Insert(i, new CodeInstruction(OpCodes.Ldarg_0));
-                    codes.Insert(i + 1, new CodeInstruction(
-                        OpCodes.Callvirt,
-                        AccessTools.PropertyGetter(typeof(ProtoActor), nameof(ProtoActor.ActorID))));
-                    codes.Insert(i + 2, new CodeInstruction(OpCodes.Ldarg_1));
-                    codes.Insert(i + 3, new CodeInstruction(OpCodes.Call, GetProgressBarTotalSecondsMethod));
-                    break;
+                    IEnumerator routine = (IEnumerator)PossessionProgressbarCoMethod.Invoke(
+                        __instance,
+                        new object[] { targetLeftTime, currentLeftTime, totalSeconds });
+                    ____progressCoroutine = __instance.StartCoroutine(routine);
+                    return false;
                 }
-
-                return codes;
+                catch (Exception ex)
+                {
+                    ModLog.Warn(Feature, $"UpdatePossessionProgressbar prefix failed — {ex.Message}");
+                    return true;
+                }
             }
         }
 
@@ -144,7 +141,7 @@ namespace MimesisPlayerEnhancement.Features.MimicTuning
         internal static class UIPrefabSpectatorStartPostfix
         {
             [HarmonyPostfix]
-            internal static void Postfix(ref float ___possessionCooltime)
+            internal static void Postfix(ref float ____possessionCooltime)
             {
                 try
                 {
@@ -153,7 +150,7 @@ namespace MimesisPlayerEnhancement.Features.MimicTuning
                         return;
                     }
 
-                    ___possessionCooltime = MimicTuningResolver.GetCooltimeTotalSeconds();
+                    ____possessionCooltime = MimicTuningResolver.GetCooltimeTotalSeconds();
                 }
                 catch (Exception ex)
                 {
@@ -168,8 +165,8 @@ namespace MimesisPlayerEnhancement.Features.MimicTuning
             [HarmonyPostfix]
             internal static void Postfix(
                 float inCooltime,
-                UnityEngine.UI.Image ___possessionKeyCooltime,
-                ref float ___possessionCooltime)
+                Image ____possessionKeyCooltime,
+                ref float ____possessionCooltime)
             {
                 try
                 {
@@ -180,9 +177,9 @@ namespace MimesisPlayerEnhancement.Features.MimicTuning
                         return;
                     }
 
-                    if (___possessionKeyCooltime != null && ___possessionKeyCooltime.fillAmount >= 0.99f)
+                    if (____possessionKeyCooltime != null && ____possessionKeyCooltime.fillAmount >= 0.99f)
                     {
-                        ___possessionCooltime = inCooltime * 0.001f;
+                        ____possessionCooltime = inCooltime * 0.001f;
                     }
                 }
                 catch (Exception ex)
@@ -224,7 +221,7 @@ namespace MimesisPlayerEnhancement.Features.MimicTuning
             int insertCount = 0;
             for (int i = 0; i < codes.Count; i++)
             {
-                if (codes[i].opcode != OpCodes.Ldfld || !ReferenceEquals(codes[i].operand, constField))
+                if (!IsConstFieldLoad(codes[i], constField))
                 {
                     continue;
                 }
@@ -239,6 +236,18 @@ namespace MimesisPlayerEnhancement.Features.MimicTuning
             }
 
             return codes;
+        }
+
+        private static bool IsConstFieldLoad(CodeInstruction instruction, FieldInfo? constField)
+        {
+            if (constField == null || instruction.opcode != OpCodes.Ldfld || instruction.operand is not FieldInfo field)
+            {
+                return false;
+            }
+
+            return ReferenceEquals(instruction.operand, constField)
+                || (field.Name == constField.Name
+                    && field.DeclaringType?.FullName == constField.DeclaringType?.FullName);
         }
     }
 }
