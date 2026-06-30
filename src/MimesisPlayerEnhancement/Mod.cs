@@ -150,7 +150,11 @@ namespace MimesisPlayerEnhancement
                 $"DungeonTime={ModConfig.EnableDungeonTime.Value}, " +
                 $"MimicTuning={ModConfig.EnableMimicTuning.Value}" +
                 (ModConfig.EnableMimicTuning.Value
-                    ? $" (randomize={ModConfig.RandomizeMimicPossessionDuration.Value}, cooltime×{ModConfig.MimicPossessionCooltimeMultiplier.Value})"
+                    ? $" (randomize={ModConfig.RandomizeMimicPossessionDuration.Value}" +
+                      (ModConfig.RandomizeMimicPossessionDuration.Value
+                          ? $", duration={ModConfig.MimicPossessionMinTimeSeconds.Value}-{ModConfig.MimicPossessionMaxTimeSeconds.Value}s"
+                          : "") +
+                      $", cooltime×{ModConfig.MimicPossessionCooltimeMultiplier.Value})"
                     : "") +
                 $", PlayerTuning={ModConfig.EnablePlayerTuning.Value}, " +
                 $"DungeonRandomizer={ModConfig.EnableDungeonRandomizer.Value}, " +

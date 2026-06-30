@@ -114,8 +114,8 @@ namespace MimesisPlayerEnhancement
 
         public static MelonPreferences_Entry<bool> EnableMimicTuning { get; private set; } = null!;
         public static MelonPreferences_Entry<bool> RandomizeMimicPossessionDuration { get; private set; } = null!;
-        public static MelonPreferences_Entry<float> MimicPossessionMinTimeMultiplier { get; private set; } = null!;
-        public static MelonPreferences_Entry<float> MimicPossessionMaxTimeMultiplier { get; private set; } = null!;
+        public static MelonPreferences_Entry<float> MimicPossessionMinTimeSeconds { get; private set; } = null!;
+        public static MelonPreferences_Entry<float> MimicPossessionMaxTimeSeconds { get; private set; } = null!;
         public static MelonPreferences_Entry<float> MimicPossessionCooltimeMultiplier { get; private set; } = null!;
 
         public static MelonPreferences_Entry<bool> EnablePlayerTuning { get; private set; } = null!;
@@ -663,19 +663,19 @@ namespace MimesisPlayerEnhancement
                 "RandomizeMimicPossessionDuration",
                 false,
                 "Randomize Mimic Possession Duration",
-                "Roll a random speak window per E-possession between min and max multipliers of vanilla duration. Host only.");
+                "Roll a random speak window per E-possession between min and max seconds below. Host only.");
 
-            MimicPossessionMinTimeMultiplier = CreateTrackedEntry(_mimicTuningCategory,
-                "MimicPossessionMinTimeMultiplier",
-                1f,
-                "Mimic Possession Min Time Multiplier",
-                "Minimum rolled speak duration as a multiple of vanilla C_PossessionDuration (1 = vanilla). Host only.");
+            MimicPossessionMinTimeSeconds = CreateTrackedEntry(_mimicTuningCategory,
+                "MimicPossessionMinTimeSeconds",
+                Features.MimicTuning.MimicTuningResolver.VanillaPossessionDurationSeconds,
+                "Mimic Possession Min Time (seconds)",
+                "Minimum rolled speak duration in seconds (vanilla is 12). Host only.");
 
-            MimicPossessionMaxTimeMultiplier = CreateTrackedEntry(_mimicTuningCategory,
-                "MimicPossessionMaxTimeMultiplier",
-                1f,
-                "Mimic Possession Max Time Multiplier",
-                "Maximum rolled speak duration as a multiple of vanilla C_PossessionDuration (1 = vanilla). Host only.");
+            MimicPossessionMaxTimeSeconds = CreateTrackedEntry(_mimicTuningCategory,
+                "MimicPossessionMaxTimeSeconds",
+                Features.MimicTuning.MimicTuningResolver.VanillaPossessionDurationSeconds,
+                "Mimic Possession Max Time (seconds)",
+                "Maximum rolled speak duration in seconds (vanilla is 12). Host only.");
 
             MimicPossessionCooltimeMultiplier = CreateTrackedEntry(_mimicTuningCategory,
                 "MimicPossessionCooltimeMultiplier",
@@ -991,12 +991,12 @@ namespace MimesisPlayerEnhancement
 
             EnableMimicTuning.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
             RandomizeMimicPossessionDuration.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
-            MimicPossessionMinTimeMultiplier.OnEntryValueChanged.Subscribe((_, value) =>
-                OnMimicTuningMultiplierChanged(logger, value, MimicPossessionMinTimeMultiplier));
-            MimicPossessionMaxTimeMultiplier.OnEntryValueChanged.Subscribe((_, value) =>
-                OnMimicTuningMultiplierChanged(logger, value, MimicPossessionMaxTimeMultiplier));
+            MimicPossessionMinTimeSeconds.OnEntryValueChanged.Subscribe((_, value) =>
+                OnMimicPossessionDurationSecondsChanged(logger, value, MimicPossessionMinTimeSeconds));
+            MimicPossessionMaxTimeSeconds.OnEntryValueChanged.Subscribe((_, value) =>
+                OnMimicPossessionDurationSecondsChanged(logger, value, MimicPossessionMaxTimeSeconds));
             MimicPossessionCooltimeMultiplier.OnEntryValueChanged.Subscribe((_, value) =>
-                OnMimicTuningMultiplierChanged(logger, value, MimicPossessionCooltimeMultiplier));
+                OnMimicPossessionCooltimeMultiplierChanged(logger, value));
 
             EnablePlayerTuning.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
             MoveSpeedMultiplier.OnEntryValueChanged.Subscribe((_, value) =>
@@ -1040,6 +1040,7 @@ namespace MimesisPlayerEnhancement
 
             RegisterFloatEntries();
             MigrateLegacyMapPlacedEncounterKeys(logger);
+            MigrateLegacyMimicPossessionTimeKeys(logger);
             ModConfigFloatHelper.SanitizeAll(FloatEntries);
             NormalizeSavedFloats();
             ModConfigRegistry.Rebuild();
@@ -1148,8 +1149,8 @@ namespace MimesisPlayerEnhancement
                 ReinforcePriceMultiplier,
                 ExtraShiftSecondsPerPlayerAboveBaseline,
                 RoomEntryDelayMultiplier,
-                MimicPossessionMinTimeMultiplier,
-                MimicPossessionMaxTimeMultiplier,
+                MimicPossessionMinTimeSeconds,
+                MimicPossessionMaxTimeSeconds,
                 MimicPossessionCooltimeMultiplier,
                 MoveSpeedMultiplier,
                 MaxStaminaMultiplier,
@@ -1195,28 +1196,59 @@ namespace MimesisPlayerEnhancement
             NotifyChanged();
         }
 
-        private static void OnMimicTuningMultiplierChanged(
+        private static void OnMimicPossessionDurationSecondsChanged(
             MelonLogger.Instance logger,
             float value,
             MelonPreferences_Entry<float> entry)
         {
-            if (value < Features.MimicTuning.MimicTuningResolver.MinMultiplier)
+            if (value < Features.MimicTuning.MimicTuningResolver.MinDurationSeconds)
             {
                 logger.Warning(
-                    $"{entry.Identifier} must be at least {Features.MimicTuning.MimicTuningResolver.MinMultiplier}; resetting.");
-                entry.Value = Features.MimicTuning.MimicTuningResolver.MinMultiplier;
+                    $"{entry.Identifier} must be at least {Features.MimicTuning.MimicTuningResolver.MinDurationSeconds}; resetting.");
+                entry.Value = Features.MimicTuning.MimicTuningResolver.MinDurationSeconds;
                 return;
             }
 
-            if (value > Features.MimicTuning.MimicTuningResolver.MaxMultiplier)
+            if (value > Features.MimicTuning.MimicTuningResolver.MaxDurationSeconds)
             {
                 logger.Warning(
-                    $"{entry.Identifier} must be at most {Features.MimicTuning.MimicTuningResolver.MaxMultiplier}; resetting.");
-                entry.Value = Features.MimicTuning.MimicTuningResolver.MaxMultiplier;
+                    $"{entry.Identifier} must be at most {Features.MimicTuning.MimicTuningResolver.MaxDurationSeconds}; resetting.");
+                entry.Value = Features.MimicTuning.MimicTuningResolver.MaxDurationSeconds;
                 return;
+            }
+
+            float min = MimicPossessionMinTimeSeconds.Value;
+            float max = MimicPossessionMaxTimeSeconds.Value;
+            if (max < min)
+            {
+                logger.Warning(
+                    "MimicPossessionMaxTimeSeconds must be >= MimicPossessionMinTimeSeconds; syncing max to min.");
+                MimicPossessionMaxTimeSeconds.Value = min;
             }
 
             ModConfigFloatHelper.SanitizeEntry(entry);
+            NotifyChanged();
+        }
+
+        private static void OnMimicPossessionCooltimeMultiplierChanged(MelonLogger.Instance logger, float value)
+        {
+            if (value < Features.MimicTuning.MimicTuningResolver.MinCooltimeMultiplier)
+            {
+                logger.Warning(
+                    $"MimicPossessionCooltimeMultiplier must be at least {Features.MimicTuning.MimicTuningResolver.MinCooltimeMultiplier}; resetting.");
+                MimicPossessionCooltimeMultiplier.Value = Features.MimicTuning.MimicTuningResolver.MinCooltimeMultiplier;
+                return;
+            }
+
+            if (value > Features.MimicTuning.MimicTuningResolver.MaxCooltimeMultiplier)
+            {
+                logger.Warning(
+                    $"MimicPossessionCooltimeMultiplier must be at most {Features.MimicTuning.MimicTuningResolver.MaxCooltimeMultiplier}; resetting.");
+                MimicPossessionCooltimeMultiplier.Value = Features.MimicTuning.MimicTuningResolver.MaxCooltimeMultiplier;
+                return;
+            }
+
+            ModConfigFloatHelper.SanitizeEntry(MimicPossessionCooltimeMultiplier);
             NotifyChanged();
         }
 
@@ -1234,6 +1266,23 @@ namespace MimesisPlayerEnhancement
             }
         }
 
+        private static void MigrateLegacyMimicPossessionTimeKeys(MelonLogger.Instance logger)
+        {
+            bool migrated = false;
+            migrated |= TryMigrateLegacyMimicPossessionTimeMultiplier(
+                "MimicPossessionMinTimeMultiplier",
+                MimicPossessionMinTimeSeconds);
+            migrated |= TryMigrateLegacyMimicPossessionTimeMultiplier(
+                "MimicPossessionMaxTimeMultiplier",
+                MimicPossessionMaxTimeSeconds);
+
+            if (migrated)
+            {
+                logger.Msg(
+                    "Mimic Tuning config migrated — possession min/max multiplier keys converted to seconds.");
+            }
+        }
+
         private static bool TryMigrateLegacyFloatKey(
             string legacyKey,
             MelonPreferences_Entry<float> targetEntry)
@@ -1244,6 +1293,20 @@ namespace MimesisPlayerEnhancement
             }
 
             targetEntry.Value = legacyEntry.Value;
+            return true;
+        }
+
+        private static bool TryMigrateLegacyMimicPossessionTimeMultiplier(
+            string legacyKey,
+            MelonPreferences_Entry<float> targetEntry)
+        {
+            if (_mimicTuningCategory.GetEntry<float>(legacyKey) is not MelonPreferences_Entry<float> legacyEntry)
+            {
+                return false;
+            }
+
+            targetEntry.Value = legacyEntry.Value
+                * Features.MimicTuning.MimicTuningResolver.VanillaPossessionDurationSeconds;
             return true;
         }
 

@@ -12,8 +12,11 @@ namespace MimesisPlayerEnhancement.Features.MimicTuning
 
         private static readonly PropertyInfo? HubDatamanProperty =
             typeof(Hub).GetProperty("dataman", InstanceFlags);
-        internal const float MinMultiplier = 0.1f;
-        internal const float MaxMultiplier = 10f;
+        internal const float VanillaPossessionDurationSeconds = 12f;
+        internal const float MinDurationSeconds = 0.1f;
+        internal const float MaxDurationSeconds = 120f;
+        internal const float MinCooltimeMultiplier = 0.1f;
+        internal const float MaxCooltimeMultiplier = 10f;
         private const float VanillaEpsilon = 0.001f;
 
         internal static bool ShouldApplyHost =>
@@ -64,10 +67,10 @@ namespace MimesisPlayerEnhancement.Features.MimicTuning
                 return vanillaMs;
             }
 
-            float minMultiplier = ModConfig.MimicPossessionMinTimeMultiplier.Value;
-            float maxMultiplier = ModConfig.MimicPossessionMaxTimeMultiplier.Value;
-            long minMs = Math.Max(1L, (long)(vanillaMs * minMultiplier));
-            long maxMs = Math.Max(minMs, (long)(vanillaMs * maxMultiplier));
+            float minSeconds = ModConfig.MimicPossessionMinTimeSeconds.Value;
+            float maxSeconds = ModConfig.MimicPossessionMaxTimeSeconds.Value;
+            long minMs = Math.Max(1L, (long)(minSeconds * 1000f));
+            long maxMs = Math.Max(minMs, (long)(maxSeconds * 1000f));
 
             long rolled = minMs >= maxMs
                 ? minMs
