@@ -204,7 +204,7 @@ Each source has three multiplier + auto-scale pairs (Consumable, Equipment, Misc
 
 | Key | Type | Default | What it does |
 |-----|------|---------|--------------|
-| `EnableLootMultiplicator` | bool | `true` | Master toggle for all loot scaling below. |
+| `EnableLootMultiplicator` | bool | `false` | Master toggle for all loot scaling below. |
 | `AutoScaleMapConsumableLootByPlayerCount` | bool | `true` | Player-count scaling for map consumables (see tables above). |
 | `MapConsumableLootMultiplier` | float | `1.0` | Base multiplier for map consumables. Minimum is `0`. |
 | `AutoScaleMapEquipmentLootByPlayerCount` | bool | `true` | Player-count scaling for map equipment. |
@@ -272,7 +272,7 @@ Host-only. When a dungeon shift starts (all members entered), extends the real s
 
 | Key | Type | Default | What it does |
 |-----|------|---------|--------------|
-| `EnableDungeonTime` | bool | `true` | Master toggle for shift extension. |
+| `EnableDungeonTime` | bool | `false` | Master toggle for shift extension. |
 | `DungeonTimeBaselinePlayerCount` | int | `4` | No extra shift time at or below this player count. Minimum is `1`. |
 | `ExtraShiftSecondsPerPlayerAboveBaseline` | float | `10.0` | Real seconds added to the shift deadline per player above the baseline. Minimum is `0`. |
 
@@ -397,7 +397,7 @@ MimicSpawnMultiplier = 1.0
 # … other spawn keys …
 
 [MimesisPlayerEnhancement_LootMultiplicator]
-EnableLootMultiplicator = true
+EnableLootMultiplicator = false
 MapConsumableLootMultiplier = 1.0
 # … other loot keys …
 
@@ -407,7 +407,7 @@ StartupMoneyMultiplier = 1.0
 # … other money keys …
 
 [MimesisPlayerEnhancement_DungeonTime]
-EnableDungeonTime = true
+EnableDungeonTime = false
 DungeonTimeBaselinePlayerCount = 4
 ExtraShiftSecondsPerPlayerAboveBaseline = 10.0
 

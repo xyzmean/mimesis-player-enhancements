@@ -382,7 +382,7 @@ namespace MimesisPlayerEnhancement
 
             EnableLootMultiplicator = CreateTrackedEntry(_lootMultiplicatorCategory, 
                 "EnableLootMultiplicator",
-                true,
+                false,
                 "Enable Loot Multiplicator",
                 "Scale how much loot appears in a run. Host only. See each Map/Drop/Trigger entry below for what it affects.");
 
@@ -616,7 +616,7 @@ namespace MimesisPlayerEnhancement
 
             EnableDungeonTime = CreateTrackedEntry(_dungeonTimeCategory, 
                 "EnableDungeonTime",
-                true,
+                false,
                 "Enable Dungeon Time",
                 "Extend dungeon shift length on the host when player count exceeds the baseline.");
 
