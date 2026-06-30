@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using MimesisPlayerEnhancement.Features.MimicTuning;
 using MimesisPlayerEnhancement.Features.PlayerTuning;
 using MimesisPlayerEnhancement.Features.JoinAnytime;
 using MimesisPlayerEnhancement.Features.DungeonRandomizer;
@@ -98,6 +99,7 @@ namespace MimesisPlayerEnhancement.Util
             new FeatureModule("MoneyMultiplier", MoneyMultiplierPatches.Apply),
             new FeatureModule("DungeonTime", DungeonTimePatches.Apply),
             new FeatureModule("RoomEntryDelay", RoomEntryDelayPatches.Apply),
+            new FeatureModule("MimicTuning", MimicTuningPatches.Apply),
             new FeatureModule("PlayerTuning", PlayerTuningPatches.Apply,
                 syncFromConfig: PlayerTuningApplier.RefreshFromConfig),
             new FeatureModule("DungeonRandomizer", DungeonRandomizerPatches.Apply),

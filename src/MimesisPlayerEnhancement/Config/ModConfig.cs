@@ -112,6 +112,12 @@ namespace MimesisPlayerEnhancement
         public static MelonPreferences_Entry<bool> EnableRoomEntryDelay { get; private set; } = null!;
         public static MelonPreferences_Entry<float> RoomEntryDelayMultiplier { get; private set; } = null!;
 
+        public static MelonPreferences_Entry<bool> EnableMimicTuning { get; private set; } = null!;
+        public static MelonPreferences_Entry<bool> RandomizeMimicPossessionDuration { get; private set; } = null!;
+        public static MelonPreferences_Entry<float> MimicPossessionMinTimeMultiplier { get; private set; } = null!;
+        public static MelonPreferences_Entry<float> MimicPossessionMaxTimeMultiplier { get; private set; } = null!;
+        public static MelonPreferences_Entry<float> MimicPossessionCooltimeMultiplier { get; private set; } = null!;
+
         public static MelonPreferences_Entry<bool> EnablePlayerTuning { get; private set; } = null!;
         public static MelonPreferences_Entry<float> MoveSpeedMultiplier { get; private set; } = null!;
         public static MelonPreferences_Entry<float> MaxStaminaMultiplier { get; private set; } = null!;
@@ -152,6 +158,7 @@ namespace MimesisPlayerEnhancement
         private static MelonPreferences_Category _moneyMultiplierCategory = null!;
         private static MelonPreferences_Category _dungeonTimeCategory = null!;
         private static MelonPreferences_Category _roomEntryDelayCategory = null!;
+        private static MelonPreferences_Category _mimicTuningCategory = null!;
         private static MelonPreferences_Category _playerTuningCategory = null!;
         private static MelonPreferences_Category _dungeonRandomizerCategory = null!;
         private static MelonPreferences_Category _webDashboardCategory = null!;
@@ -177,6 +184,7 @@ namespace MimesisPlayerEnhancement
             _moneyMultiplierCategory = CreateCategory("MimesisPlayerEnhancement_MoneyMultiplier", "Money Multiplier");
             _dungeonTimeCategory = CreateCategory("MimesisPlayerEnhancement_DungeonTime", "Dungeon Time");
             _roomEntryDelayCategory = CreateCategory("MimesisPlayerEnhancement_RoomEntryDelay", "Room Entry Delay");
+            _mimicTuningCategory = CreateCategory("MimesisPlayerEnhancement_MimicTuning", "Mimic Tuning");
             _playerTuningCategory = CreateCategory("MimesisPlayerEnhancement_PlayerTuning", "Player Tuning");
             _dungeonRandomizerCategory = CreateCategory("MimesisPlayerEnhancement_DungeonRandomizer", "Dungeon Randomizer");
             _webDashboardCategory = CreateCategory("MimesisPlayerEnhancement_WebDashboard", "Web Dashboard");
@@ -644,6 +652,36 @@ namespace MimesisPlayerEnhancement
                 "Room Entry Delay Multiplier",
                 "Multiplier for room entry timing at teleporters and dungeon doors (1 = vanilla, 2 = double). Host only.");
 
+            EnableMimicTuning = CreateTrackedEntry(_mimicTuningCategory,
+                "EnableMimicTuning",
+                false,
+                "Enable Mimic Tuning",
+                "Tune dead-player mimic possession speak duration and cooldown on the host.");
+
+            RandomizeMimicPossessionDuration = CreateTrackedEntry(_mimicTuningCategory,
+                "RandomizeMimicPossessionDuration",
+                false,
+                "Randomize Mimic Possession Duration",
+                "Roll a random speak window per E-possession between min and max multipliers of vanilla duration. Host only.");
+
+            MimicPossessionMinTimeMultiplier = CreateTrackedEntry(_mimicTuningCategory,
+                "MimicPossessionMinTimeMultiplier",
+                1f,
+                "Mimic Possession Min Time Multiplier",
+                "Minimum rolled speak duration as a multiple of vanilla C_PossessionDuration (1 = vanilla). Host only.");
+
+            MimicPossessionMaxTimeMultiplier = CreateTrackedEntry(_mimicTuningCategory,
+                "MimicPossessionMaxTimeMultiplier",
+                1f,
+                "Mimic Possession Max Time Multiplier",
+                "Maximum rolled speak duration as a multiple of vanilla C_PossessionDuration (1 = vanilla). Host only.");
+
+            MimicPossessionCooltimeMultiplier = CreateTrackedEntry(_mimicTuningCategory,
+                "MimicPossessionCooltimeMultiplier",
+                1f,
+                "Mimic Possession Cooltime Multiplier",
+                "Multiplier for wait time after mimic possession before the next E-possession (1 = vanilla). Host only.");
+
             EnablePlayerTuning = CreateTrackedEntry(_playerTuningCategory,
                 "EnablePlayerTuning",
                 false,
@@ -950,6 +988,15 @@ namespace MimesisPlayerEnhancement
             RoomEntryDelayMultiplier.OnEntryValueChanged.Subscribe((_, value) =>
                 OnRoomEntryDelayMultiplierChanged(logger, value));
 
+            EnableMimicTuning.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
+            RandomizeMimicPossessionDuration.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
+            MimicPossessionMinTimeMultiplier.OnEntryValueChanged.Subscribe((_, value) =>
+                OnMimicTuningMultiplierChanged(logger, value, MimicPossessionMinTimeMultiplier));
+            MimicPossessionMaxTimeMultiplier.OnEntryValueChanged.Subscribe((_, value) =>
+                OnMimicTuningMultiplierChanged(logger, value, MimicPossessionMaxTimeMultiplier));
+            MimicPossessionCooltimeMultiplier.OnEntryValueChanged.Subscribe((_, value) =>
+                OnMimicTuningMultiplierChanged(logger, value, MimicPossessionCooltimeMultiplier));
+
             EnablePlayerTuning.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
             MoveSpeedMultiplier.OnEntryValueChanged.Subscribe((_, value) =>
                 OnPlayerTuningMultiplierChanged(logger, value, MoveSpeedMultiplier));
@@ -1100,6 +1147,9 @@ namespace MimesisPlayerEnhancement
                 ReinforcePriceMultiplier,
                 ExtraShiftSecondsPerPlayerAboveBaseline,
                 RoomEntryDelayMultiplier,
+                MimicPossessionMinTimeMultiplier,
+                MimicPossessionMaxTimeMultiplier,
+                MimicPossessionCooltimeMultiplier,
                 MoveSpeedMultiplier,
                 MaxStaminaMultiplier,
                 StaminaDrainMultiplier,
@@ -1141,6 +1191,31 @@ namespace MimesisPlayerEnhancement
             }
 
             ModConfigFloatHelper.SanitizeEntry(RoomEntryDelayMultiplier);
+            NotifyChanged();
+        }
+
+        private static void OnMimicTuningMultiplierChanged(
+            MelonLogger.Instance logger,
+            float value,
+            MelonPreferences_Entry<float> entry)
+        {
+            if (value < Features.MimicTuning.MimicTuningResolver.MinMultiplier)
+            {
+                logger.Warning(
+                    $"{entry.Identifier} must be at least {Features.MimicTuning.MimicTuningResolver.MinMultiplier}; resetting.");
+                entry.Value = Features.MimicTuning.MimicTuningResolver.MinMultiplier;
+                return;
+            }
+
+            if (value > Features.MimicTuning.MimicTuningResolver.MaxMultiplier)
+            {
+                logger.Warning(
+                    $"{entry.Identifier} must be at most {Features.MimicTuning.MimicTuningResolver.MaxMultiplier}; resetting.");
+                entry.Value = Features.MimicTuning.MimicTuningResolver.MaxMultiplier;
+                return;
+            }
+
+            ModConfigFloatHelper.SanitizeEntry(entry);
             NotifyChanged();
         }
 

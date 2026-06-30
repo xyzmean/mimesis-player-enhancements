@@ -39,6 +39,7 @@ Tested with **MIMESIS 0.3.0** and **MelonLoader 0.7.3**.
 | **Money Multiplier** | Scale startup money, round goal, scrap/sell values, shop buy prices, shop item count, and reinforce costs | No — host only |
 | **Dungeon Time** | Extend dungeon shift length by real seconds per player above a baseline (default: +10s per player above 4) | No — host only |
 | **Room Entry Delay** | Multiply hold/teleport timing when entering rooms via E at teleporters and dungeon doors | No — host only |
+| **Mimic Tuning** | Randomize dead-player mimic possession speak duration and scale post-possession cooldown | No — host only |
 | **Player Tuning** | Scale player move speed, stamina (max/drain/regen/delay), and max carry weight | No — host only |
 | **Dungeon Randomizer** | Randomize tram dungeon pick, layout flow, map variant, and procedural seed | No — host only |
 
@@ -285,6 +286,22 @@ Host-only. Multiplies vanilla timing when players press **E** to enter a room th
 | `EnableRoomEntryDelay` | bool | `false` | Master toggle for room entry timing multiplier. |
 | `RoomEntryDelayMultiplier` | float | `1.0` | Timing multiplier (`1` = vanilla, `0.5` = half as long, `2` = double). Valid range is `0.1`–`10.0`. |
 
+### Mimic Tuning — `[MimesisPlayerEnhancement_MimicTuning]`
+
+Host-only. When you are dead and press **E** to speak through a nearby mimic, vanilla uses a fixed speak window (`C_PossessionDuration`) and a fixed cooldown before the next possession (`C_PossessionCooltime`). This feature can randomize the speak window per possession and/or scale the cooldown. Off by default — set `EnableMimicTuning = true` to turn it on.
+
+**Speak duration:** When `RandomizeMimicPossessionDuration` is enabled, each possession rolls a random duration between `MimicPossessionMinTimeMultiplier` × vanilla and `MimicPossessionMaxTimeMultiplier` × vanilla. At `1.0` / `1.0` the roll equals vanilla length.
+
+**Cooldown:** `MimicPossessionCooltimeMultiplier` scales the wait after possession ends (`1` = vanilla, `2` = double). Independent of the random duration toggle.
+
+| Key | Type | Default | What it does |
+|-----|------|---------|--------------|
+| `EnableMimicTuning` | bool | `false` | Master toggle for mimic possession timing tweaks. |
+| `RandomizeMimicPossessionDuration` | bool | `false` | Roll a random speak duration per E-possession between the min and max multipliers below. |
+| `MimicPossessionMinTimeMultiplier` | float | `1.0` | Minimum rolled speak duration as a multiple of vanilla (`1` = vanilla). Valid range is `0.1`–`10.0`. |
+| `MimicPossessionMaxTimeMultiplier` | float | `1.0` | Maximum rolled speak duration as a multiple of vanilla (`1` = vanilla). Valid range is `0.1`–`10.0`. |
+| `MimicPossessionCooltimeMultiplier` | float | `1.0` | Post-possession cooldown multiplier (`1` = vanilla, `2` = double). Valid range is `0.1`–`10.0`. |
+
 ### Player Tuning — `[MimesisPlayerEnhancement_PlayerTuning]`
 
 Host-only. Scales player movement and stamina on the server. Joining clients do not need the mod — stats sync from the host automatically. Multipliers use `1.0` for vanilla; valid range is `0.1`–`5.0`. Changes apply at runtime when config is saved (host reloads player stats).
@@ -414,6 +431,13 @@ ExtraShiftSecondsPerPlayerAboveBaseline = 10.0
 [MimesisPlayerEnhancement_RoomEntryDelay]
 EnableRoomEntryDelay = false
 RoomEntryDelayMultiplier = 1.0
+
+[MimesisPlayerEnhancement_MimicTuning]
+EnableMimicTuning = false
+RandomizeMimicPossessionDuration = false
+MimicPossessionMinTimeMultiplier = 1.0
+MimicPossessionMaxTimeMultiplier = 1.0
+MimicPossessionCooltimeMultiplier = 1.0
 
 [MimesisPlayerEnhancement_PlayerTuning]
 EnablePlayerTuning = false

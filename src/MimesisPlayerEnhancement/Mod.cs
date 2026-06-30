@@ -138,7 +138,11 @@ namespace MimesisPlayerEnhancement
                 $"LootMultiplicator={ModConfig.EnableLootMultiplicator.Value}, " +
                 $"MoneyMultiplier={ModConfig.EnableMoneyMultiplier.Value}, " +
                 $"DungeonTime={ModConfig.EnableDungeonTime.Value}, " +
-                $"PlayerTuning={ModConfig.EnablePlayerTuning.Value}, " +
+                $"MimicTuning={ModConfig.EnableMimicTuning.Value}" +
+                (ModConfig.EnableMimicTuning.Value
+                    ? $" (randomize={ModConfig.RandomizeMimicPossessionDuration.Value}, cooltime×{ModConfig.MimicPossessionCooltimeMultiplier.Value})"
+                    : "") +
+                $", PlayerTuning={ModConfig.EnablePlayerTuning.Value}, " +
                 $"DungeonRandomizer={ModConfig.EnableDungeonRandomizer.Value}, " +
                 $"ExtendedSaveSlots={ModConfig.EnableExtendedSaveSlots.Value}" +
                 (ModConfig.EnableExtendedSaveSlots.Value
@@ -169,7 +173,11 @@ namespace MimesisPlayerEnhancement
                 $"LootMultiplicator={ModConfig.EnableLootMultiplicator.Value}, " +
                 $"MoneyMultiplier={ModConfig.EnableMoneyMultiplier.Value}, " +
                 $"DungeonTime={ModConfig.EnableDungeonTime.Value}, " +
-                $"PlayerTuning={ModConfig.EnablePlayerTuning.Value}, " +
+                $"MimicTuning={ModConfig.EnableMimicTuning.Value}" +
+                (ModConfig.EnableMimicTuning.Value
+                    ? $" (randomize={ModConfig.RandomizeMimicPossessionDuration.Value}, cooltime×{ModConfig.MimicPossessionCooltimeMultiplier.Value})"
+                    : "") +
+                $", PlayerTuning={ModConfig.EnablePlayerTuning.Value}, " +
                 $"DungeonRandomizer={ModConfig.EnableDungeonRandomizer.Value}, " +
                 $"ExtendedSaveSlots={ModConfig.EnableExtendedSaveSlots.Value}" +
                 (ModConfig.EnableExtendedSaveSlots.Value
