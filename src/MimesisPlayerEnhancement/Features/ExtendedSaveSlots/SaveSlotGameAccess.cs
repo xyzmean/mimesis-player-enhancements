@@ -17,12 +17,11 @@ namespace MimesisPlayerEnhancement.Features.ExtendedSaveSlots
         private static readonly MethodInfo? LoadSaveMethod =
             AccessTools.Method(typeof(PlatformMgr), "Load")?.MakeGenericMethod(typeof(MMSaveGameData));
 
-        private static readonly MethodInfo? InstantiateJoinTramMethod =
-            AccessTools.Method(typeof(UIManager), "InstatiateUI")?.MakeGenericMethod(typeof(UIPrefab_JoinTram));
+        private static readonly MethodInfo? InstantiatePublicRoomListMethod =
+            AccessTools.Method(typeof(UIManager), "InstatiateUIPrefab")?.MakeGenericMethod(typeof(UIPrefab_PublicRoomList));
 
         private static FieldInfo? _uimanField;
         private static PropertyInfo? _uimanProperty;
-        private static FieldInfo? _joinTramPrefabField;
 
         internal static string GetL10NText(string key, params object[] formattingArgs)
         {
@@ -57,33 +56,17 @@ namespace MimesisPlayerEnhancement.Features.ExtendedSaveSlots
             return GameSessionAccess.TryGetPdata();
         }
 
-        internal static Color GetMouseOverTextColor()
+        internal static UIPrefab_PublicRoomList? CreateSavePickerShell(UIManager uiManager)
         {
-            return TryGetUiManager()?.mouseOverTextColor ?? SaveSlotDisplayFormatter.DefaultTextColor;
-        }
-
-        internal static UIPrefab_JoinTram? CreateSavePickerShell(UIPrefab_MainMenu mainMenuUi)
-        {
-            UIManager? uiManager = TryGetUiManager();
-            if (uiManager == null)
+            if (uiManager.prefab_PublicRoomList == null || InstantiatePublicRoomListMethod == null)
             {
                 return null;
             }
 
-            _joinTramPrefabField ??= typeof(UIPrefab_MainMenu).GetField("joinTramUIPrefab", InstanceFlags);
-            if (_joinTramPrefabField?.GetValue(mainMenuUi) is not GameObject prefab || prefab == null)
-            {
-                return null;
-            }
-
-            if (InstantiateJoinTramMethod == null)
-            {
-                return null;
-            }
-
-            // Same layer as New/Load Tram overlays so the picker renders above the main menu.
             object topHeight = System.Enum.Parse(typeof(eUIHeight), "Top");
-            return InstantiateJoinTramMethod.Invoke(uiManager, [prefab, topHeight]) as UIPrefab_JoinTram;
+            return InstantiatePublicRoomListMethod.Invoke(
+                uiManager,
+                [uiManager.prefab_PublicRoomList, topHeight]) as UIPrefab_PublicRoomList;
         }
 
         internal static MMSaveGameData? LoadSaveData(PlatformMgr platformMgr, string fileName)
@@ -103,10 +86,15 @@ namespace MimesisPlayerEnhancement.Features.ExtendedSaveSlots
             }
         }
 
-        internal static Component? GetLoadTramTextComponent(UIPrefab_LoadTram loadTram, string propertyName)
-        {
-            object? value = typeof(UIPrefab_LoadTram).GetProperty(propertyName)?.GetValue(loadTram);
-            return value as Component;
-        }
+#pragma warning disable CS0618
+        internal static UIPrefab_LoadTram? TryFindHiddenLoadTram() =>
+            Object.FindObjectOfType<UIPrefab_LoadTram>(true);
+
+        internal static UIPrefab_NewTram? TryFindHiddenNewTram() =>
+            Object.FindObjectOfType<UIPrefab_NewTram>(true);
+
+        internal static UIPrefab_NewTramPopUp? TryFindHiddenNewTramPopUp() =>
+            Object.FindObjectOfType<UIPrefab_NewTramPopUp>(true);
+#pragma warning restore CS0618
     }
 }

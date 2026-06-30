@@ -170,6 +170,7 @@ namespace MimesisPlayerEnhancement
         {
             ModConfigRegistry.ClearRegistrationOrder();
             FilePath = Path.Combine(MelonEnvironment.UserDataDirectory, "MimesisPlayerEnhancement.cfg");
+            SparseTomlConfig.RepairTomletCompatibility(FilePath);
 
             _mainCategory = CreateCategory(MainCategoryId, "Mimesis Player Enhancement");
             MainCategory = _mainCategory;

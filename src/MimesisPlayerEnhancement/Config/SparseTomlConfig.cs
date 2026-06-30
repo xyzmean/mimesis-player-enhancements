@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Text;
+using MimesisPlayerEnhancement.Util;
 
 namespace MimesisPlayerEnhancement
 {
@@ -138,14 +140,119 @@ namespace MimesisPlayerEnhancement
             return true;
         }
 
+        /// <summary>
+        /// Quotes bare string values so MelonLoader's Tomlet parser can load the file.
+        /// </summary>
+        internal static void RepairTomletCompatibility(string? filePath)
+        {
+            if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
+            {
+                return;
+            }
+
+            string[] lines = File.ReadAllLines(filePath);
+            bool changed = false;
+            for (int i = 0; i < lines.Length; i++)
+            {
+                if (TryRepairAssignmentLine(lines[i], out string repaired) && repaired != lines[i])
+                {
+                    lines[i] = repaired;
+                    changed = true;
+                }
+            }
+
+            if (!changed)
+            {
+                return;
+            }
+
+            AtomicFileIO.WriteText(filePath, string.Join(Environment.NewLine, lines) + Environment.NewLine, "SparseTomlConfig");
+        }
+
+        internal static bool TryRepairAssignmentLine(string line, out string repaired)
+        {
+            repaired = line;
+            int eq = line.IndexOf('=');
+            if (eq <= 0 || line.TrimStart().StartsWith('['))
+            {
+                return false;
+            }
+
+            string keyPart = line[..eq];
+            string remainder = line[(eq + 1)..];
+            string valuePart = remainder;
+            string trailing = "";
+
+            int commentIdx = remainder.IndexOf('#');
+            if (commentIdx >= 0)
+            {
+                valuePart = remainder[..commentIdx];
+                trailing = remainder[commentIdx..];
+            }
+
+            valuePart = valuePart.Trim();
+            if (!NeedsQuotingForTomlet(valuePart))
+            {
+                return false;
+            }
+
+            string unquoted = UnquoteTomlString(valuePart);
+            repaired = keyPart + "= " + FormatValue(unquoted) + trailing;
+            return true;
+        }
+
         private static string FormatValue(string value)
         {
-            if (value.IndexOfAny([' ', '\t', '#', '[', '=', '"', '\n', '\r']) >= 0)
+            if (NeedsQuotingForTomlet(value))
             {
-                return '"' + value.Replace("\\", "\\\\").Replace("\"", "\\\"") + '"';
+                return QuoteTomlString(value);
             }
 
             return value;
+        }
+
+        private static bool NeedsQuotingForTomlet(string value)
+        {
+            if (value.Length == 0)
+            {
+                return true;
+            }
+
+            if (value.Length >= 2 && value.StartsWith('"') && value.EndsWith('"'))
+            {
+                return false;
+            }
+
+            if (string.Equals(value, "true", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(value, "false", StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            if (long.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out _)
+                || float.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out _))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        private static string UnquoteTomlString(string value)
+        {
+            if (value.Length >= 2 && value.StartsWith('"') && value.EndsWith('"'))
+            {
+                return value[1..^1]
+                    .Replace("\\\"", "\"")
+                    .Replace("\\\\", "\\");
+            }
+
+            return value;
+        }
+
+        private static string QuoteTomlString(string value)
+        {
+            return '"' + value.Replace("\\", "\\\\").Replace("\"", "\\\"") + '"';
         }
     }
 }

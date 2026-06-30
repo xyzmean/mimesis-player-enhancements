@@ -1,12 +1,9 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using HarmonyLib;
 using MimesisPlayerEnhancement.Util;
 using ReluProtocol;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 namespace MimesisPlayerEnhancement.Features.ExtendedSaveSlots
 {
@@ -14,122 +11,78 @@ namespace MimesisPlayerEnhancement.Features.ExtendedSaveSlots
     {
         private const string Feature = "ExtendedSaveSlots";
 
-        private static MethodInfo? _createNewGameInSlotLoadTram;
-        private static MethodInfo? _tryDeleteSaveGameData;
-        private static MethodInfo? _createRoom;
+        private static MethodInfo? _tryLoadSaveAndCreateRoom;
+        private static MethodInfo? _handleNewGameSlotSelection;
 
-        internal static void LoadSaveAndCreateRoom(
+        internal static void TryLoadSaveAndCreateRoom(
             MainMenu menu,
-            UIPrefabScript pickerShell,
-            int slotId,
-            MMSaveGameData saveData)
+            UIPrefab_PublicRoomList pickerShell,
+            UIPrefab_LoadTram loadTram,
+            int slotId)
         {
+            MethodInfo? method = GetTryLoadSaveAndCreateRoom();
+            if (method == null)
+            {
+                ModLog.Warn(Feature, "TryLoadSaveAndCreateRoom not found.");
+                return;
+            }
+
             UIManager? uiManager = SaveSlotGameAccess.TryGetUiManager();
-            if (uiManager == null)
+            if (uiManager != null)
             {
-                return;
-            }
-
-            uiManager.ui_escapeStack.Remove(pickerShell);
-            pickerShell.Hide();
-
-            Hub.PersistentData? pdata = SaveSlotGameAccess.TryGetPdata();
-            if (pdata == null)
-            {
-                return;
-            }
-            pdata.SaveSlotID = slotId;
-            pdata.StageCount = saveData.StageCount;
-            pdata.CycleCount = saveData.CycleCount;
-            pdata.Repaired = saveData.TramRepaired;
-            pdata.TramUpgradeIDs = saveData.TramUpgradeList != null
-                ? saveData.TramUpgradeList.Clone()
-                : new List<int>();
-            pdata.TramUpgradeIDs = pdata.TramUpgradeIDs.Distinct().ToList();
-            pdata.IsMaintenanceMachineAvailable = saveData.TramRepaired;
-
-            StartCreateRoom(menu);
-        }
-
-        internal static void CreateNewGameInSlot(MainMenu menu, UIPrefabScript pickerShell, int slotId)
-        {
-            MethodInfo? method = GetCreateNewGameInSlotLoadTram();
-            if (method == null)
-            {
-                ModLog.Warn(Feature, "CreateNewGameInSlot(UIPrefab_LoadTram) not found.");
-                return;
-            }
-
-            // MainMenu only needs Hide/escape-stack removal; LoadTram type is accepted by the game method.
-            UIPrefab_LoadTram? loadTramShell = pickerShell as UIPrefab_LoadTram
-                ?? pickerShell.GetComponent<UIPrefab_LoadTram>();
-            if (loadTramShell == null)
-            {
-                UIManager? uiManager = SaveSlotGameAccess.TryGetUiManager();
-                uiManager?.ui_escapeStack.Remove(pickerShell);
+                uiManager.ui_escapeStack.Remove(pickerShell);
                 pickerShell.Hide();
-                Hub.PersistentData? pdata = SaveSlotGameAccess.TryGetPdata();
-                if (pdata != null)
-                {
-                    pdata.ResetCycleInfos();
-                    pdata.SaveSlotID = slotId;
-                }
+                TramSavePickerController.SetSavePickerOpen(false, pickerShell);
+            }
 
-                StartCreateRoom(menu);
+            loadTram.InitSaveInfoList();
+            _ = method.Invoke(menu, [loadTram, slotId]);
+        }
+
+        internal static void HandleNewGameSlotSelection(
+            MainMenu menu,
+            UIPrefab_NewTram newTram,
+            UIPrefab_NewTramPopUp newTramPopUp,
+            int slotId)
+        {
+            MethodInfo? method = GetHandleNewGameSlotSelection();
+            if (method == null)
+            {
+                ModLog.Warn(Feature, "HandleNewGameSlotSelection not found.");
                 return;
             }
 
-            _ = method.Invoke(menu, [loadTramShell, slotId]);
-        }
-
-        internal static bool TryDeleteSaveGameData(MainMenu menu, int slotId)
-        {
-            MethodInfo? method = GetTryDeleteSaveGameData();
-            if (method == null)
+            UIManager? uiManager = SaveSlotGameAccess.TryGetUiManager();
+            UIPrefab_PublicRoomList? picker = TramSavePickerController.ActiveSavePickerList;
+            if (uiManager != null && picker != null)
             {
-                ModLog.Warn(Feature, "TryDeleteSaveGameData not found.");
-                return false;
+                uiManager.ui_escapeStack.Remove(picker);
+                picker.Hide();
+                TramSavePickerController.SetSavePickerOpen(false, picker);
             }
 
-            object? result = method.Invoke(menu, [slotId]);
-            return result is bool deleted && deleted;
+            EventSystem.current?.SetSelectedGameObject(null);
+            _ = method.Invoke(menu, [newTram, newTramPopUp, slotId]);
         }
 
-        private static void StartCreateRoom(MainMenu menu)
+        private static MethodInfo? GetTryLoadSaveAndCreateRoom()
         {
-            MethodInfo? method = GetCreateRoom();
-            if (method == null)
-            {
-                ModLog.Warn(Feature, "CreateRoom not found.");
-                return;
-            }
-
-            if (method.Invoke(menu, null) is IEnumerator routine)
-            {
-                ((MonoBehaviour)menu).StartCoroutine(routine);
-            }
-        }
-
-        private static MethodInfo? GetCreateNewGameInSlotLoadTram()
-        {
-            _createNewGameInSlotLoadTram ??= AccessTools.Method(
+            _tryLoadSaveAndCreateRoom ??= AccessTools.Method(
                 typeof(MainMenu),
-                "CreateNewGameInSlot",
+                "TryLoadSaveAndCreateRoom",
                 [typeof(UIPrefab_LoadTram), typeof(int)]);
 
-            return _createNewGameInSlotLoadTram;
+            return _tryLoadSaveAndCreateRoom;
         }
 
-        private static MethodInfo? GetTryDeleteSaveGameData()
+        private static MethodInfo? GetHandleNewGameSlotSelection()
         {
-            _tryDeleteSaveGameData ??= AccessTools.Method(typeof(MainMenu), "TryDeleteSaveGameData", [typeof(int)]);
-            return _tryDeleteSaveGameData;
-        }
+            _handleNewGameSlotSelection ??= AccessTools.Method(
+                typeof(MainMenu),
+                "HandleNewGameSlotSelection",
+                [typeof(UIPrefab_NewTram), typeof(UIPrefab_NewTramPopUp), typeof(int)]);
 
-        private static MethodInfo? GetCreateRoom()
-        {
-            _createRoom ??= AccessTools.Method(typeof(MainMenu), "CreateRoom", System.Type.EmptyTypes);
-            return _createRoom;
+            return _handleNewGameSlotSelection;
         }
     }
 }

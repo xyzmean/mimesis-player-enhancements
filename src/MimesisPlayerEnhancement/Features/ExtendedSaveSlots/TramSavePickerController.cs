@@ -15,10 +15,25 @@ namespace MimesisPlayerEnhancement.Features.ExtendedSaveSlots
 
         private static MainMenu? _mainMenu;
         private static UIPrefab_MainMenu? _mainMenuUi;
-        private static UIPrefab_LoadTram? _styleDonor;
-        private static TramSavePickerPanel? _panel;
+        private static SaveSlotPickerPanel? _panel;
+        private static UIPrefab_PublicRoomList? _activeSavePickerList;
 
         internal static bool IsActive => ModConfig.EnableExtendedSaveSlots.Value;
+
+        internal static bool IsSavePickerOpen { get; private set; }
+
+        internal static UIPrefab_PublicRoomList? ActiveSavePickerList => _activeSavePickerList;
+
+        internal static SaveSlotPickerPanel? Panel => _panel;
+
+        internal static bool IsSavePickerList(UIPrefab_PublicRoomList? list) =>
+            IsSavePickerOpen && list != null && ReferenceEquals(list, _activeSavePickerList);
+
+        internal static void SetSavePickerOpen(bool open, UIPrefab_PublicRoomList? list)
+        {
+            IsSavePickerOpen = open;
+            _activeSavePickerList = open ? list : null;
+        }
 
         internal static bool TryGetCachedSave(int slotId, out MMSaveGameData? data)
         {
@@ -31,7 +46,18 @@ namespace MimesisPlayerEnhancement.Features.ExtendedSaveSlots
             return false;
         }
 
-        internal static void Initialize(MainMenu mainMenu, UIPrefab_MainMenu mainMenuUi, UIPrefab_LoadTram styleDonor)
+        internal static bool TryGetRowContext(Steamworks.CSteamID rowKey, out SaveSlotRowContext? context)
+        {
+            if (_panel != null && _panel.TryGetRowContext(rowKey, out context))
+            {
+                return true;
+            }
+
+            context = null;
+            return false;
+        }
+
+        internal static void Initialize(MainMenu mainMenu, UIPrefab_MainMenu mainMenuUi)
         {
             if (!IsActive)
             {
@@ -40,16 +66,15 @@ namespace MimesisPlayerEnhancement.Features.ExtendedSaveSlots
 
             _mainMenu = mainMenu;
             _mainMenuUi = mainMenuUi;
-            _styleDonor = styleDonor;
             RestoreMainMenuRoot();
 
             if (!TryEnsurePanelReady())
             {
-                ModLog.Warn(Feature, "Failed to initialize tram save picker during MainMenu.Start.");
+                ModLog.Warn(Feature, "Failed to initialize save picker during MainMenu.Start.");
             }
             else
             {
-                ModLog.Info(Feature, "Unified tram save picker initialized.");
+                ModLog.Info(Feature, "Unified save picker initialized.");
             }
 
             ConfigureMainMenuButtons();
@@ -69,11 +94,6 @@ namespace MimesisPlayerEnhancement.Features.ExtendedSaveSlots
             ConfigureMainMenuButtons();
             ApplyFunnyHostButtonLabel();
             HideLoadButton();
-        }
-
-        internal static void OnJoinTramShellStarted(UIPrefab_JoinTram shell)
-        {
-            _panel?.OnJoinTramShellStarted(shell);
         }
 
         internal static void TryHandleHostButtonClick(UIPrefab_MainMenu mainMenuUi)
@@ -174,13 +194,7 @@ namespace MimesisPlayerEnhancement.Features.ExtendedSaveSlots
         {
             if (_panel != null)
             {
-                if (_panel.IsShellAlive)
-                {
-                    return true;
-                }
-
-                ModLog.Warn(Feature, "Save picker shell was destroyed; recreating.");
-                _panel = null;
+                return true;
             }
 
             if (_mainMenuUi == null)
@@ -190,25 +204,21 @@ namespace MimesisPlayerEnhancement.Features.ExtendedSaveSlots
             }
 
             _mainMenu ??= FindMainMenu();
-            _styleDonor ??= FindStyleDonor();
+            UIPrefab_LoadTram? loadTram = SaveSlotGameAccess.TryFindHiddenLoadTram();
+            UIPrefab_NewTram? newTram = SaveSlotGameAccess.TryFindHiddenNewTram();
+            UIPrefab_NewTramPopUp? newTramPopUp = SaveSlotGameAccess.TryFindHiddenNewTramPopUp();
 
-            if (_mainMenu == null || _styleDonor == null)
+            if (_mainMenu == null || loadTram == null || newTram == null || newTramPopUp == null)
             {
-                ModLog.Warn(Feature, "MainMenu or LoadTram style donor not found.");
+                ModLog.Warn(Feature, "MainMenu or hidden tram UI references not found.");
                 return false;
             }
 
-            _styleDonor.Hide();
+            loadTram.Hide();
+            newTram.Hide();
+            newTramPopUp.Hide();
 
-            UIPrefab_JoinTram? shell = SaveSlotGameAccess.CreateSavePickerShell(_mainMenuUi);
-            if (shell == null)
-            {
-                ModLog.Warn(Feature, "Failed to create save picker shell from Join Tram prefab.");
-                return false;
-            }
-
-            _panel = shell.gameObject.AddComponent<TramSavePickerPanel>();
-            _panel.Configure(shell, _mainMenuUi, _mainMenu, _styleDonor);
+            _panel = new SaveSlotPickerPanel(_mainMenu, _mainMenuUi, loadTram, newTram, newTramPopUp);
             return true;
         }
 
@@ -282,8 +292,6 @@ namespace MimesisPlayerEnhancement.Features.ExtendedSaveSlots
 
 #pragma warning disable CS0618
         private static MainMenu? FindMainMenu() => UnityEngine.Object.FindObjectOfType<MainMenu>();
-
-        private static UIPrefab_LoadTram? FindStyleDonor() => UnityEngine.Object.FindObjectOfType<UIPrefab_LoadTram>(true);
 #pragma warning restore CS0618
     }
 }

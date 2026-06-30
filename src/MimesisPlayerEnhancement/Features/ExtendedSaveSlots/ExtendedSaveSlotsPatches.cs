@@ -2,12 +2,19 @@ using System;
 using HarmonyLib;
 using MimesisPlayerEnhancement.Util;
 using ReluProtocol;
+using Steamworks;
+using UnityEngine;
+using UnityEngine.UI;
 
 namespace MimesisPlayerEnhancement.Features.ExtendedSaveSlots
 {
     public static class ExtendedSaveSlotsPatches
     {
         private const string Feature = "ExtendedSaveSlots";
+        private const float DoubleClickWindowSeconds = 0.35f;
+
+        private static float _lastRowClickTime;
+        private static CSteamID _lastRowClickKey;
 
         public static void Apply(HarmonyLib.Harmony harmony)
         {
@@ -66,6 +73,24 @@ namespace MimesisPlayerEnhancement.Features.ExtendedSaveSlots
             }
         }
 
+        [HarmonyPatch(typeof(UIPrefab_LoadTram), nameof(UIPrefab_LoadTram.IsSlotVersionCompatible))]
+        internal static class IsSlotVersionCompatiblePostfix
+        {
+            [HarmonyPostfix]
+            private static void Postfix(int slotID, ref bool __result)
+            {
+                if (!TramSavePickerController.IsActive)
+                {
+                    return;
+                }
+
+                if (TramSavePickerController.TryGetCachedSave(slotID, out MMSaveGameData? cached) && cached != null)
+                {
+                    __result = cached.Version >= 1;
+                }
+            }
+        }
+
         [HarmonyPatch(typeof(MainMenu), "Start")]
         internal static class MainMenuStartPostfix
         {
@@ -77,19 +102,16 @@ namespace MimesisPlayerEnhancement.Features.ExtendedSaveSlots
                     return;
                 }
 
-#pragma warning disable CS0618
-                UIPrefab_LoadTram? loadTram = UnityEngine.Object.FindObjectOfType<UIPrefab_LoadTram>(true);
-#pragma warning restore CS0618
                 UIPrefab_MainMenu? mainMenuUi = AccessTools.Field(typeof(MainMenu), "ui_mainmenu")
                     .GetValue(__instance) as UIPrefab_MainMenu;
 
-                if (loadTram == null || mainMenuUi == null)
+                if (mainMenuUi == null)
                 {
-                    ModLog.Warn(Feature, "Failed to initialize tram save picker — UI references missing.");
+                    ModLog.Warn(Feature, "Failed to initialize save picker — main menu UI missing.");
                     return;
                 }
 
-                TramSavePickerController.Initialize(__instance, mainMenuUi, loadTram);
+                TramSavePickerController.Initialize(__instance, mainMenuUi);
             }
         }
 
@@ -150,18 +172,113 @@ namespace MimesisPlayerEnhancement.Features.ExtendedSaveSlots
                     return;
                 }
 
-                // Click handling is done in OnButtonClick prefix; suppress vanilla New Tram handler.
                 value = static _ => { };
             }
         }
 
-        [HarmonyPatch(typeof(UIPrefab_JoinTram), "Start")]
-        internal static class JoinTramStartPostfix
+        [HarmonyPatch(typeof(UIPrefab_PublicRoomList), "OnEnable")]
+        internal static class PublicRoomListOnEnablePrefix
+        {
+            [HarmonyPrefix]
+            private static bool Prefix(UIPrefab_PublicRoomList __instance)
+            {
+                return !TramSavePickerController.IsSavePickerList(__instance);
+            }
+        }
+
+        [HarmonyPatch(typeof(UIPrefab_PublicRoomList), "OnDisable")]
+        internal static class PublicRoomListOnDisablePrefix
+        {
+            [HarmonyPrefix]
+            private static bool Prefix(UIPrefab_PublicRoomList __instance)
+            {
+                if (!TramSavePickerController.IsSavePickerList(__instance))
+                {
+                    return true;
+                }
+
+                TramSavePickerController.SetSavePickerOpen(false, __instance);
+                return false;
+            }
+        }
+
+        [HarmonyPatch(typeof(UIPrefab_PublicRoomList), nameof(UIPrefab_PublicRoomList.ShowPopup))]
+        internal static class PublicRoomListShowPopupPrefix
+        {
+            [HarmonyPrefix]
+            private static bool Prefix(UIPrefab_PublicRoomList __instance)
+            {
+                return !TramSavePickerController.IsSavePickerList(__instance);
+            }
+        }
+
+        [HarmonyPatch(typeof(UiPrefab_RoomCard), nameof(UiPrefab_RoomCard.SetRoomData))]
+        internal static class RoomCardSetRoomDataPostfix
         {
             [HarmonyPostfix]
-            private static void Postfix(UIPrefab_JoinTram __instance)
+            private static void Postfix(
+                PublicRoomListData data,
+                UIPrefab_PublicRoomList publicroomlist,
+                UiPrefab_RoomCard __instance)
             {
-                TramSavePickerController.OnJoinTramShellStarted(__instance);
+                if (!TramSavePickerController.IsSavePickerList(publicroomlist))
+                {
+                    return;
+                }
+
+                HideRoomCardElement(__instance, "UE_flag");
+                HideRoomCardElement(__instance, "UE_NationCode");
+                HideRoomCardElement(__instance, "UE_LockIcon");
+
+                if (!TramSavePickerController.TryGetRowContext(data.lobbyID, out SaveSlotRowContext? context)
+                    || context == null)
+                {
+                    return;
+                }
+
+                Button button = __instance.GetComponent<Button>();
+                button.onClick = new Button.ButtonClickedEvent();
+                button.onClick.AddListener(() => HandleSaveRowClick(data.lobbyID, context));
+            }
+        }
+
+        private static void HandleSaveRowClick(CSteamID rowKey, SaveSlotRowContext context)
+        {
+            SaveSlotPickerPanel? panel = TramSavePickerController.Panel;
+            if (panel == null)
+            {
+                return;
+            }
+
+            float now = Time.unscaledTime;
+            bool doubleClick = _lastRowClickKey == rowKey
+                && now - _lastRowClickTime <= DoubleClickWindowSeconds
+                && !context.IsEmpty;
+
+            _lastRowClickKey = rowKey;
+            _lastRowClickTime = now;
+
+            if (doubleClick)
+            {
+                panel.HandleRowClick(rowKey, requestCreate: true);
+                _lastRowClickKey = default;
+                return;
+            }
+
+            if (context.IsEmpty)
+            {
+                panel.HandleRowClick(rowKey, requestCreate: true);
+                return;
+            }
+
+            panel.HandleRowClick(rowKey, requestCreate: false);
+        }
+
+        private static void HideRoomCardElement(UiPrefab_RoomCard card, string propertyName)
+        {
+            if (typeof(UiPrefab_RoomCard).GetProperty(propertyName)?.GetValue(card) is Component component)
+            {
+                component.gameObject.SetActive(false);
             }
         }
     }
