@@ -59,6 +59,7 @@ namespace MimesisPlayerEnhancement.Features.JoinAnytime.Patches
         [HarmonyPostfix]
         private static void Postfix()
         {
+            JoinAnytimeRoomTools.InvalidateWaitingRoomPrepareCache();
             JoinAnytimeLobbyController.RefreshLobbyState(force: true);
         }
     }
@@ -73,15 +74,29 @@ namespace MimesisPlayerEnhancement.Features.JoinAnytime.Patches
         }
     }
 
+    [HarmonyPatch(typeof(VRoomManager), "BroadcastRoomReady")]
+    internal static class VRoomManagerBroadcastRoomReadyPatch
+    {
+        [HarmonyPrefix]
+        private static void Prefix(VRoomManager __instance, VRoomType roomType)
+        {
+            if (!ModConfig.EnableJoinAnytime.Value || roomType != VRoomType.Waiting)
+            {
+                return;
+            }
+
+            JoinAnytimeRoomTools.PrepareWaitingRoomBeforeBroadcast(__instance);
+        }
+    }
+
     [HarmonyPatch(typeof(VRoomManager), nameof(VRoomManager.InitWaitingRoom))]
     internal static class VRoomManagerInitWaitingRoomPatch
     {
         [HarmonyPostfix]
         private static void Postfix(VRoomManager __instance)
         {
-            JoinAnytimeRoomTools.PrepareWaitingRoomForEnter(__instance);
             JoinAnytimeRoomTools.RefreshWaitingRoomDisplaysForOccupants(__instance);
-            JoinAnytimeLobbyController.RefreshLobbyState(force: true);
+            JoinAnytimeLobbyController.ScheduleDeferredLobbyRefresh();
         }
     }
 
@@ -96,7 +111,7 @@ namespace MimesisPlayerEnhancement.Features.JoinAnytime.Patches
                 return;
             }
 
-            JoinAnytimeRoomTools.EnsureWaitingRoomForDungeonReturn();
+            JoinAnytimeRoomTools.PrepareWaitingRoomAfterDungeonSuccess();
         }
     }
 
@@ -106,7 +121,7 @@ namespace MimesisPlayerEnhancement.Features.JoinAnytime.Patches
         [HarmonyPrefix]
         private static void Prefix(SessionContext context)
         {
-            JoinAnytimeRoomTools.PrepareWaitingRoomForEnter();
+            JoinAnytimeRoomTools.EnsureWaitingRoomEnterReady();
             LateJoinManager.OnServerEnterWaitingRoom(context);
         }
     }

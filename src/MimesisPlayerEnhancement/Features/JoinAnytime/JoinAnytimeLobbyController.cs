@@ -389,6 +389,11 @@ namespace MimesisPlayerEnhancement.Features.JoinAnytime
             }
         }
 
+        internal static void ScheduleDeferredLobbyRefresh()
+        {
+            ScheduleImmediateRefresh();
+        }
+
         private static void ScheduleImmediateRefresh()
         {
             if (_refreshCoroutineRunning)

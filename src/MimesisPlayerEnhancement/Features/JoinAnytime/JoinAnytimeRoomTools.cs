@@ -280,13 +280,48 @@ namespace MimesisPlayerEnhancement.Features.JoinAnytime
             return waitingRoom != null;
         }
 
+        private static long _preparedWaitingRoomId;
+        private static int _preparedStageCount = -1;
+        private static int _preparedCycleCount = -1;
+
+        internal static void InvalidateWaitingRoomPrepareCache()
+        {
+            _preparedWaitingRoomId = 0;
+            _preparedStageCount = -1;
+            _preparedCycleCount = -1;
+        }
+
+        internal static void EnsureWaitingRoomEnterReady()
+        {
+            if (!ModConfig.EnableJoinAnytime.Value)
+            {
+                return;
+            }
+
+            if (!TryGetVRoomManager(out VRoomManager? vroomManager))
+            {
+                return;
+            }
+
+            if (TryGetWaitingRoom(vroomManager!) is not VWaitingRoom waitingRoom)
+            {
+                return;
+            }
+
+            EnsureWaitingRoomPlayable(waitingRoom);
+            if (!IsWaitingRoomPrepared(waitingRoom, vroomManager!))
+            {
+                PrepareWaitingRoomForEnter(vroomManager, force: true);
+            }
+        }
+
         /// <summary>
         /// Join-anytime keeps the waiting room alive while the party is in a dungeon. On return,
         /// vanilla InitWaitingRoom queues ResetEnvironment asynchronously but broadcasts
         /// MakeRoomCompleteSig immediately. EnterWaitingRoomReq can arrive before spawn points
         /// exist; ProcessEnterWaitQueue then drops the request without a response (60s client timeout).
         /// </summary>
-        internal static void PrepareWaitingRoomForEnter(VRoomManager? vroomManager = null)
+        internal static void PrepareWaitingRoomForEnter(VRoomManager? vroomManager = null, bool force = false)
         {
             if (!ModConfig.EnableJoinAnytime.Value)
             {
@@ -298,29 +333,57 @@ namespace MimesisPlayerEnhancement.Features.JoinAnytime
                 return;
             }
 
-            FlushVRoomManagerCommands(vroomManager!);
-
             if (TryGetWaitingRoom(vroomManager!) is not VWaitingRoom waitingRoom)
             {
                 return;
             }
 
+            if (!force && IsWaitingRoomPrepared(waitingRoom, vroomManager!))
+            {
+                EnsureWaitingRoomPlayable(waitingRoom);
+                return;
+            }
+
+            FlushVRoomManagerCommands(vroomManager!);
             EnsureWaitingRoomPlayable(waitingRoom);
             FlushRoomCommands(waitingRoom);
             EnsurePlayerStartPoints(waitingRoom);
+            MarkWaitingRoomPrepared(waitingRoom, vroomManager!);
         }
 
-        internal static void EnsureWaitingRoomForDungeonReturn()
+        internal static void PrepareWaitingRoomBeforeBroadcast(VRoomManager vroomManager)
         {
-            if (!ModConfig.EnableJoinAnytime.Value || Hub.s == null)
+            PrepareWaitingRoomForEnter(vroomManager, force: true);
+        }
+
+        internal static void PrepareWaitingRoomAfterDungeonSuccess()
+        {
+            if (!ModConfig.EnableJoinAnytime.Value)
             {
                 return;
             }
 
-            if (HubVworldProperty?.GetValue(Hub.s) is VWorld vworld)
+            PrepareWaitingRoomForEnter(force: true);
+        }
+
+        private static bool IsWaitingRoomPrepared(VWaitingRoom waitingRoom, VRoomManager vroomManager)
+        {
+            if (_preparedWaitingRoomId != waitingRoom.RoomID)
             {
-                vworld.InitWaitingRoom();
+                return false;
             }
+
+            GameSessionInfo sessionInfo = vroomManager.GetGameSessionInfo();
+            return sessionInfo.StageCount == _preparedStageCount
+                && sessionInfo.CycleCount == _preparedCycleCount;
+        }
+
+        private static void MarkWaitingRoomPrepared(VWaitingRoom waitingRoom, VRoomManager vroomManager)
+        {
+            GameSessionInfo sessionInfo = vroomManager.GetGameSessionInfo();
+            _preparedWaitingRoomId = waitingRoom.RoomID;
+            _preparedStageCount = sessionInfo.StageCount;
+            _preparedCycleCount = sessionInfo.CycleCount;
         }
 
         private static void EnsureWaitingRoomPlayable(VWaitingRoom waitingRoom)
@@ -370,8 +433,6 @@ namespace MimesisPlayerEnhancement.Features.JoinAnytime
             {
                 return;
             }
-
-            PrepareWaitingRoomForEnter(vroomManager);
 
             if (TryGetWaitingRoom(vroomManager!) is not VWaitingRoom waitingRoom)
             {
