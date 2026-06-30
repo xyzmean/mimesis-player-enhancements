@@ -26,6 +26,7 @@ namespace MimesisPlayerEnhancement.Features.RoomEntryDelay
             HarmonyPatchHelper.LogPatchAudit(Feature, harmony,
             [
                 ("GetGameActionDelay/ILevelObjectInfo", AccessTools.Method(typeof(ILevelObjectInfo), nameof(ILevelObjectInfo.GetGameActionDelay))),
+                ("GetCrossHairAnimDuration/StaticLevelObject", AccessTools.Method(typeof(StaticLevelObject), nameof(StaticLevelObject.GetCrossHairAnimDuration))),
                 ("GetTransitionDuration/StaticLevelObject", AccessTools.Method(typeof(StaticLevelObject), nameof(StaticLevelObject.GetTransitionDuration))),
             ]);
         }
@@ -53,7 +54,7 @@ namespace MimesisPlayerEnhancement.Features.RoomEntryDelay
                         return;
                     }
 
-                    if (!RoomEntryDelayFilter.IsRoomEntryTeleportTransition(__instance, fromState, toState))
+                    if (!RoomEntryDelayFilter.ShouldScaleServerDelay(__instance, fromState, toState))
                     {
                         return;
                     }
@@ -63,6 +64,44 @@ namespace MimesisPlayerEnhancement.Features.RoomEntryDelay
                 catch (Exception ex)
                 {
                     ModLog.Warn(Feature, $"GetGameActionDelay postfix failed — {ex.Message}");
+                }
+            }
+        }
+
+        [HarmonyPatch(typeof(StaticLevelObject), nameof(StaticLevelObject.GetCrossHairAnimDuration))]
+        public static class StaticLevelObjectGetCrossHairAnimDurationPatch
+        {
+            [HarmonyPostfix]
+            public static void Postfix(StaticLevelObject __instance, ref float __result)
+            {
+                try
+                {
+                    if (!RoomEntryDelayResolver.ShouldApply)
+                    {
+                        return;
+                    }
+
+                    float multiplier = RoomEntryDelayResolver.GetMultiplier();
+                    if (RoomEntryDelayResolver.IsVanillaMultiplier(multiplier))
+                    {
+                        return;
+                    }
+
+                    if (!RoomEntryDelayFilter.IsIndoorOutdoorCrossingDoor(__instance))
+                    {
+                        return;
+                    }
+
+                    if (!RoomEntryDelayTransitionAccess.TryGetPendingInteractTransition(__instance, out float transitionSeconds))
+                    {
+                        return;
+                    }
+
+                    __result = RoomEntryDelayResolver.ScaleDurationSeconds(transitionSeconds, multiplier);
+                }
+                catch (Exception ex)
+                {
+                    ModLog.Warn(Feature, $"GetCrossHairAnimDuration postfix failed — {ex.Message}");
                 }
             }
         }
@@ -91,7 +130,7 @@ namespace MimesisPlayerEnhancement.Features.RoomEntryDelay
                         return;
                     }
 
-                    if (!RoomEntryDelayFilter.IsRoomEntryTeleportTransition(__instance, fromState, toState))
+                    if (!RoomEntryDelayFilter.ShouldScaleClientTransition(__instance, fromState, toState))
                     {
                         return;
                     }

@@ -279,7 +279,7 @@ Host-only. When a dungeon shift starts (all members entered), extends the real s
 
 ### Room Entry Delay — `[MimesisPlayerEnhancement_RoomEntryDelay]`
 
-Host-only. Multiplies vanilla timing when players press **E** to enter a room through fixed teleporters (`TeleporterLevelObject`) or procedural dungeon doors (`RandomTeleporterLevelObject`). Server-side action delay applies to all players; the hold ring on the crosshair follows the host config on the host client only (participants keep vanilla hold UI).
+Host-only. Multiplies vanilla timing when players press **E** on indoor↔outdoor crossing doors: fixed teleporters (`TeleporterLevelObject`) or procedural dungeon doors (`RandomTeleporterLevelObject`) where the door side and destination differ (`IsIndoor != DestinationIsToInDoor`). Same-zone teleporters are unchanged. Server-side action delay applies to all players; the hold ring on the crosshair follows the host config on the host client only (participants keep vanilla hold UI).
 
 | Key | Type | Default | What it does |
 |-----|------|---------|--------------|

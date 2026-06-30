@@ -6,6 +6,10 @@ namespace MimesisPlayerEnhancement.Features.RoomEntryDelay
 {
     internal static class RoomEntryDelayTransitionAccess
     {
+        private const int TeleporterOnState = 1;
+        private const int RandomTeleporterReadyState = 0;
+        private const int RandomTeleporterStartState = 1;
+
         private static readonly FieldInfo? CurrentTransitionField =
             AccessTools.Field(typeof(StaticLevelObject), "currentTransition");
 
@@ -43,6 +47,40 @@ namespace MimesisPlayerEnhancement.Features.RoomEntryDelay
 
             fromState = (int)FromStateField.GetValue(transitionContext)!;
             toState = (int)ToStateField.GetValue(transitionContext)!;
+            return true;
+        }
+
+        internal static bool TryGetPendingInteractTransition(StaticLevelObject levelObject, out float transitionSeconds)
+        {
+            transitionSeconds = 0f;
+
+            int fromState = levelObject.State;
+            int toState;
+
+            switch (levelObject)
+            {
+                case TeleporterLevelObject:
+                    toState = TeleporterOnState;
+                    break;
+                case RandomTeleporterLevelObject randomTeleporter:
+                    if (randomTeleporter.State != RandomTeleporterReadyState)
+                    {
+                        return false;
+                    }
+
+                    toState = RandomTeleporterStartState;
+                    break;
+                default:
+                    return false;
+            }
+
+            if (!levelObject.HasStateActionTransition(fromState, toState, out LevelObject.StateActionInfo? stateActionInfo)
+                || stateActionInfo == null)
+            {
+                return false;
+            }
+
+            transitionSeconds = stateActionInfo.transitionDurtaion;
             return true;
         }
     }
