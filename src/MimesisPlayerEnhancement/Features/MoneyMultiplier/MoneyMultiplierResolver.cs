@@ -39,6 +39,11 @@ namespace MimesisPlayerEnhancement.Features.MoneyMultiplier
 
         internal static float GetEffectiveMultiplier(MoneyType type, int playerCount)
         {
+            if (!ModConfig.EnableMoneyMultiplier.Value)
+            {
+                return FeatureToggleGate.NeutralMultiplier;
+            }
+
             return GetPerTypeMultiplier(type) * GetPlayerScale(type, playerCount);
         }
 

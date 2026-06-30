@@ -30,18 +30,13 @@ namespace MimesisPlayerEnhancement.Features.LootMultiplicator
 
         private static bool TryScaleItemCount(IVroom? room, LootSource source, int masterId, ref int itemCount)
         {
-            if (!ModConfig.EnableLootMultiplicator.Value || masterId <= 0)
+            if (!LootScalingGate.ShouldScale() || masterId <= 0)
             {
                 return false;
             }
 
             // Map loot is spread across unused markers; never stack at the spawn point.
             if (source.Equals(LootSource.Map))
-            {
-                return false;
-            }
-
-            if (!HostApplyGate.ShouldApplyHostOnlyFeature())
             {
                 return false;
             }

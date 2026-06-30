@@ -105,6 +105,41 @@ namespace MimesisPlayerEnhancement.Features.MoreVoices
             return $"indoor={caps.Indoor}, deathmatch={caps.DeathMatch}, outdoor={caps.Outdoor}";
         }
 
+        internal static bool TryRestoreVanilla(SpeechEventArchive archive, bool retrimOnDecrease)
+        {
+            if (archive == null || !FieldsAvailable)
+            {
+                return false;
+            }
+
+            var limits = new PoolLimits(
+                VanillaMaxEvents,
+                VanillaMaxDeathMatchEvents,
+                VanillaMaxOutDoorEvents);
+
+            try
+            {
+                EffectiveCaps before = ReadEffectiveCaps(archive);
+                if (!WriteFields(archive, limits))
+                {
+                    return false;
+                }
+
+                EffectiveCaps after = ToEffectiveCaps(limits);
+                if (retrimOnDecrease && after.AnyDecreasedComparedTo(before))
+                {
+                    TryRetrimLocalArchive(archive);
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                ModLog.Warn(Feature, $"Failed to restore vanilla voice limits: {ex.Message}");
+                return false;
+            }
+        }
+
         /// <summary>Writes current config limits to archive fields. No re-trim.</summary>
         internal static bool TryApplyFields(SpeechEventArchive archive)
         {

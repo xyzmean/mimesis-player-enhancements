@@ -12,7 +12,10 @@ namespace MimesisPlayerEnhancement.Features.RoomEntryDelay
         internal static bool ShouldApply =>
             HostApplyGate.ShouldApplyHostOnlyFeature(() => ModConfig.EnableRoomEntryDelay.Value);
 
-        internal static float GetMultiplier() => ModConfig.RoomEntryDelayMultiplier.Value;
+        internal static float GetMultiplier() =>
+            ModConfig.EnableRoomEntryDelay.Value
+                ? ModConfig.RoomEntryDelayMultiplier.Value
+                : FeatureToggleGate.NeutralMultiplier;
 
         internal static bool IsVanillaMultiplier(float multiplier) =>
             Math.Abs(multiplier - 1f) < VanillaEpsilon;

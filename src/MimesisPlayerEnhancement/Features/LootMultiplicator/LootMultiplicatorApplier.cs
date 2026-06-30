@@ -55,7 +55,7 @@ namespace MimesisPlayerEnhancement.Features.LootMultiplicator
 
         internal static void Apply(DungeonRoom room)
         {
-            if (!ModConfig.EnableLootMultiplicator.Value)
+            if (!LootScalingGate.ShouldScale(room))
             {
                 ModLog.Debug(Feature, "Loot scaling skipped — EnableLootMultiplicator is off");
                 return;

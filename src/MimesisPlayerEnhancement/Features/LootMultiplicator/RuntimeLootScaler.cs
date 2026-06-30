@@ -13,17 +13,12 @@ namespace MimesisPlayerEnhancement.Features.LootMultiplicator
             int spawnPointIndex = 0,
             bool isRestored = false)
         {
-            if (!ModConfig.EnableLootMultiplicator.Value || element == null)
+            if (!LootScalingGate.ShouldScale() || element == null)
             {
                 return;
             }
 
             if (LootSpawnScalingContext.IsDuplicating)
-            {
-                return;
-            }
-
-            if (!HostApplyGate.ShouldApplyHostOnlyFeature())
             {
                 return;
             }

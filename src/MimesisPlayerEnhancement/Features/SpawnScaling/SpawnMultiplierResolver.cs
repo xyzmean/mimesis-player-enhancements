@@ -37,6 +37,11 @@ namespace MimesisPlayerEnhancement.Features.SpawnScaling
 
         internal static float GetEffectiveMultiplier(SpawnCategory category, int playerCount)
         {
+            if (!ModConfig.EnableSpawnScaling.Value)
+            {
+                return FeatureToggleGate.NeutralMultiplier;
+            }
+
             return GetPerCategoryMultiplier(category) * GetPlayerScale(category, playerCount);
         }
 

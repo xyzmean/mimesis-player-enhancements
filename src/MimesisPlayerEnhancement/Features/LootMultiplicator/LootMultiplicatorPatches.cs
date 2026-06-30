@@ -236,7 +236,7 @@ namespace MimesisPlayerEnhancement.Features.LootMultiplicator
             [HarmonyPrefix]
             public static void Prefix(IVroom __instance, SpawnedActorData spawnedActorData)
             {
-                if (!ModConfig.EnableLootMultiplicator.Value || __instance is not DungeonRoom dungeonRoom)
+                if (!LootScalingGate.ShouldScale() || __instance is not DungeonRoom dungeonRoom)
                 {
                     return;
                 }
@@ -264,7 +264,7 @@ namespace MimesisPlayerEnhancement.Features.LootMultiplicator
                     MapLootSpawnContext.Exit();
                 }
 
-                if (!ModConfig.EnableDebugLogging.Value || !ModConfig.EnableLootMultiplicator.Value)
+                if (!ModConfig.EnableDebugLogging.Value || !LootScalingGate.ShouldScale())
                 {
                     return;
                 }
@@ -336,7 +336,7 @@ namespace MimesisPlayerEnhancement.Features.LootMultiplicator
                 bool isRestored,
                 ref int __result)
             {
-                if (!ModConfig.EnableLootMultiplicator.Value)
+                if (!LootScalingGate.ShouldScale())
                 {
                     return true;
                 }
@@ -389,7 +389,7 @@ namespace MimesisPlayerEnhancement.Features.LootMultiplicator
                 bool isRestored,
                 int __result)
             {
-                if (!ModConfig.EnableDebugLogging.Value || !ModConfig.EnableLootMultiplicator.Value)
+                if (!ModConfig.EnableDebugLogging.Value || !LootScalingGate.ShouldScale())
                 {
                     return;
                 }

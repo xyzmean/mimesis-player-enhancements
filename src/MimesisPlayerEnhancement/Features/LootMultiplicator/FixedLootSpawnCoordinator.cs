@@ -72,12 +72,7 @@ namespace MimesisPlayerEnhancement.Features.LootMultiplicator
 
         internal static void ApplyAfterInit(DungeonRoom room)
         {
-            if (!ModConfig.EnableLootMultiplicator.Value || AppliedRooms.Contains(room))
-            {
-                return;
-            }
-
-            if (!HostApplyGate.ShouldApplyHostOnlyFeature())
+            if (!LootScalingGate.ShouldScale(room) || AppliedRooms.Contains(room))
             {
                 return;
             }
@@ -168,12 +163,7 @@ namespace MimesisPlayerEnhancement.Features.LootMultiplicator
 
         internal static void OnActorDead(SpawnedActorData spawnData)
         {
-            if (!ModConfig.EnableLootMultiplicator.Value || spawnData == null)
-            {
-                return;
-            }
-
-            if (!HostApplyGate.ShouldApplyHostOnlyFeature())
+            if (!LootScalingGate.ShouldScale() || spawnData == null)
             {
                 return;
             }

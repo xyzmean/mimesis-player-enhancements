@@ -65,6 +65,11 @@ namespace MimesisPlayerEnhancement.Features.LootMultiplicator
             int playerCount,
             int masterId)
         {
+            if (!ModConfig.EnableLootMultiplicator.Value)
+            {
+                return FeatureToggleGate.NeutralMultiplier;
+            }
+
             if (masterId > 0 && !LootItemFilter.IsEligible(masterId))
             {
                 return 0f;

@@ -4,6 +4,11 @@ namespace MimesisPlayerEnhancement.Features.DungeonTime
     {
         internal static double GetBonusSeconds(int playerCount)
         {
+            if (!ModConfig.EnableDungeonTime.Value)
+            {
+                return 0d;
+            }
+
             int baseline = ModConfig.DungeonTimeBaselinePlayerCount.Value;
             if (playerCount <= baseline)
             {

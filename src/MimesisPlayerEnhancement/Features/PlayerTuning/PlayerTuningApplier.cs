@@ -40,22 +40,26 @@ namespace MimesisPlayerEnhancement.Features.PlayerTuning
         private static long _vanillaStaminaRegenDelayEmpty;
         private static long _vanillaStaminaRegenDelayRemain;
         private static bool _runtimeTuningApplied;
+        private static bool _wasApplying;
 
         internal static bool ShouldApply =>
             HostApplyGate.ShouldApplyHostOnlyFeature(() => PlayerTuningResolver.IsFeatureEnabled);
 
         internal static void RefreshFromConfig()
         {
-            if (PlayerTuningResolver.IsFeatureEnabled && ShouldApply)
+            if (ShouldApply)
             {
                 ApplyRuntimeTuning();
                 RefreshAllPlayers();
+                _wasApplying = true;
                 return;
             }
 
-            if (_runtimeTuningApplied)
+            if (_wasApplying || _runtimeTuningApplied)
             {
                 RestoreRuntimeTuning("feature disabled");
+                RefreshAllPlayers();
+                _wasApplying = false;
             }
         }
 
