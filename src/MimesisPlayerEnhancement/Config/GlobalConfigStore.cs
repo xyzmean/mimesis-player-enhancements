@@ -26,7 +26,12 @@ namespace MimesisPlayerEnhancement
             return SparseTomlConfig.Load(text);
         }
 
-        internal static bool TryWriteValue(string sectionId, string key, string normalized, out string? error)
+        internal static bool TryWriteValue(
+            string sectionId,
+            string key,
+            string normalized,
+            out string? error,
+            bool waitForCompletion = false)
         {
             error = null;
 
@@ -61,10 +66,13 @@ namespace MimesisPlayerEnhancement
                 doc.Sections[sectionId][key] = normalized;
             }
 
-            return SaveDocument(doc, out error);
+            return SaveDocument(doc, out error, waitForCompletion);
         }
 
-        private static bool SaveDocument(SparseTomlConfig.Document doc, out string? error)
+        private static bool SaveDocument(
+            SparseTomlConfig.Document doc,
+            out string? error,
+            bool waitForCompletion = false)
         {
             error = null;
 
@@ -78,7 +86,7 @@ namespace MimesisPlayerEnhancement
 
                 if (SparseTomlConfig.IsEmpty(doc) && File.Exists(ModConfig.FilePath))
                 {
-                    BackgroundFileWriteQueue.EnqueueDelete(ModConfig.FilePath, Feature);
+                    BackgroundFileWriteQueue.EnqueueDelete(ModConfig.FilePath, Feature, waitForCompletion);
                     return true;
                 }
 
@@ -90,7 +98,8 @@ namespace MimesisPlayerEnhancement
                 BackgroundFileWriteQueue.EnqueueText(
                     ModConfig.FilePath,
                     SparseTomlConfig.Serialize(doc),
-                    Feature);
+                    Feature,
+                    waitForCompletion);
                 return true;
             }
             catch (Exception ex)

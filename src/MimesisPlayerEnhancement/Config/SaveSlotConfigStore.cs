@@ -40,7 +40,13 @@ namespace MimesisPlayerEnhancement
             return SparseTomlConfig.Load(text);
         }
 
-        internal static bool TrySetOverride(int slotId, string sectionId, string key, string rawValue, out string? error)
+        internal static bool TrySetOverride(
+            int slotId,
+            string sectionId,
+            string key,
+            string rawValue,
+            out string? error,
+            bool waitForCompletion = false)
         {
             error = null;
 
@@ -86,7 +92,7 @@ namespace MimesisPlayerEnhancement
                 doc.Sections[sectionId][key] = normalized;
             }
 
-            if (!SaveDocument(slotId, filePath, doc))
+            if (!SaveDocument(slotId, filePath, doc, waitForCompletion))
             {
                 error = "Failed to save override file.";
                 return false;
@@ -120,7 +126,7 @@ namespace MimesisPlayerEnhancement
             _ = SaveDocument(slotId, filePath, doc);
         }
 
-        internal static void PruneMatchingGlobal(int slotId)
+        internal static void PruneMatchingGlobal(int slotId, bool waitForCompletion = false)
         {
             string? filePath = GetOverrideFilePath(slotId);
             if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
@@ -172,11 +178,7 @@ namespace MimesisPlayerEnhancement
                 return;
             }
 
-            _ = SaveDocument(slotId, filePath, doc);
-            if (_activeSlotId == slotId)
-            {
-                ApplyOverridesToRuntime(slotId);
-            }
+            _ = SaveDocument(slotId, filePath, doc, waitForCompletion);
         }
 
         internal static void ApplyOverridesToRuntime(int slotId)
@@ -244,7 +246,11 @@ namespace MimesisPlayerEnhancement
                 && keys.ContainsKey(key);
         }
 
-        private static bool SaveDocument(int slotId, string filePath, SparseTomlConfig.Document doc)
+        private static bool SaveDocument(
+            int slotId,
+            string filePath,
+            SparseTomlConfig.Document doc,
+            bool waitForCompletion = false)
         {
             try
             {
@@ -256,11 +262,15 @@ namespace MimesisPlayerEnhancement
 
                 if (SparseTomlConfig.IsEmpty(doc))
                 {
-                    BackgroundFileWriteQueue.EnqueueDelete(filePath, Feature);
+                    BackgroundFileWriteQueue.EnqueueDelete(filePath, Feature, waitForCompletion);
                     return true;
                 }
 
-                BackgroundFileWriteQueue.EnqueueText(filePath, SparseTomlConfig.Serialize(doc), Feature);
+                BackgroundFileWriteQueue.EnqueueText(
+                    filePath,
+                    SparseTomlConfig.Serialize(doc),
+                    Feature,
+                    waitForCompletion);
                 return true;
             }
             catch (Exception ex)

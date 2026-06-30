@@ -79,7 +79,7 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
                 };
             }
 
-            if (!GlobalConfigStore.TryWriteValue(sectionId, key, normalized, out error))
+            if (!GlobalConfigStore.TryWriteValue(sectionId, key, normalized, out error, waitForCompletion: true))
             {
                 return new WebDashboardConfigUpdateResult
                 {
@@ -88,6 +88,7 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
                 };
             }
 
+            SparseTomlConfig.RepairTomletCompatibility(ModConfig.FilePath);
             ModConfig.ReloadGlobalFromFile();
             ModConfig.SanitizeFloatEntries();
 
@@ -104,8 +105,7 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
 
             if (activeSlotId >= 0)
             {
-                SaveSlotConfigStore.ClearOverrideKey(activeSlotId, sectionId, key);
-                SaveSlotConfigStore.PruneMatchingGlobal(activeSlotId);
+                SaveSlotConfigStore.PruneMatchingGlobal(activeSlotId, waitForCompletion: true);
                 SaveSlotConfigStore.ApplyOverridesToRuntime(activeSlotId);
             }
             else
@@ -118,7 +118,7 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
 
         internal static WebDashboardConfigUpdateResult ApplySaveUpdate(int slotId, string sectionId, string key, string value)
         {
-            if (!SaveSlotConfigStore.TrySetOverride(slotId, sectionId, key, value, out string? error))
+            if (!SaveSlotConfigStore.TrySetOverride(slotId, sectionId, key, value, out string? error, waitForCompletion: true))
             {
                 return new WebDashboardConfigUpdateResult
                 {
