@@ -17,9 +17,6 @@ namespace MimesisPlayerEnhancement.Features.ExtendedSaveSlots
         private static readonly MethodInfo? LoadSaveMethod =
             AccessTools.Method(typeof(PlatformMgr), "Load")?.MakeGenericMethod(typeof(MMSaveGameData));
 
-        private static readonly MethodInfo? InstantiatePublicRoomListMethod =
-            AccessTools.Method(typeof(UIManager), "InstatiateUIPrefab")?.MakeGenericMethod(typeof(UIPrefab_PublicRoomList));
-
         private static FieldInfo? _uimanField;
         private static PropertyInfo? _uimanProperty;
 
@@ -56,17 +53,42 @@ namespace MimesisPlayerEnhancement.Features.ExtendedSaveSlots
             return GameSessionAccess.TryGetPdata();
         }
 
-        internal static UIPrefab_PublicRoomList? CreateSavePickerShell(UIManager uiManager)
+        internal static object? TryGetInputManager()
         {
-            if (uiManager.prefab_PublicRoomList == null || InstantiatePublicRoomListMethod == null)
+            if (Hub.s == null)
             {
                 return null;
             }
 
-            object topHeight = System.Enum.Parse(typeof(eUIHeight), "Top");
-            return InstantiatePublicRoomListMethod.Invoke(
-                uiManager,
-                [uiManager.prefab_PublicRoomList, topHeight]) as UIPrefab_PublicRoomList;
+            FieldInfo? field = typeof(Hub).GetField("inputman", InstanceFlags)
+                ?? typeof(Hub).GetField("<inputman>k__BackingField", InstanceFlags);
+            PropertyInfo? property = typeof(Hub).GetProperty("inputman", InstanceFlags);
+            return field?.GetValue(Hub.s) ?? property?.GetValue(Hub.s);
+        }
+
+        internal static void TryPlaySfx(string sfxId)
+        {
+            if (string.IsNullOrEmpty(sfxId) || Hub.s == null || !Application.isFocused)
+            {
+                return;
+            }
+
+            FieldInfo? field = typeof(Hub).GetField("audioman", InstanceFlags)
+                ?? typeof(Hub).GetField("<audioman>k__BackingField", InstanceFlags);
+            PropertyInfo? property = typeof(Hub).GetProperty("audioman", InstanceFlags);
+            object? audioManager = field?.GetValue(Hub.s) ?? property?.GetValue(Hub.s);
+            if (audioManager == null)
+            {
+                return;
+            }
+
+            MethodInfo? playSfx = audioManager.GetType().GetMethod(
+                "PlaySfx",
+                InstanceFlags,
+                binder: null,
+                [typeof(string)],
+                modifiers: null);
+            playSfx?.Invoke(audioManager, [sfxId]);
         }
 
         internal static MMSaveGameData? LoadSaveData(PlatformMgr platformMgr, string fileName)

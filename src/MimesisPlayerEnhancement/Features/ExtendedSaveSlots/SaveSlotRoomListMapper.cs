@@ -1,29 +1,12 @@
 using System.Collections.Generic;
-using System.Linq;
-using ReluProtocol;
-using Steamworks;
 
 namespace MimesisPlayerEnhancement.Features.ExtendedSaveSlots
 {
-    internal sealed class SaveSlotRowContext
-    {
-        internal int SlotId { get; set; }
-        internal SaveSlotEntry Entry { get; set; } = null!;
-    }
-
     internal static class SaveSlotRoomListMapper
     {
-        internal static CSteamID ToRowKey(int slotId) => new((ulong)slotId);
-
-        internal static int FromRowKey(CSteamID rowKey) => (int)rowKey.m_SteamID;
-
-        internal static List<PublicRoomListData> BuildRoomListData(
-            out Dictionary<CSteamID, SaveSlotRowContext> rowContexts)
+        internal static List<SaveSlotEntry> BuildSaveEntries()
         {
-            rowContexts = new Dictionary<CSteamID, SaveSlotRowContext>();
-            List<PublicRoomListData> rows = [];
             List<SaveSlotEntry> entries = [];
-
             SaveSlotEntry? autosave = SaveSlotDiscovery.TryLoadAutosave();
             if (autosave != null)
             {
@@ -31,20 +14,18 @@ namespace MimesisPlayerEnhancement.Features.ExtendedSaveSlots
             }
 
             entries.AddRange(SaveSlotDiscovery.GetManualSaves());
-            entries.Sort(static (a, b) => b.Data.RegDateTime.CompareTo(a.Data.RegDateTime));
+            entries.Sort(static (a, b) => a.SlotId.CompareTo(b.SlotId));
+            return entries;
+        }
 
-            foreach (SaveSlotEntry entry in entries)
+        internal static string FormatLine1(SaveSlotEntry entry)
+        {
+            if (entry.SlotId == SaveSlotLimits.AutosaveSlotId)
             {
-                PublicRoomListData row = ToOccupiedRow(entry);
-                rows.Add(row);
-                rowContexts[row.lobbyID] = new SaveSlotRowContext
-                {
-                    SlotId = entry.SlotId,
-                    Entry = entry,
-                };
+                return FormatSlotNumber(entry);
             }
 
-            return rows;
+            return FormatSlotNumber(entry) + " · " + FormatLobbyName(entry);
         }
 
         internal static string FormatSlotNumber(SaveSlotEntry entry)
@@ -59,34 +40,13 @@ namespace MimesisPlayerEnhancement.Features.ExtendedSaveSlots
 
         internal static string FormatLobbyName(SaveSlotEntry entry)
         {
-            string hostName = entry.Data.PlayerNames?.FirstOrDefault() ?? string.Empty;
-            return SaveSlotGameAccess.GetL10NText("STRING_PUBLIC_TRAM_TITLE_DEFAULT", hostName);
-        }
-
-        internal static string FormatPlayerNames(MMSaveGameData save)
-        {
-            if (save.PlayerNames == null || save.PlayerNames.Count == 0)
+            string hostName = string.Empty;
+            if (entry.Data.PlayerNames != null && entry.Data.PlayerNames.Count > 0)
             {
-                return string.Empty;
+                hostName = entry.Data.PlayerNames[0];
             }
 
-            return string.Join(", ", save.PlayerNames.ToArray());
-        }
-
-        private static PublicRoomListData ToOccupiedRow(SaveSlotEntry entry)
-        {
-            MMSaveGameData save = entry.Data;
-
-            return new PublicRoomListData
-            {
-                lobbyID = ToRowKey(entry.SlotId),
-                locale = FormatSlotNumber(entry),
-                lobbyName = FormatLobbyName(entry),
-                cycle = save.StageCount,
-                repairStatus = 0,
-                PlayerCount = save.PlayerNames?.Count ?? 0,
-                password = string.Empty,
-            };
+            return SaveSlotGameAccess.GetL10NText("STRING_PUBLIC_TRAM_TITLE_DEFAULT", hostName);
         }
     }
 }

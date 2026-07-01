@@ -1,28 +1,14 @@
 using System.Collections.Generic;
-using System.Reflection;
 using MimesisPlayerEnhancement.Util;
 using ReluProtocol;
-using Steamworks;
 using UnityEngine;
 using UnityEngine.EventSystems;
-using UnityEngine.UI;
 
 namespace MimesisPlayerEnhancement.Features.ExtendedSaveSlots
 {
     internal sealed class SaveSlotPickerPanel
     {
         private const string Feature = "ExtendedSaveSlots";
-        private const BindingFlags InstanceFlags =
-            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
-
-        private static readonly FieldInfo? RoomListDataField =
-            typeof(UIPrefab_PublicRoomList).GetField("roomListData", InstanceFlags);
-
-        private static readonly MethodInfo? SetRoomListUiMethod =
-            typeof(UIPrefab_PublicRoomList).GetMethod("SetRoomListUI", InstanceFlags);
-
-        private static readonly FieldInfo? JoinTramUiField =
-            typeof(UIPrefab_PublicRoomList).GetField("joinTramUI", InstanceFlags);
 
         private readonly MainMenu _mainMenu;
         private readonly UIPrefab_MainMenu _mainMenuUi;
@@ -30,12 +16,10 @@ namespace MimesisPlayerEnhancement.Features.ExtendedSaveSlots
         private readonly UIPrefab_NewTram _newTram;
         private readonly UIPrefab_NewTramPopUp _newTramPopUp;
 
-        private UIPrefab_PublicRoomList? _list;
-        private SaveSlotPickerButtons? _buttons;
+        private SaveSlotPickerUi? _ui;
         private readonly Dictionary<int, MMSaveGameData> _saveCache = new();
-        private Dictionary<CSteamID, SaveSlotRowContext> _rowContexts = new();
-        private CSteamID? _selectedRowKey;
-        private UiPrefab_RoomCard? _selectedCard;
+        private readonly Dictionary<int, SaveSlotEntry> _entriesBySlot = new();
+        private SaveSlotPickerRow? _selectedRow;
 
         internal SaveSlotPickerPanel(
             MainMenu mainMenu,
@@ -51,123 +35,117 @@ namespace MimesisPlayerEnhancement.Features.ExtendedSaveSlots
             _newTramPopUp = newTramPopUp;
         }
 
-        internal bool IsOpen => _list != null && _list.gameObject.activeInHierarchy;
-
-        internal UIPrefab_PublicRoomList? List => _list;
+        internal bool IsOpen => _ui != null && _ui.IsVisible;
 
         internal bool TryGetCachedSave(int slotId, out MMSaveGameData? data) =>
             _saveCache.TryGetValue(slotId, out data);
 
-        internal bool TryGetRowContext(CSteamID rowKey, out SaveSlotRowContext? context) =>
-            _rowContexts.TryGetValue(rowKey, out context);
+        internal bool TryGetEntry(int slotId, out SaveSlotEntry? entry) =>
+            _entriesBySlot.TryGetValue(slotId, out entry);
 
         internal bool TryOpen()
         {
-            UIManager? uiManager = SaveSlotGameAccess.TryGetUiManager();
-            if (uiManager == null)
+            Transform? parent = SaveSlotPickerUiBuilder.GetUiTopParent();
+            if (parent == null)
             {
-                ModLog.Warn(Feature, "UIManager unavailable; cannot show save picker.");
+                ModLog.Warn(Feature, "UIManager Top layer unavailable; cannot show save picker.");
                 return false;
             }
 
-            if (_list == null)
+            if (_ui == null)
             {
-                _list = SaveSlotGameAccess.CreateSavePickerShell(uiManager);
-                if (_list == null)
+                _ui = SaveSlotPickerUi.Create(parent, _mainMenuUi, _loadTram);
+                if (_ui == null)
                 {
-                    ModLog.Warn(Feature, "Failed to create save picker shell from public room list prefab.");
+                    ModLog.Warn(Feature, "Failed to create save picker UI.");
                     return false;
                 }
 
-                JoinTramUiField?.SetValue(_list, null);
-                _buttons = SaveSlotUiShellCustomizer.CreateFooterButtons(_list);
-                ConfigureButtonHandlers(_buttons);
+                WireUiHandlers(_ui);
             }
 
             ClearSelection();
-            TramSavePickerController.SetSavePickerOpen(true, _list);
-            SaveSlotSteamListGuard.DetachSavePickerFromSteam(_list);
+            TramSavePickerController.SetSavePickerOpen(true);
             RefreshSaveList();
             UpdateActionButtons();
 
             EventSystem.current?.SetSelectedGameObject(null);
             SaveSlotGameAccess.TryGetPdata()?.SaveSlotID = -1;
-            SaveSlotUiShellCustomizer.ApplyMainMenuDimming(_mainMenuUi);
-
-            if (!uiManager.ui_escapeStack.Contains(_list))
-            {
-                uiManager.ui_escapeStack.Add(_list);
-            }
-
-            _list.Show();
-            SaveSlotUiShellCustomizer.ApplyVisualCustomization(_list, _buttons);
-            return _list.gameObject.activeInHierarchy;
+            SaveSlotPickerChrome.ApplyMainMenuDimming(_mainMenuUi);
+            _ui.Show();
+            return _ui.IsVisible;
         }
 
         internal void Close()
         {
             ClearSelection();
-            SaveSlotUiShellCustomizer.RestoreMainMenuDimming(_mainMenuUi);
+            SaveSlotPickerChrome.RestoreMainMenuDimming(_mainMenuUi);
 
-            if (_list == null)
+            if (_ui != null)
             {
-                TramSavePickerController.SetSavePickerOpen(false, null);
-                return;
+                _ui.Hide();
             }
 
-            UIManager? uiManager = SaveSlotGameAccess.TryGetUiManager();
-            uiManager?.ui_escapeStack.Remove(_list);
-            _list.Hide();
-            TramSavePickerController.SetSavePickerOpen(false, _list);
+            TramSavePickerController.SetSavePickerOpen(false);
         }
 
-        internal void SelectRow(CSteamID rowKey, UiPrefab_RoomCard card)
+        internal void Dispose()
         {
-            if (_selectedCard != null)
+            Close();
+
+            if (_ui != null)
             {
-                SetCardSelected(_selectedCard, selected: false);
+                Object.Destroy(_ui.gameObject);
+                _ui = null;
             }
 
-            _selectedRowKey = rowKey;
-            _selectedCard = card;
-            SetCardSelected(card, selected: true);
+            _saveCache.Clear();
+            _entriesBySlot.Clear();
+            _selectedRow = null;
+        }
+
+        internal void SelectRow(SaveSlotPickerRow row)
+        {
+            _selectedRow = row;
+            _ui?.SetSelection(row);
             UpdateActionButtons();
         }
 
         internal void HandleLoadSelected()
         {
-            if (_selectedRowKey == null
-                || !_rowContexts.TryGetValue(_selectedRowKey.Value, out SaveSlotRowContext? context))
+            if (_selectedRow == null)
             {
                 return;
             }
 
-            if (!context.Entry.Display.IsVersionCompatible)
-            {
-                ModLog.Debug(Feature, $"Save slot {context.SlotId} blocked by version mismatch.");
-                if (context.SlotId <= 3)
-                {
-                    _loadTram.InitSaveInfoList();
-                    _loadTram.CanNotLoadSaveData(context.SlotId);
-                }
+            HandleLoadRow(_selectedRow);
+        }
 
+        internal void HandleLoadRow(SaveSlotPickerRow row)
+        {
+            SaveSlotEntry entry = row.Entry;
+            if (!entry.Display.IsVersionCompatible)
+            {
+                ModLog.Debug(Feature, $"Save slot {entry.SlotId} blocked by version mismatch.");
+                row.BlinkVersionWarning();
                 return;
             }
 
-            MainMenuSessionBridge.TryLoadSaveAndCreateRoom(_mainMenu, _list!, _loadTram, context.SlotId);
+            SelectRow(row);
+            MainMenuSessionBridge.TryLoadSaveAndCreateRoom(_mainMenu, _loadTram, entry.SlotId);
         }
 
         internal void HandleDeleteSelected()
         {
-            if (_selectedRowKey == null
-                || !_rowContexts.TryGetValue(_selectedRowKey.Value, out SaveSlotRowContext? context))
+            if (_selectedRow == null)
             {
                 return;
             }
 
-            if (!SaveSlotDeleteService.TryDeleteSave(_mainMenu, context.SlotId))
+            int slotId = _selectedRow.SlotId;
+            if (!SaveSlotDeleteService.TryDeleteSave(_mainMenu, slotId))
             {
-                ModLog.Warn(Feature, $"Failed to delete save slot {context.SlotId}.");
+                ModLog.Warn(Feature, $"Failed to delete save slot {slotId}.");
                 return;
             }
 
@@ -190,89 +168,56 @@ namespace MimesisPlayerEnhancement.Features.ExtendedSaveSlots
 
         internal void RefreshSaveList()
         {
-            if (_list == null || RoomListDataField?.GetValue(_list) is not List<PublicRoomListData> roomListData)
+            if (_ui == null)
             {
                 return;
             }
 
             _saveCache.Clear();
-            SaveSlotEntry? autosave = SaveSlotDiscovery.TryLoadAutosave();
-            if (autosave != null)
-            {
-                _saveCache[autosave.SlotId] = autosave.Data;
-            }
+            _entriesBySlot.Clear();
 
-            foreach (SaveSlotEntry entry in SaveSlotDiscovery.GetManualSaves())
+            List<SaveSlotEntry> entries = SaveSlotRoomListMapper.BuildSaveEntries();
+            foreach (SaveSlotEntry entry in entries)
             {
                 _saveCache[entry.SlotId] = entry.Data;
+                _entriesBySlot[entry.SlotId] = entry;
             }
 
-            List<PublicRoomListData> rows = SaveSlotRoomListMapper.BuildRoomListData(out _rowContexts);
-            roomListData.Clear();
-            roomListData.AddRange(rows);
-
-            if (rows.Count == 0)
-            {
-                _list.SetEmptyListText();
-                SetListElementActive(_list, "UE_EmptyListText", true);
-                return;
-            }
-
-            SetListElementActive(_list, "UE_EmptyListText", false);
-            SetRoomListUiMethod?.Invoke(_list, null);
+            _ui.RebuildRows(entries);
         }
 
-        private void ConfigureButtonHandlers(SaveSlotPickerButtons buttons)
+        private void WireUiHandlers(SaveSlotPickerUi ui)
         {
-            buttons.Back.onClick.AddListener(() =>
+            ui.BackClicked += () =>
             {
                 Close();
                 EventSystem.current?.SetSelectedGameObject(null);
-            });
-            buttons.NewTram.onClick.AddListener(HandleNewTram);
-            buttons.Delete.onClick.AddListener(HandleDeleteSelected);
-            buttons.Load.onClick.AddListener(HandleLoadSelected);
+            };
+            ui.NewTramClicked += HandleNewTram;
+            ui.DeleteClicked += HandleDeleteSelected;
+            ui.LoadClicked += HandleLoadSelected;
+            ui.RowSelected += SelectRow;
+            ui.RowDoubleClicked += HandleLoadRow;
         }
 
         private void UpdateActionButtons()
         {
-            if (_buttons == null)
+            if (_ui == null)
             {
                 return;
             }
 
-            bool hasSelection = _selectedRowKey != null;
-            SaveSlotUiShellCustomizer.SetButtonEnabled(_buttons.Delete, hasSelection);
-            SaveSlotUiShellCustomizer.SetButtonEnabled(_buttons.Load, hasSelection);
-            SaveSlotUiShellCustomizer.SetButtonEnabled(
-                _buttons.NewTram,
-                SaveSlotDiscovery.FindFirstFreeManualSlot() >= 0);
+            bool hasSelection = _selectedRow != null;
+            _ui.SetActionButtons(
+                loadEnabled: hasSelection,
+                deleteEnabled: hasSelection,
+                newTramEnabled: SaveSlotDiscovery.FindFirstFreeManualSlot() >= 0);
         }
 
         private void ClearSelection()
         {
-            if (_selectedCard != null)
-            {
-                SetCardSelected(_selectedCard, selected: false);
-            }
-
-            _selectedRowKey = null;
-            _selectedCard = null;
-        }
-
-        private static void SetCardSelected(UiPrefab_RoomCard card, bool selected)
-        {
-            card.UE_mouseover.color = selected
-                ? new Color(1f, 1f, 1f, 1f)
-                : new Color(0f, 0f, 0f, 0f);
-        }
-
-        private static void SetListElementActive(UIPrefab_PublicRoomList list, string propertyName, bool active)
-        {
-            if (typeof(UIPrefab_PublicRoomList).GetProperty(propertyName)?.GetValue(list) is Component component)
-            {
-                component.gameObject.SetActive(active);
-            }
+            _selectedRow = null;
+            _ui?.SetSelection(null);
         }
     }
 }

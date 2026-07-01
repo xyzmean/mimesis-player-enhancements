@@ -35,6 +35,104 @@ namespace MimesisPlayerEnhancement.Features.Persistence
             return File.Exists(filePath) || File.Exists(filePath + ".bak");
         }
 
+        internal static int TryGetSavedSpeechEventCount(string slotPath)
+        {
+            if (string.IsNullOrEmpty(slotPath))
+            {
+                return 0;
+            }
+
+            int fromMetadata = TryReadSpeechCountFromMetadata(slotPath);
+            if (fromMetadata > 0)
+            {
+                return fromMetadata;
+            }
+
+            return TryReadSpeechCountFromBinary(slotPath);
+        }
+
+        private static int TryReadSpeechCountFromMetadata(string slotPath)
+        {
+            string metaPath = Path.Combine(slotPath, MetadataFile);
+            string? json = AtomicFileIO.ReadText(metaPath, Feature);
+            if (string.IsNullOrEmpty(json))
+            {
+                return 0;
+            }
+
+            const string marker = "\"speechCount\":";
+            int markerIndex = json.IndexOf(marker, StringComparison.Ordinal);
+            if (markerIndex < 0)
+            {
+                return 0;
+            }
+
+            int start = markerIndex + marker.Length;
+            int end = start;
+            while (end < json.Length && (char.IsDigit(json[end]) || json[end] == '-'))
+            {
+                end++;
+            }
+
+            return end > start && int.TryParse(json.Substring(start, end - start), out int count) && count > 0
+                ? count
+                : 0;
+        }
+
+        private static int TryReadSpeechCountFromBinary(string slotPath)
+        {
+            string filePath = GetSpeechEventsPath(slotPath);
+            if (!File.Exists(filePath))
+            {
+                filePath += ".bak";
+                if (!File.Exists(filePath))
+                {
+                    return 0;
+                }
+            }
+
+            try
+            {
+                byte[] header = new byte[12];
+                using FileStream stream = File.OpenRead(filePath);
+                int read = stream.Read(header, 0, header.Length);
+                if (read < 4)
+                {
+                    return 0;
+                }
+
+                if (HasMagicHeader(header))
+                {
+                    if (read >= 12)
+                    {
+                        int count = BitConverter.ToInt32(header, 8);
+                        return count > 0 ? count : 0;
+                    }
+
+                    return ReadCountAfterHeader(stream, skipBytes: 8);
+                }
+
+                int legacyCount = BitConverter.ToInt32(header, 0);
+                return legacyCount > 0 ? legacyCount : 0;
+            }
+            catch
+            {
+                return 0;
+            }
+        }
+
+        private static int ReadCountAfterHeader(FileStream stream, int skipBytes)
+        {
+            if (stream.Length < skipBytes + 4)
+            {
+                return 0;
+            }
+
+            stream.Seek(skipBytes, SeekOrigin.Begin);
+            byte[] countBytes = new byte[4];
+            return stream.Read(countBytes, 0, 4) == 4 ? BitConverter.ToInt32(countBytes, 0) : 0;
+        }
+
         internal static SpeechEventSaveSnapshot Serialize(string slotPath, List<SpeechEvent> speechEvents)
         {
             string speechPath = GetSpeechEventsPath(slotPath);

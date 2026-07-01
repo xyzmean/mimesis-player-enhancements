@@ -2,10 +2,6 @@ using System;
 using HarmonyLib;
 using MimesisPlayerEnhancement.Util;
 using ReluProtocol;
-using Steamworks;
-using UnityEngine;
-using UnityEngine.EventSystems;
-using UnityEngine.UI;
 
 namespace MimesisPlayerEnhancement.Features.ExtendedSaveSlots
 {
@@ -117,17 +113,7 @@ namespace MimesisPlayerEnhancement.Features.ExtendedSaveSlots
             }
         }
 
-        [HarmonyPatch(typeof(UIPrefab_MainMenu), "Start")]
-        internal static class MainMenuUiStartPostfix
-        {
-            [HarmonyPostfix]
-            private static void Postfix(UIPrefab_MainMenu __instance)
-            {
-                TramSavePickerController.OnMainMenuShown(__instance);
-            }
-        }
-
-        [HarmonyPatch(typeof(UIPrefabScript), "OnButtonClick")]
+        [HarmonyPatch(typeof(UIPrefabScript), "OnButtonClick", typeof(string))]
         internal static class MainMenuHostButtonClickPrefix
         {
             [HarmonyPrefix]
@@ -168,176 +154,40 @@ namespace MimesisPlayerEnhancement.Features.ExtendedSaveSlots
             }
         }
 
-        [HarmonyPatch(typeof(UIPrefab_PublicRoomList), "OnEnable")]
-        internal static class PublicRoomListOnEnablePrefix
+        [HarmonyPatch(typeof(UIManager), "Update")]
+        internal static class UiManagerUpdateEscapePrefix
         {
             [HarmonyPrefix]
-            private static bool Prefix(UIPrefab_PublicRoomList __instance)
+            private static bool Prefix()
             {
-                return !TramSavePickerController.IsSavePickerList(__instance);
-            }
-        }
-
-        [HarmonyPatch(typeof(UIPrefab_PublicRoomList), "OnDisable")]
-        internal static class PublicRoomListOnDisablePrefix
-        {
-            [HarmonyPrefix]
-            private static bool Prefix(UIPrefab_PublicRoomList __instance)
-            {
-                if (!TramSavePickerController.IsSavePickerList(__instance))
+                if (!TramSavePickerController.IsSavePickerOpen || TramSavePickerController.Panel == null)
                 {
                     return true;
                 }
 
-                TramSavePickerController.SetSavePickerOpen(false, __instance);
-                return false;
-            }
-        }
-
-        [HarmonyPatch(typeof(UIPrefab_PublicRoomList), nameof(UIPrefab_PublicRoomList.ShowPopup))]
-        internal static class PublicRoomListShowPopupPrefix
-        {
-            [HarmonyPrefix]
-            private static bool Prefix(UIPrefab_PublicRoomList __instance)
-            {
-                return !TramSavePickerController.IsSavePickerList(__instance);
-            }
-        }
-
-        [HarmonyPatch(typeof(UIPrefab_PublicRoomList), nameof(UIPrefab_PublicRoomList.SetRoomList))]
-        internal static class PublicRoomListSetRoomListPrefix
-        {
-            [HarmonyPrefix]
-            private static bool Prefix(UIPrefab_PublicRoomList __instance)
-            {
-                return !TramSavePickerController.IsSavePickerList(__instance);
-            }
-        }
-
-        [HarmonyPatch(typeof(UIPrefab_PublicRoomList), nameof(UIPrefab_PublicRoomList.SetEmptyListText))]
-        internal static class PublicRoomListSetEmptyListTextPrefix
-        {
-            [HarmonyPrefix]
-            private static bool Prefix(UIPrefab_PublicRoomList __instance)
-            {
-                return !TramSavePickerController.IsSavePickerList(__instance);
-            }
-        }
-
-        [HarmonyPatch(typeof(UIPrefab_PublicRoomList), "RefreshBtn")]
-        internal static class PublicRoomListRefreshBtnPrefix
-        {
-            [HarmonyPrefix]
-            private static bool Prefix(UIPrefab_PublicRoomList __instance)
-            {
-                return !TramSavePickerController.IsSavePickerList(__instance);
-            }
-        }
-
-        [HarmonyPatch(typeof(SteamInviteDispatcher), "RequestLobbyList", typeof(int), typeof(UIPrefab_PublicRoomList))]
-        internal static class SteamRequestLobbyListPrefix
-        {
-            [HarmonyPrefix]
-            private static void Prefix(ref UIPrefab_PublicRoomList _roomListUI)
-            {
-                if (TramSavePickerController.IsSavePickerList(_roomListUI))
-                {
-                    _roomListUI = null!;
-                }
-            }
-        }
-
-        [HarmonyPatch(typeof(SteamInviteDispatcher), "OnLobbyMatchListReceived")]
-        internal static class SteamLobbyMatchListReceivedPrefix
-        {
-            [HarmonyPrefix]
-            private static void Prefix(SteamInviteDispatcher __instance)
-            {
-                if (TramSavePickerController.IsSavePickerList(__instance.roomListUI))
-                {
-                    __instance.roomListUI = null;
-                }
-            }
-        }
-
-        [HarmonyPatch(typeof(UiPrefab_RoomCard), nameof(UiPrefab_RoomCard.SetRoomData))]
-        internal static class RoomCardSetRoomDataPrefix
-        {
-            [HarmonyPrefix]
-            private static bool Prefix(
-                PublicRoomListData data,
-                UIPrefab_PublicRoomList publicroomlist,
-                UiPrefab_RoomCard __instance)
-            {
-                if (!TramSavePickerController.IsSavePickerList(publicroomlist))
+                object? inputman = SaveSlotGameAccess.TryGetInputManager();
+                if (inputman == null || !WasEscapePressed(inputman))
                 {
                     return true;
                 }
 
-                if (!TramSavePickerController.TryGetRowContext(data.lobbyID, out SaveSlotRowContext? context)
-                    || context == null)
-                {
-                    return true;
-                }
-
-                ApplySaveRowDisplay(__instance, context.Entry);
-
-                Button button = __instance.GetComponent<Button>();
-                button.onClick = new Button.ButtonClickedEvent();
-                button.onClick.AddListener(() =>
-                {
-                    SaveSlotPickerPanel? panel = TramSavePickerController.Panel;
-                    panel?.SelectRow(data.lobbyID, __instance);
-                    EventSystem.current?.SetSelectedGameObject(null);
-                });
-
-                __instance.Show();
+                TramSavePickerController.Panel.Close();
+                UnityEngine.EventSystems.EventSystem.current?.SetSelectedGameObject(null);
                 return false;
             }
 
-            private static void ApplySaveRowDisplay(UiPrefab_RoomCard card, SaveSlotEntry entry)
+            private static bool WasEscapePressed(object inputman)
             {
-                MMSaveGameData save = entry.Data;
+                Type? actionType = AccessTools.TypeByName("Mimic.InputSystem.InputAction");
+                if (actionType == null)
+                {
+                    return false;
+                }
 
-                HideRoomCardElement(card, "UE_flag");
-                HideRoomCardElement(card, "UE_LockIcon");
-                HideRoomCardElement(card, "UE_RoomCycle");
-                HideRoomCardElement(card, "UE_RepairStat");
-                HideRoomCardElement(card, "UE_Status");
-                HideRoomCardElement(card, "UE_Start");
-                HideRoomCardElement(card, "UE_BeforeRepair");
-                HideRoomCardElement(card, "UE_AfterRepair");
-
-                ShowRoomCardElement(card, "UE_NationCode");
-                SaveSlotTextHelper.SetText(
-                    GetRoomCardText(card, "UE_NationCode"),
-                    SaveSlotRoomListMapper.FormatSlotNumber(entry));
-                SaveSlotTextHelper.SetText(
-                    GetRoomCardText(card, "UE_RoomName"),
-                    SaveSlotRoomListMapper.FormatLobbyName(entry));
-                SaveSlotTextHelper.SetText(
-                    GetRoomCardText(card, "UE_PlayerCount"),
-                    SaveSlotRoomListMapper.FormatPlayerNames(save));
+                object escape = Enum.Parse(actionType, "Escape");
+                System.Reflection.MethodInfo? method = AccessTools.Method(inputman.GetType(), "wasPressedThisFrame", [actionType]);
+                return method != null && method.Invoke(inputman, [escape]) is true;
             }
         }
-
-        private static void HideRoomCardElement(UiPrefab_RoomCard card, string propertyName)
-        {
-            if (typeof(UiPrefab_RoomCard).GetProperty(propertyName)?.GetValue(card) is Component component)
-            {
-                component.gameObject.SetActive(false);
-            }
-        }
-
-        private static void ShowRoomCardElement(UiPrefab_RoomCard card, string propertyName)
-        {
-            if (typeof(UiPrefab_RoomCard).GetProperty(propertyName)?.GetValue(card) is Component component)
-            {
-                component.gameObject.SetActive(true);
-            }
-        }
-
-        private static Component? GetRoomCardText(UiPrefab_RoomCard card, string propertyName) =>
-            typeof(UiPrefab_RoomCard).GetProperty(propertyName)?.GetValue(card) as Component;
     }
 }

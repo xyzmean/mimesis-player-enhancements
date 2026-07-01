@@ -11,11 +11,9 @@ namespace MimesisPlayerEnhancement.Features.ExtendedSaveSlots
             "All aboard the pain train",
             "Thomas has seen things",
             "Trammy McTramface",
-            "Conduct thyself",
             "Press F to pay tramfare",
             "Hop on the hype tram",
             "This tram runs on screams",
-            "Survival: Electric Tramaloo",
         ];
 
         internal static string PickRandom()

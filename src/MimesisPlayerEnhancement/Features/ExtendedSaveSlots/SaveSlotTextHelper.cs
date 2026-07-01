@@ -57,6 +57,16 @@ namespace MimesisPlayerEnhancement.Features.ExtendedSaveSlots
 
         internal static void SetAlignment(Component? textComponent, bool upperLeft)
         {
+            SetAlignment(textComponent, upperLeft ? TextAlignment.TopLeft : TextAlignment.Top);
+        }
+
+        internal static void SetMiddleCenterAlignment(Component? textComponent)
+        {
+            SetAlignment(textComponent, TextAlignment.MiddleCenter);
+        }
+
+        private static void SetAlignment(Component? textComponent, TextAlignment alignment)
+        {
             if (textComponent == null)
             {
                 return;
@@ -70,8 +80,55 @@ namespace MimesisPlayerEnhancement.Features.ExtendedSaveSlots
                 return;
             }
 
-            object value = Enum.Parse(alignmentProperty.PropertyType, upperLeft ? "TopLeft" : "Top");
+            object value = Enum.ToObject(alignmentProperty.PropertyType, (int)alignment);
             alignmentProperty.SetValue(textComponent, value, null);
+        }
+
+        private enum TextAlignment
+        {
+            TopLeft = 257,
+            Top = 258,
+            MiddleCenter = 514,
+        }
+
+        internal static void ConfigureTextLayout(Component? textComponent, bool wordWrap, int overflowMode)
+        {
+            if (textComponent == null)
+            {
+                return;
+            }
+
+            System.Type textType = textComponent.GetType();
+            PropertyInfo? wrapProp = textType.GetProperty(
+                "enableWordWrapping",
+                BindingFlags.Instance | BindingFlags.Public);
+            wrapProp?.SetValue(textComponent, wordWrap, null);
+
+            PropertyInfo? overflowProp = textType.GetProperty(
+                "overflowMode",
+                BindingFlags.Instance | BindingFlags.Public);
+            if (overflowProp != null && overflowProp.PropertyType.IsEnum)
+            {
+                overflowProp.SetValue(textComponent, Enum.ToObject(overflowProp.PropertyType, overflowMode), null);
+            }
+
+            PropertyInfo? raycastProp = textType.GetProperty(
+                "raycastTarget",
+                BindingFlags.Instance | BindingFlags.Public);
+            raycastProp?.SetValue(textComponent, false, null);
+        }
+
+        internal static void EnableRichText(Component? textComponent)
+        {
+            if (textComponent == null)
+            {
+                return;
+            }
+
+            PropertyInfo? richTextProp = textComponent.GetType().GetProperty(
+                "richText",
+                BindingFlags.Instance | BindingFlags.Public);
+            richTextProp?.SetValue(textComponent, true, null);
         }
 
         private static PropertyInfo? GetTextProperty(Component textComponent)

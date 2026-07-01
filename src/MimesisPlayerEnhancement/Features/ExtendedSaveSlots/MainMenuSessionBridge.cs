@@ -16,7 +16,6 @@ namespace MimesisPlayerEnhancement.Features.ExtendedSaveSlots
 
         internal static void TryLoadSaveAndCreateRoom(
             MainMenu menu,
-            UIPrefab_PublicRoomList pickerShell,
             UIPrefab_LoadTram loadTram,
             int slotId)
         {
@@ -27,13 +26,7 @@ namespace MimesisPlayerEnhancement.Features.ExtendedSaveSlots
                 return;
             }
 
-            UIManager? uiManager = SaveSlotGameAccess.TryGetUiManager();
-            if (uiManager != null)
-            {
-                uiManager.ui_escapeStack.Remove(pickerShell);
-                pickerShell.Hide();
-                TramSavePickerController.SetSavePickerOpen(false, pickerShell);
-            }
+            TramSavePickerController.Panel?.Close();
 
             loadTram.InitSaveInfoList();
             _ = method.Invoke(menu, [loadTram, slotId]);
@@ -52,17 +45,27 @@ namespace MimesisPlayerEnhancement.Features.ExtendedSaveSlots
                 return;
             }
 
+            TramSavePickerController.Panel?.Close();
+            EventSystem.current?.SetSelectedGameObject(null);
+            PrepareNewTramSession(newTram, newTramPopUp);
+            _ = method.Invoke(menu, [newTram, newTramPopUp, slotId]);
+        }
+
+        private static void PrepareNewTramSession(UIPrefab_NewTram newTram, UIPrefab_NewTramPopUp newTramPopUp)
+        {
+            SaveSlotGameAccess.TryGetPdata()?.SaveSlotID = -1;
+            newTram.InitSaveInfoList();
+            newTram.Hide();
+            newTramPopUp.Hide();
+
             UIManager? uiManager = SaveSlotGameAccess.TryGetUiManager();
-            UIPrefab_PublicRoomList? picker = TramSavePickerController.ActiveSavePickerList;
-            if (uiManager != null && picker != null)
+            if (uiManager == null)
             {
-                uiManager.ui_escapeStack.Remove(picker);
-                picker.Hide();
-                TramSavePickerController.SetSavePickerOpen(false, picker);
+                return;
             }
 
-            EventSystem.current?.SetSelectedGameObject(null);
-            _ = method.Invoke(menu, [newTram, newTramPopUp, slotId]);
+            uiManager.ui_escapeStack.Remove(newTram);
+            uiManager.ui_escapeStack.Remove(newTramPopUp);
         }
 
         private static MethodInfo? GetTryLoadSaveAndCreateRoom()
