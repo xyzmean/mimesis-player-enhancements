@@ -3,12 +3,6 @@
 [![issues - mimesis-player-enhancements](https://img.shields.io/github/issues/Kandru/mimesis-player-enhancements?color=darkgreen)](https://github.com/Kandru/mimesis-player-enhancements/issues)
 [![](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/donate/?hosted_button_id=C2AVYKGVP9TRG)
 
-> [!NOTE]  
-> Please support my work by giving me a small donation. It takes a lot of dedicated time to work on such a plug-in.
-
-> [!CAUTION]  
-> **Alpha — under heavy development.** This plugin is not finished and things may not work as expected. Please report bugs and share feedback via [GitHub issues](https://github.com/Kandru/mimesis-player-enhancements/issues).
-
 # Mimesis Player Enhancement
 
 ![Mimesis Player Enhancement Logo](logo.png)
@@ -16,15 +10,18 @@
 > [!NOTE]  
 > Disclosure: this project is being build with help of AI!
 
+> [!CAUTION]  
+> **Alpha — under heavy development.** This plugin is not finished and things may not work as expected. Please report bugs and share feedback via [GitHub issues](https://github.com/Kandru/mimesis-player-enhancements/issues).
+
 > [!WARNING]  
 > I am not responsible for any damage, data loss, bans, or other problems that come from using this mod. Mods change how the game runs, and things can break.
 
 > [!TIP]
 > If you do not trust a pre-built `.dll`, you can [build this mod yourself](#build-from-source) from the source code here on GitHub. That takes some basic dev setup, but you know exactly what you are running.
 
-Mimesis Player Enhancement is a mod for Mimesis that consolidates and extends a lot of tweaks into one maintained package. Hosts can raise the player cap, expand mimic voice recording and persistence, allow join-anytime lobbies, scale spawns/loot/money to match their needs, randomize dungeons, tune player and mimic behavior, and track session statistics — all from one config file. Clients do not need the mod; only the host does. It also enables the player to use up to 99 different save games within a new UI.
+Mimesis Player Enhancement is a mod for Mimesis that consolidates and extends a lot of tweaks into one maintained package. Hosts can raise the player limits, expand mimic voice recording and persistence (across game sessions), allow players to join at any time, scale spawns/loot/money to match their needs, randomize dungeons, tune player and mimic behavior, and track session statistics — all from one config file. Clients do not need the mod; only the host does. It also enables the player to use up to 99 different save games within a new UI.
 
-There is also a webinterface listening on http://127.0.0.1:8001 per default after the game has been started. It allows you to manage bigger lobbies (kick, ban, respawn) as well as change settings per savegame or globally.
+Additionally, there is also a webinterface listening on http://127.0.0.1:8001 per default after the game has been started. It allows you to manage bigger lobbies (kick, ban, respawn) as well as change settings per savegame or globally.
 
 Tested with **MIMESIS 0.3.0** and **MelonLoader 0.7.3**.
 
@@ -32,17 +29,17 @@ Tested with **MIMESIS 0.3.0** and **MelonLoader 0.7.3**.
 
 | Feature | What it does | Everyone needs the mod? |
 |---------|--------------|-------------------------|
-| **More Players** | Raise the 4-player cap (default: 32) | No — host only |
-| **More Voices** | Record more mimic voice lines per context (default: 3000 each for indoor, deathmatch, outdoor) | No — host only |
-| **Persistence** | Keep mimic voices after save/load | No — host only |
-| **Join Anytime** | Let friends join an active lobby; they wait in the tram until the current dungeon ends | No — host only |
-| **Statistics** | Session stats and leaderboard per save slot | No — host only |
-| **Web Dashboard** | Browser UI for players, stats, and host moderation | No — host only |
-| **Player Announcements** | In-game toasts for dungeon settings, boss spawns, and per-map death stats | No — host only |
-| **Spawn Scaling** | Scale mimic/monster spawn budgets by type and player count | No — host only |
-| **Loot Multiplicator** | Scale loot quantity by where it comes from and item type | No — host only |
-| **Money Multiplier** | Scale startup money, round goal, scrap/sell values, shop buy prices, shop item count, and reinforce costs | No — host only |
-| **Dungeon Time** | Extend dungeon shift length by real seconds per player above a baseline (default: +10s per player above 4) | No — host only |
+| **More Players** | Raise the 4-player limit (default: 32) | No — host only |
+| **More Voices** | Record more player voice lines per context (default: 3000 instead of ~150) | No — host only |
+| **Persistence** | Save player voice lines to disk | No — host only |
+| **Join Anytime** | Let friends join an active lobby whenever players are not inside a dungeon | No — host only |
+| **Statistics** | Session stats and leaderboards per save slot | No — host only |
+| **Web Dashboard** | Browser UI for players, stats, and moderation | No — host only |
+| **Player Announcements** | In-game notifications for dungeon settings, boss spawns, and per-map death stats | No — host only |
+| **Spawn Scaling** | Scale mimic/monster spawns by type and player count | No — host only |
+| **Loot Multiplicator** | Scale loot quantity and limit item types | No — host only |
+| **Money Multiplier** | Scale startup money, round goal, and shop buy prices | No — host only |
+| **Dungeon Time** | Extend dungeon shift length by X seconds per player above a baseline (default: +10s per player above 4) | No — host only |
 | **Mimic Tuning** | Randomize dead-player mimic possession speak duration and scale post-possession cooldown | No — host only |
 | **Player Tuning** | Scale player move speed, stamina (max/drain/regen/delay), and max carry weight | No — host only |
 | **Dungeon Randomizer** | Randomize tram dungeon pick, layout flow, map variant, and procedural seed | No — host only |
