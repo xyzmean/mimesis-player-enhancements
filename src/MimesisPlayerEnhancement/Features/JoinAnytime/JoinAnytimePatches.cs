@@ -3,7 +3,6 @@ using HarmonyLib;
 using MimesisPlayerEnhancement.Util;
 using Mimic.Actors;
 using ReluProtocol;
-using ReluProtocol.C2S;
 using ReluProtocol.Enum;
 
 namespace MimesisPlayerEnhancement.Features.JoinAnytime
@@ -25,8 +24,6 @@ namespace MimesisPlayerEnhancement.Features.JoinAnytime
 
         private static void LogPatchAudit(HarmonyLib.Harmony harmony)
         {
-            Type[] corRefreshParams = { typeof(Action<bool>) };
-
             HarmonyPatchHelper.LogPatchAudit(Feature, harmony,
             [
                 ("CanEnterSession/GameSessionInfo", AccessTools.Method(typeof(GameSessionInfo), nameof(GameSessionInfo.CanEnterSession))),
@@ -43,7 +40,7 @@ namespace MimesisPlayerEnhancement.Features.JoinAnytime
                 ("SetLobbyPublic/SteamInviteDispatcher", AccessTools.Method(typeof(SteamInviteDispatcher), nameof(SteamInviteDispatcher.SetLobbyPublic))),
                 ("SetLobbyPublicCoroutine/SteamInviteDispatcher", AccessTools.Method(typeof(SteamInviteDispatcher), "SetLobbyPublicCoroutine", [typeof(bool)])),
                 ("CheckPublicTramAndChangeGameState/MaintenanceScene", AccessTools.Method(typeof(MaintenanceScene), "CheckPublicTramAndChangeGameState", [typeof(float), typeof(Hub.PersistentData.eGameState)])),
-                ("OnPacket(MoveToWaitingRoomSig)/MaintenanceScene", AccessTools.Method(typeof(MaintenanceScene), "OnPacket", [typeof(MoveToWaitingRoomSig)])),
+                ("CorRun/MaintenanceScene", AccessTools.Method(typeof(MaintenanceScene), "CorRun")),
                 ("SetPresenceInLobby/SteamInviteDispatcher", AccessTools.Method(typeof(SteamInviteDispatcher), nameof(SteamInviteDispatcher.SetPresenceInLobby))),
                 ("SetPresencePlaying/SteamInviteDispatcher", AccessTools.Method(typeof(SteamInviteDispatcher), nameof(SteamInviteDispatcher.SetPresencePlaying))),
                 ("UpdateLobbyData/SteamInviteDispatcher", AccessTools.Method(typeof(SteamInviteDispatcher), nameof(SteamInviteDispatcher.UpdateLobbyData))),
@@ -54,7 +51,6 @@ namespace MimesisPlayerEnhancement.Features.JoinAnytime
                 ("SetRoomData/UiPrefab_RoomCard", AccessTools.Method(typeof(UiPrefab_RoomCard), "SetRoomData")),
                 ("TryInitHostMaintenenceRoom/MaintenanceScene", AccessTools.Method(typeof(MaintenanceScene), "TryInitHostMaintenenceRoom")),
                 ("Start/InTramWaitingScene", AccessTools.Method(typeof(InTramWaitingScene), "Start")),
-                ("CorRefreshSteamLobbyData/GameMainBase", AccessTools.Method(typeof(GameMainBase), "CorRefreshSteamLobbyData", corRefreshParams)),
                 (".ctor/VPlayer", AccessTools.Constructor(
                     typeof(VPlayer),
                     [

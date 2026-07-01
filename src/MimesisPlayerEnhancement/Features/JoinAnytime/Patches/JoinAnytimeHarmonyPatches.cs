@@ -7,7 +7,6 @@ using HarmonyLib;
 using MimesisPlayerEnhancement.Util;
 using Mimic.Actors;
 using ReluProtocol;
-using ReluProtocol.C2S;
 using ReluProtocol.Enum;
 using Steamworks;
 
@@ -293,7 +292,11 @@ namespace MimesisPlayerEnhancement.Features.JoinAnytime.Patches
                 return true;
             }
 
-            if (!isPublic && JoinAnytimeLobbyController.ShouldBlockPublicRoomClose())
+            if (isPublic)
+            {
+                JoinAnytimeLobbyController.SetHostWantsPublicMatchmaking(true);
+            }
+            else if (JoinAnytimeLobbyController.ShouldBlockPublicRoomClose())
             {
                 ModLog.Debug("JoinAnytime", "Blocked SetLobbyPublic(false) for join-anytime host.");
                 return false;
@@ -306,19 +309,6 @@ namespace MimesisPlayerEnhancement.Features.JoinAnytime.Patches
         private static void Postfix(SteamInviteDispatcher __instance, bool isPublic)
         {
             JoinAnytimeLobbyController.OnSetLobbyPublicCompleted(__instance, isPublic);
-        }
-    }
-
-    [HarmonyPatch]
-    internal static class MaintenanceSceneMoveToWaitingRoomPatch
-    {
-        private static MethodBase? TargetMethod() =>
-            AccessTools.Method(typeof(MaintenanceScene), "OnPacket", [typeof(MoveToWaitingRoomSig)]);
-
-        [HarmonyPostfix]
-        private static void Postfix()
-        {
-            JoinAnytimeLobbyController.OnMaintenanceTransferToTram();
         }
     }
 
@@ -385,19 +375,6 @@ namespace MimesisPlayerEnhancement.Features.JoinAnytime.Patches
             }
 
             return true;
-        }
-    }
-
-    [HarmonyPatch]
-    internal static class GameMainBaseCorRefreshSteamLobbyDataPatch
-    {
-        private static MethodBase? TargetMethod() =>
-            AccessTools.Method(typeof(GameMainBase), "CorRefreshSteamLobbyData", [typeof(Action<bool>)]);
-
-        [HarmonyPostfix]
-        private static void Postfix()
-        {
-            JoinAnytimeLobbyController.RefreshAfterSteamLobbyDataUpdate();
         }
     }
 
@@ -560,6 +537,7 @@ namespace MimesisPlayerEnhancement.Features.JoinAnytime.Patches
         private static void Postfix()
         {
             JoinAnytimeLobbyController.OnHostSceneReady();
+            JoinAnytimeLobbyController.ApplyHostPublicLobbyIntent();
         }
     }
 
