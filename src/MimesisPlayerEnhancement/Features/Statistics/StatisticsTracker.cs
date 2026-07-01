@@ -175,7 +175,6 @@ namespace MimesisPlayerEnhancement.Features.Statistics
             }
 
             ModLog.Info(Feature, $"Player disconnected — steamId={steamId} displayName={doc.DisplayName}");
-            StatisticsWriteQueue.FlushPendingWrites();
             PersistSlot(_loadedSlotId);
             StatisticsMessages.OnPlayerLeftSession(steamId, doc.DisplayName, doc);
             WebDashboardSnapshotCache.MarkDirty();
@@ -270,7 +269,6 @@ namespace MimesisPlayerEnhancement.Features.Statistics
             }
 
             Dictionary<ulong, int> voiceCounts = BuildVoiceCountCache();
-            StatisticsWriteQueue.FlushPendingWrites();
 
             foreach (ulong steamId in affected)
             {
@@ -473,7 +471,6 @@ namespace MimesisPlayerEnhancement.Features.Statistics
             }
 
             LoadForSlot(slotId);
-            StatisticsWriteQueue.FlushPendingWrites();
             PersistSlot(slotId, waitForCompletion: false);
             ModLog.Debug(Feature, $"Statistics queued on game save for slot {slotId}.");
             WebDashboardSnapshotCache.MarkDirty();
@@ -959,7 +956,7 @@ namespace MimesisPlayerEnhancement.Features.Statistics
             }
 
             StatisticsWriteQueue.Configure(slotId, () => _players);
-            StatisticsStore.SaveSlot(slotId, _players, waitForCompletion);
+            StatisticsWriteQueue.PersistImmediate(waitForCompletion);
         }
 
         internal static void PersistLoadedSlot(bool waitForCompletion = false)

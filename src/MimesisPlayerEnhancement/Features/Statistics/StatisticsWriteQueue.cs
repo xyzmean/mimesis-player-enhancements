@@ -76,7 +76,6 @@ namespace MimesisPlayerEnhancement.Features.Statistics
         internal static void FlushAllSync()
         {
             StatisticsTracker.PersistLoadedSlot(waitForCompletion: true);
-            FlushDirty(waitForCompletion: true);
             BackgroundFileWriteQueue.FlushAllSync();
         }
 
@@ -84,6 +83,17 @@ namespace MimesisPlayerEnhancement.Features.Statistics
         {
             FlushDirty(waitForCompletion: false);
             _nextFlushTime = UnityEngine.Time.time + DebounceSeconds;
+        }
+
+        internal static void PersistImmediate(bool waitForCompletion)
+        {
+            lock (DirtyLock)
+            {
+                _slotDirty = false;
+            }
+
+            _nextFlushTime = UnityEngine.Time.time + DebounceSeconds;
+            WriteLoadedSlot(waitForCompletion);
         }
 
         private static void FlushDirty(bool waitForCompletion)

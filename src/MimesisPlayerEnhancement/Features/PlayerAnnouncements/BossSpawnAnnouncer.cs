@@ -77,8 +77,12 @@ namespace MimesisPlayerEnhancement.Features.PlayerAnnouncements
             List<string> segments = [];
             foreach (KeyValuePair<int, int> kvp in spawns)
             {
-                string name = MonsterTypeLookup.GetDisplayName(kvp.Key);
-                segments.Add(FormatSegment(kvp.Value, name));
+                string humanizedName = EntityDisplayNameFormatter.Humanize(MonsterTypeLookup.GetDisplayName(kvp.Key));
+                string segment = FormatSegment(kvp.Value, humanizedName, capitalizeArticle: segments.Count == 0);
+                if (!string.IsNullOrWhiteSpace(segment))
+                {
+                    segments.Add(segment);
+                }
             }
 
             if (segments.Count == 0)
@@ -96,9 +100,16 @@ namespace MimesisPlayerEnhancement.Features.PlayerAnnouncements
             return $"{joined} appeared. Be careful!";
         }
 
-        private static string FormatSegment(int count, string name)
+        private static string FormatSegment(int count, string humanizedName, bool capitalizeArticle)
         {
-            return count <= 0 ? "" : count == 1 ? $"A {name}" : $"{count} {name}";
+            if (count <= 0 || string.IsNullOrWhiteSpace(humanizedName))
+            {
+                return "";
+            }
+
+            return count == 1
+                ? EntityDisplayNameFormatter.FormatWithArticle(humanizedName, capitalizeArticle)
+                : $"{count} {EntityDisplayNameFormatter.Pluralize(humanizedName)}";
         }
     }
 }

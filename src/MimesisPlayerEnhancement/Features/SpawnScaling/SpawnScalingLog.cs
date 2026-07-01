@@ -21,7 +21,9 @@ namespace MimesisPlayerEnhancement.Features.SpawnScaling
             }
 
             string roomName = SpawnScalingRoomLookup.TryGetRoomName(room, pos);
-            return string.IsNullOrWhiteSpace(roomName) ? location : $"{location} room={roomName}";
+            return string.IsNullOrWhiteSpace(roomName)
+                ? $"{location} room=(unknown)"
+                : $"{location} room={roomName}";
         }
 
         internal static void InfoScalingApplied(int playerCount)
