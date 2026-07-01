@@ -339,7 +339,7 @@ namespace MimesisPlayerEnhancement.Features.JoinAnytime
         {
             string baseName = string.IsNullOrEmpty(_baseLobbyName) ? "Train" : _baseLobbyName;
             string tag = phase == JoinAnytimeSessionPhase.Dungeon && waitMinutes > 0
-                ? $" [wait {waitMinutes} min]"
+                ? $" [join in {waitMinutes} min]"
                 : phase is JoinAnytimeSessionPhase.Maintenance
                     or JoinAnytimeSessionPhase.Tram
                     or JoinAnytimeSessionPhase.Dungeon
