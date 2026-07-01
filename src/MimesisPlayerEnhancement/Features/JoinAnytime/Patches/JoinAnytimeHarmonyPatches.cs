@@ -407,6 +407,16 @@ namespace MimesisPlayerEnhancement.Features.JoinAnytime.Patches
         }
     }
 
+    [HarmonyPatch(typeof(UIPrefab_InGameMenu), "OnEnable")]
+    internal static class UIPrefabInGameMenuOnEnableJoinAnytimePatch
+    {
+        [HarmonyPostfix]
+        private static void Postfix(UIPrefab_InGameMenu __instance)
+        {
+            JoinAnytimeInGameMenuTools.EnsurePublicRoomControlsAccessible(__instance);
+        }
+    }
+
     [HarmonyPatch]
     internal static class UIPrefabInGameMenuSetPublicRoomNamePatch
     {
