@@ -88,38 +88,44 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
                 };
             }
 
-            if (!ModConfigRegistry.TrySetEntryValue(sectionId, key, normalized, out error))
+            ModConfigChangeTracker.BeginBatch();
+            try
             {
-                return new WebDashboardConfigUpdateResult
+                if (!ModConfigRegistry.TrySetEntryValue(sectionId, key, normalized, out error))
                 {
-                    Success = false,
-                    Message = error ?? "Failed to apply setting.",
-                };
-            }
+                    return new WebDashboardConfigUpdateResult
+                    {
+                        Success = false,
+                        Message = error ?? "Failed to apply setting.",
+                    };
+                }
 
-            ModConfig.SanitizeFloatEntries();
+                ModConfig.SanitizeFloatEntries();
 
-            if (!GlobalConfigStore.TryWriteValue(sectionId, key, normalized, out error, waitForCompletion: false))
-            {
-                return new WebDashboardConfigUpdateResult
+                if (!GlobalConfigStore.TryWriteValue(sectionId, key, normalized, out error, waitForCompletion: false))
                 {
-                    Success = false,
-                    Message = error ?? "Failed to save global config.",
-                };
-            }
+                    return new WebDashboardConfigUpdateResult
+                    {
+                        Success = false,
+                        Message = error ?? "Failed to save global config.",
+                    };
+                }
 
-            int activeSlotId = SaveSlotConfigStore.ActiveSlotId;
-            if (activeSlotId < 0 && MimesisSaveManager.TryGetActiveSaveSlotId(out int resolvedSlotId))
+                int activeSlotId = SaveSlotConfigStore.ActiveSlotId;
+                if (activeSlotId < 0 && MimesisSaveManager.TryGetActiveSaveSlotId(out int resolvedSlotId))
+                {
+                    activeSlotId = resolvedSlotId;
+                }
+
+                if (activeSlotId >= 0)
+                {
+                    ReconcileActiveSaveOverride(activeSlotId, sectionId, key, normalized, out error);
+                }
+            }
+            finally
             {
-                activeSlotId = resolvedSlotId;
+                ModConfigChangeTracker.EndBatch();
             }
-
-            if (activeSlotId >= 0)
-            {
-                ReconcileActiveSaveOverride(activeSlotId, sectionId, key, normalized, out error);
-            }
-
-            ModConfig.NotifyRuntimeChanged();
 
             return BuildUpdateResult(sectionId, key, normalized, "Saved to global config.");
         }

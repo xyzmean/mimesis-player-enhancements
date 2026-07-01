@@ -17,6 +17,7 @@ namespace MimesisPlayerEnhancement.Features.MorePlayers
     {
         private const string Feature = "MorePlayers";
         private const int VanillaMaxPlayers = 4;
+        private static int _lastAppliedMaxClients = -1;
 
         private static readonly MethodInfo GetMaxPlayersMethod =
             AccessTools.Method(typeof(MorePlayersPatches), nameof(GetMaxPlayers));
@@ -66,6 +67,13 @@ namespace MimesisPlayerEnhancement.Features.MorePlayers
         {
             if (!ModConfig.EnableMorePlayers.Value)
             {
+                _lastAppliedMaxClients = -1;
+                return;
+            }
+
+            int maxPlayers = GetMaxPlayers();
+            if (maxPlayers == _lastAppliedMaxClients)
+            {
                 return;
             }
 
@@ -74,8 +82,9 @@ namespace MimesisPlayerEnhancement.Features.MorePlayers
                 object? socket = GameNetworkApi.GetServerSocket();
                 if (socket != null)
                 {
-                    GameNetworkApi.SetMaximumClients(socket, GetMaxPlayers());
-                    ModLog.Debug(Feature, $"Server socket max clients refreshed to {GetMaxPlayers()}.");
+                    GameNetworkApi.SetMaximumClients(socket, maxPlayers);
+                    _lastAppliedMaxClients = maxPlayers;
+                    ModLog.Debug(Feature, $"Server socket max clients refreshed to {maxPlayers}.");
                 }
             }
             catch (Exception ex)
@@ -160,6 +169,7 @@ namespace MimesisPlayerEnhancement.Features.MorePlayers
                 try
                 {
                     GameNetworkApi.SetMaximumClients(__instance, GetMaxPlayers());
+                    _lastAppliedMaxClients = GetMaxPlayers();
                 }
                 catch (Exception ex)
                 {

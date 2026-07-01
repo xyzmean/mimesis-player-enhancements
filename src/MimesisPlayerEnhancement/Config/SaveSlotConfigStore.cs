@@ -94,13 +94,21 @@ namespace MimesisPlayerEnhancement
                 return false;
             }
 
-            if (!ModConfigRegistry.TrySetEntryValue(sectionId, key, normalized, out error))
+            ModConfigChangeTracker.BeginBatch();
+            try
             {
-                return false;
+                if (!ModConfigRegistry.TrySetEntryValue(sectionId, key, normalized, out error))
+                {
+                    return false;
+                }
+
+                ModConfig.SanitizeFloatEntries();
+            }
+            finally
+            {
+                ModConfigChangeTracker.EndBatch();
             }
 
-            ModConfig.SanitizeFloatEntries();
-            ModConfig.NotifyRuntimeChanged();
             return true;
         }
 
@@ -184,6 +192,7 @@ namespace MimesisPlayerEnhancement
                 return;
             }
 
+            ModConfigChangeTracker.BeginBatch();
             _isApplyingOverrides = true;
             try
             {
@@ -215,11 +224,11 @@ namespace MimesisPlayerEnhancement
                 }
 
                 ModConfig.SanitizeFloatEntries();
-                ModConfig.NotifyRuntimeChanged();
             }
             finally
             {
                 _isApplyingOverrides = false;
+                ModConfigChangeTracker.EndBatch();
             }
         }
 
@@ -231,8 +240,17 @@ namespace MimesisPlayerEnhancement
                 return;
             }
 
-            ModConfig.ReloadGlobalFromFile();
-            ModConfig.NotifyRuntimeChanged();
+            ModConfigChangeTracker.BeginBatch();
+            try
+            {
+                ModConfig.ReloadGlobalFromFile();
+            }
+            finally
+            {
+                ModConfigChangeTracker.CancelBatch();
+            }
+
+            ModConfigChangeTracker.NotifyFullReload();
         }
 
         internal static bool IsOverridden(int slotId, string sectionId, string key)

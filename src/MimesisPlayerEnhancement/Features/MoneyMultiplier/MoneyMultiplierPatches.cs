@@ -25,7 +25,7 @@ namespace MimesisPlayerEnhancement.Features.MoneyMultiplier
         {
             _ = GameNetworkApi.GetGameAssembly();
 
-            ModConfig.Changed += MaintenanceShopApplier.NotifyConfigChanged;
+            ModConfig.Changed += OnConfigChanged;
 
             HarmonyPatchHelper.PatchApplyResult result = HarmonyPatchHelper.ApplyPatchTypes(
                 harmony,
@@ -34,6 +34,14 @@ namespace MimesisPlayerEnhancement.Features.MoneyMultiplier
 
             LogPatchAudit(harmony);
             HarmonyPatchHelper.LogPatchSummary(Feature, result);
+        }
+
+        private static void OnConfigChanged(ModConfigChangeInfo change)
+        {
+            if (change.IsFullReload || change.AffectsSection(ModConfigRegistry.MoneyMultiplierSectionId))
+            {
+                MaintenanceShopApplier.NotifyConfigChanged();
+            }
         }
 
         private static void LogPatchAudit(HarmonyLib.Harmony harmony)

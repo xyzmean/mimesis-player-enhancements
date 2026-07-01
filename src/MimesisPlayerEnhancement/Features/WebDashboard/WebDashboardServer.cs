@@ -24,7 +24,7 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
             WebDashboardMinimapPatches.Apply(harmony);
         }
 
-        private static void OnConfigChanged()
+        private static void OnConfigChanged(ModConfigChangeInfo change)
         {
             WebDashboardSnapshotCache.MarkDirty();
         }

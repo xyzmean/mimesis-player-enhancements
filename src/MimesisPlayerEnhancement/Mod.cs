@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using MelonLoader;
 using MimesisPlayerEnhancement.Features.Persistence;
 using MimesisPlayerEnhancement.Features.PlayerTuning;
@@ -30,7 +31,7 @@ namespace MimesisPlayerEnhancement
             }
 
             _statisticsWasEnabled = ModConfig.EnableStatistics.Value;
-            SyncFromConfig();
+            SyncFromConfig(ModConfigChangeInfo.FullReload);
             LogStartupSummary();
         }
 
@@ -105,24 +106,36 @@ namespace MimesisPlayerEnhancement
             return string.Equals(filepath, ModConfig.FilePath, StringComparison.OrdinalIgnoreCase);
         }
 
-        private void SyncFromConfig()
+        private void SyncFromConfig(ModConfigChangeInfo change)
         {
             if (!ModConfig.IsInitialized)
             {
                 return;
             }
 
+            HashSet<string>? affectedModules = change.IsFullReload
+                ? null
+                : ModConfigRegistry.GetAffectedModuleNames(change);
+
             foreach (IFeatureModule module in FeatureModules.All)
             {
+                if (affectedModules != null && !affectedModules.Contains(module.Name))
+                {
+                    continue;
+                }
+
                 module.SyncFromConfig();
             }
 
-            if (_statisticsWasEnabled && !ModConfig.EnableStatistics.Value)
+            if (change.IsFullReload || change.AffectsSection(ModConfigRegistry.StatisticsSectionId))
             {
-                StatisticsTracker.ClearRuntimeState();
-            }
+                if (_statisticsWasEnabled && !ModConfig.EnableStatistics.Value)
+                {
+                    StatisticsTracker.ClearRuntimeState();
+                }
 
-            _statisticsWasEnabled = ModConfig.EnableStatistics.Value;
+                _statisticsWasEnabled = ModConfig.EnableStatistics.Value;
+            }
 
             ModLog.Debug("Config", $"Synced — {BuildConfigSummary()}");
         }

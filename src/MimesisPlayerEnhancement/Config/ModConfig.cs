@@ -16,8 +16,12 @@ namespace MimesisPlayerEnhancement
     {
         private const string MainCategoryId = "MimesisPlayerEnhancement";
 
-        /// <summary>Fired when any preference value changes (UI save, file reload, or programmatic update).</summary>
-        public static event Action? Changed;
+        /// <summary>Fired when preference values change (UI save, file reload, or programmatic update).</summary>
+        public static event Action<ModConfigChangeInfo>? Changed
+        {
+            add => ModConfigChangeTracker.Changed += value;
+            remove => ModConfigChangeTracker.Changed -= value;
+        }
 
         /// <summary>Increments whenever configuration values change at runtime.</summary>
         public static int Version => ModConfigRegistry.Version;
@@ -814,7 +818,7 @@ namespace MimesisPlayerEnhancement
                     return;
                 }
 
-                NotifyChanged();
+                NotifyChanged(MaxPlayers);
             });
 
             MaxIndoorVoiceEvents.OnEntryValueChanged.Subscribe((_, value) =>
@@ -826,7 +830,7 @@ namespace MimesisPlayerEnhancement
                     return;
                 }
 
-                NotifyChanged();
+                NotifyChanged(MaxIndoorVoiceEvents);
             });
 
             MaxDeathMatchVoiceEvents.OnEntryValueChanged.Subscribe((_, value) =>
@@ -838,7 +842,7 @@ namespace MimesisPlayerEnhancement
                     return;
                 }
 
-                NotifyChanged();
+                NotifyChanged(MaxDeathMatchVoiceEvents);
             });
 
             MaxOutdoorVoiceEvents.OnEntryValueChanged.Subscribe((_, value) =>
@@ -850,12 +854,12 @@ namespace MimesisPlayerEnhancement
                     return;
                 }
 
-                NotifyChanged();
+                NotifyChanged(MaxOutdoorVoiceEvents);
             });
 
-            EnableMorePlayers.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
-            EnableMoreVoices.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
-            EnablePersistence.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
+            EnableMorePlayers.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged(EnableMorePlayers));
+            EnableMoreVoices.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged(EnableMoreVoices));
+            EnablePersistence.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged(EnablePersistence));
 
             SessionReconnectGraceMinutes.OnEntryValueChanged.Subscribe((_, value) =>
             {
@@ -866,12 +870,12 @@ namespace MimesisPlayerEnhancement
                     return;
                 }
 
-                NotifyChanged();
+                NotifyChanged(SessionReconnectGraceMinutes);
             });
 
-            EnableStatistics.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
-            ShowStatisticsToasts.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
-            ShowPlayerAnnouncements.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
+            EnableStatistics.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged(EnableStatistics));
+            ShowStatisticsToasts.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged(ShowStatisticsToasts));
+            ShowPlayerAnnouncements.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged(ShowPlayerAnnouncements));
             ModToastDurationSeconds.OnEntryValueChanged.Subscribe((_, value) =>
             {
                 if (value < 1f)
@@ -881,11 +885,11 @@ namespace MimesisPlayerEnhancement
                     return;
                 }
 
-                NotifyChanged();
+                NotifyChanged(ModToastDurationSeconds);
             });
-            EnableJoinAnytime.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
+            EnableJoinAnytime.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged(EnableJoinAnytime));
 
-            EnableExtendedSaveSlots.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
+            EnableExtendedSaveSlots.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged(EnableExtendedSaveSlots));
 
             JoinConnectionGraceSeconds.OnEntryValueChanged.Subscribe((_, value) =>
             {
@@ -896,29 +900,29 @@ namespace MimesisPlayerEnhancement
                     return;
                 }
 
-                NotifyChanged();
+                NotifyChanged(JoinConnectionGraceSeconds);
             });
-            EnableSpawnScaling.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
-            AutoScaleMimicSpawnsByPlayerCount.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
-            AutoScaleBossSpawnsByPlayerCount.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
-            AutoScaleJakoSpawnsByPlayerCount.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
-            AutoScaleSpecialSpawnsByPlayerCount.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
-            AutoScaleTrapSpawnsByPlayerCount.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
+            EnableSpawnScaling.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged(EnableSpawnScaling));
+            AutoScaleMimicSpawnsByPlayerCount.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged(AutoScaleMimicSpawnsByPlayerCount));
+            AutoScaleBossSpawnsByPlayerCount.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged(AutoScaleBossSpawnsByPlayerCount));
+            AutoScaleJakoSpawnsByPlayerCount.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged(AutoScaleJakoSpawnsByPlayerCount));
+            AutoScaleSpecialSpawnsByPlayerCount.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged(AutoScaleSpecialSpawnsByPlayerCount));
+            AutoScaleTrapSpawnsByPlayerCount.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged(AutoScaleTrapSpawnsByPlayerCount));
             MapPlacedEncounterDelayMinSeconds.OnEntryValueChanged.Subscribe((_, value) => OnMapPlacedEncounterDelayChanged(logger, value, MapPlacedEncounterDelayMinSeconds));
             MapPlacedEncounterDelayMaxSeconds.OnEntryValueChanged.Subscribe((_, value) => OnMapPlacedEncounterDelayChanged(logger, value, MapPlacedEncounterDelayMaxSeconds));
             MapPlacedEncounterMinPlayerDistanceMeters.OnEntryValueChanged.Subscribe((_, value) => OnMapPlacedEncounterMinPlayerDistanceChanged(logger, value));
-            AutoScaleOtherSpawnsByPlayerCount.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
+            AutoScaleOtherSpawnsByPlayerCount.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged(AutoScaleOtherSpawnsByPlayerCount));
 
-            EnableLootMultiplicator.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
-            AutoScaleMapConsumableLootByPlayerCount.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
-            AutoScaleMapEquipmentLootByPlayerCount.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
-            AutoScaleMapMiscellanyLootByPlayerCount.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
-            AutoScaleDropConsumableLootByPlayerCount.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
-            AutoScaleDropEquipmentLootByPlayerCount.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
-            AutoScaleDropMiscellanyLootByPlayerCount.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
-            AutoScaleTriggerConsumableLootByPlayerCount.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
-            AutoScaleTriggerEquipmentLootByPlayerCount.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
-            AutoScaleTriggerMiscellanyLootByPlayerCount.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
+            EnableLootMultiplicator.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged(EnableLootMultiplicator));
+            AutoScaleMapConsumableLootByPlayerCount.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged(AutoScaleMapConsumableLootByPlayerCount));
+            AutoScaleMapEquipmentLootByPlayerCount.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged(AutoScaleMapEquipmentLootByPlayerCount));
+            AutoScaleMapMiscellanyLootByPlayerCount.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged(AutoScaleMapMiscellanyLootByPlayerCount));
+            AutoScaleDropConsumableLootByPlayerCount.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged(AutoScaleDropConsumableLootByPlayerCount));
+            AutoScaleDropEquipmentLootByPlayerCount.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged(AutoScaleDropEquipmentLootByPlayerCount));
+            AutoScaleDropMiscellanyLootByPlayerCount.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged(AutoScaleDropMiscellanyLootByPlayerCount));
+            AutoScaleTriggerConsumableLootByPlayerCount.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged(AutoScaleTriggerConsumableLootByPlayerCount));
+            AutoScaleTriggerEquipmentLootByPlayerCount.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged(AutoScaleTriggerEquipmentLootByPlayerCount));
+            AutoScaleTriggerMiscellanyLootByPlayerCount.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged(AutoScaleTriggerMiscellanyLootByPlayerCount));
 
             MimicSpawnMultiplier.OnEntryValueChanged.Subscribe((_, value) => OnSpawnMultiplierChanged(logger, value, MimicSpawnMultiplier));
             BossSpawnMultiplier.OnEntryValueChanged.Subscribe((_, value) => OnSpawnMultiplierChanged(logger, value, BossSpawnMultiplier));
@@ -937,18 +941,18 @@ namespace MimesisPlayerEnhancement
             TriggerEquipmentLootMultiplier.OnEntryValueChanged.Subscribe((_, value) => OnSpawnMultiplierChanged(logger, value, TriggerEquipmentLootMultiplier));
             TriggerMiscellanyLootMultiplier.OnEntryValueChanged.Subscribe((_, value) => OnSpawnMultiplierChanged(logger, value, TriggerMiscellanyLootMultiplier));
             LootItemFilterMode.OnEntryValueChanged.Subscribe((_, value) => OnLootItemFilterModeChanged(logger, value));
-            LootAllowlist.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
-            LootBlocklist.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
+            LootAllowlist.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged(LootAllowlist));
+            LootBlocklist.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged(LootBlocklist));
             ConvertFakeActorDyingDropChancePercent.OnEntryValueChanged.Subscribe((_, value) =>
                 OnFakeActorDyingDropChancePercentChanged(logger, value));
 
-            EnableMoneyMultiplier.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
-            AutoScaleStartupMoneyByPlayerCount.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
-            AutoScaleRoundGoalMoneyByPlayerCount.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
-            AutoScaleScrapSellValueByPlayerCount.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
-            AutoScaleShopBuyPriceByPlayerCount.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
-            AutoScaleShopItemsByPlayerCount.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
-            AutoScaleReinforcePriceByPlayerCount.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
+            EnableMoneyMultiplier.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged(EnableMoneyMultiplier));
+            AutoScaleStartupMoneyByPlayerCount.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged(AutoScaleStartupMoneyByPlayerCount));
+            AutoScaleRoundGoalMoneyByPlayerCount.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged(AutoScaleRoundGoalMoneyByPlayerCount));
+            AutoScaleScrapSellValueByPlayerCount.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged(AutoScaleScrapSellValueByPlayerCount));
+            AutoScaleShopBuyPriceByPlayerCount.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged(AutoScaleShopBuyPriceByPlayerCount));
+            AutoScaleShopItemsByPlayerCount.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged(AutoScaleShopItemsByPlayerCount));
+            AutoScaleReinforcePriceByPlayerCount.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged(AutoScaleReinforcePriceByPlayerCount));
 
             StartupMoneyMultiplier.OnEntryValueChanged.Subscribe((_, value) => OnSpawnMultiplierChanged(logger, value, StartupMoneyMultiplier));
             RoundGoalMoneyMultiplier.OnEntryValueChanged.Subscribe((_, value) => OnSpawnMultiplierChanged(logger, value, RoundGoalMoneyMultiplier));
@@ -960,7 +964,7 @@ namespace MimesisPlayerEnhancement
             ShopDiscountChancePercent.OnEntryValueChanged.Subscribe((_, value) => OnShopDiscountPercentChanged(logger, value, ShopDiscountChancePercent));
             ReinforcePriceMultiplier.OnEntryValueChanged.Subscribe((_, value) => OnSpawnMultiplierChanged(logger, value, ReinforcePriceMultiplier));
 
-            EnableDungeonTime.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
+            EnableDungeonTime.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged(EnableDungeonTime));
             DungeonTimeBaselinePlayerCount.OnEntryValueChanged.Subscribe((_, value) =>
             {
                 if (value < 1)
@@ -970,17 +974,17 @@ namespace MimesisPlayerEnhancement
                     return;
                 }
 
-                NotifyChanged();
+                NotifyChanged(DungeonTimeBaselinePlayerCount);
             });
             ExtraShiftSecondsPerPlayerAboveBaseline.OnEntryValueChanged.Subscribe((_, value) =>
                 OnExtraShiftSecondsPerPlayerChanged(logger, value));
 
-            EnableRoomEntryDelay.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
+            EnableRoomEntryDelay.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged(EnableRoomEntryDelay));
             RoomEntryDelayMultiplier.OnEntryValueChanged.Subscribe((_, value) =>
                 OnRoomEntryDelayMultiplierChanged(logger, value));
 
-            EnableMimicTuning.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
-            RandomizeMimicPossessionDuration.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
+            EnableMimicTuning.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged(EnableMimicTuning));
+            RandomizeMimicPossessionDuration.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged(RandomizeMimicPossessionDuration));
             MimicPossessionMinTimeSeconds.OnEntryValueChanged.Subscribe((_, value) =>
                 OnMimicPossessionDurationSecondsChanged(logger, value, MimicPossessionMinTimeSeconds));
             MimicPossessionMaxTimeSeconds.OnEntryValueChanged.Subscribe((_, value) =>
@@ -988,7 +992,7 @@ namespace MimesisPlayerEnhancement
             MimicPossessionCooltimeMultiplier.OnEntryValueChanged.Subscribe((_, value) =>
                 OnMimicPossessionCooltimeMultiplierChanged(logger, value));
 
-            EnablePlayerTuning.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
+            EnablePlayerTuning.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged(EnablePlayerTuning));
             MoveSpeedMultiplier.OnEntryValueChanged.Subscribe((_, value) =>
                 OnPlayerTuningMultiplierChanged(logger, value, MoveSpeedMultiplier));
             MaxStaminaMultiplier.OnEntryValueChanged.Subscribe((_, value) =>
@@ -1002,18 +1006,18 @@ namespace MimesisPlayerEnhancement
             MaxCarryWeightMultiplier.OnEntryValueChanged.Subscribe((_, value) =>
                 OnPlayerTuningMultiplierChanged(logger, value, MaxCarryWeightMultiplier));
 
-            EnableDungeonRandomizer.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
-            RandomizeDungeonPick.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
+            EnableDungeonRandomizer.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged(EnableDungeonRandomizer));
+            RandomizeDungeonPick.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged(RandomizeDungeonPick));
             DungeonPickPoolMode.OnEntryValueChanged.Subscribe((_, value) => OnDungeonPickPoolModeChanged(logger, value));
-            DungeonAllowlist.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
-            DungeonBlocklist.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
-            IgnoreDungeonExcludeList.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
-            RandomizeLayoutFlow.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
-            RandomizeMapVariant.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
-            RandomizeDungeonSeed.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
+            DungeonAllowlist.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged(DungeonAllowlist));
+            DungeonBlocklist.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged(DungeonBlocklist));
+            IgnoreDungeonExcludeList.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged(IgnoreDungeonExcludeList));
+            RandomizeLayoutFlow.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged(RandomizeLayoutFlow));
+            RandomizeMapVariant.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged(RandomizeMapVariant));
+            RandomizeDungeonSeed.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged(RandomizeDungeonSeed));
 
-            EnableWebDashboard.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
-            WebDashboardListenAddress.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
+            EnableWebDashboard.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged(EnableWebDashboard));
+            WebDashboardListenAddress.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged(WebDashboardListenAddress));
             WebDashboardListenPort.OnEntryValueChanged.Subscribe((_, value) =>
             {
                 if (value is < 1 or > 65535)
@@ -1023,10 +1027,10 @@ namespace MimesisPlayerEnhancement
                     return;
                 }
 
-                NotifyChanged();
+                NotifyChanged(WebDashboardListenPort);
             });
 
-            EnableDebugLogging.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged());
+            EnableDebugLogging.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged(EnableDebugLogging));
 
             RegisterFloatEntries();
             MigrateLegacyMapPlacedEncounterKeys(logger);
@@ -1059,7 +1063,7 @@ namespace MimesisPlayerEnhancement
         /// <summary>Notify listeners that runtime config changed without persisting global file.</summary>
         internal static void NotifyRuntimeChanged()
         {
-            NotifyChanged();
+            ModConfigRegistry.NotifyRuntimeChange();
         }
 
         /// <summary>Update a single preference by section and key. Validation runs through existing entry change handlers.</summary>
@@ -1071,7 +1075,7 @@ namespace MimesisPlayerEnhancement
         /// <summary>Called after MelonLoader reloads the config file from disk.</summary>
         internal static void NotifyFileReloaded()
         {
-            NotifyChanged();
+            ModConfigChangeTracker.NotifyFullReload();
         }
 
         public static void NormalizeSavedFloats()
@@ -1136,7 +1140,7 @@ namespace MimesisPlayerEnhancement
             }
 
             ModConfigFloatHelper.SanitizeEntry(ExtraShiftSecondsPerPlayerAboveBaseline);
-            NotifyChanged();
+            NotifyChanged(ExtraShiftSecondsPerPlayerAboveBaseline);
         }
 
         private static void OnRoomEntryDelayMultiplierChanged(MelonLogger.Instance logger, float value)
@@ -1158,7 +1162,7 @@ namespace MimesisPlayerEnhancement
             }
 
             ModConfigFloatHelper.SanitizeEntry(RoomEntryDelayMultiplier);
-            NotifyChanged();
+            NotifyChanged(RoomEntryDelayMultiplier);
         }
 
         private static void OnMimicPossessionDurationSecondsChanged(
@@ -1192,7 +1196,7 @@ namespace MimesisPlayerEnhancement
             }
 
             ModConfigFloatHelper.SanitizeEntry(entry);
-            NotifyChanged();
+            NotifyChanged(entry);
         }
 
         private static void OnMimicPossessionCooltimeMultiplierChanged(MelonLogger.Instance logger, float value)
@@ -1214,7 +1218,7 @@ namespace MimesisPlayerEnhancement
             }
 
             ModConfigFloatHelper.SanitizeEntry(MimicPossessionCooltimeMultiplier);
-            NotifyChanged();
+            NotifyChanged(MimicPossessionCooltimeMultiplier);
         }
 
         private static void MigrateLegacyMapPlacedEncounterKeys(MelonLogger.Instance logger)
@@ -1293,7 +1297,7 @@ namespace MimesisPlayerEnhancement
             }
 
             ModConfigFloatHelper.SanitizeEntry(entry);
-            NotifyChanged();
+            NotifyChanged(entry);
         }
 
         private static void OnMapPlacedEncounterMinPlayerDistanceChanged(MelonLogger.Instance logger, float value)
@@ -1306,7 +1310,7 @@ namespace MimesisPlayerEnhancement
             }
 
             ModConfigFloatHelper.SanitizeEntry(MapPlacedEncounterMinPlayerDistanceMeters);
-            NotifyChanged();
+            NotifyChanged(MapPlacedEncounterMinPlayerDistanceMeters);
         }
 
         private static void OnPlayerTuningMultiplierChanged(
@@ -1331,7 +1335,7 @@ namespace MimesisPlayerEnhancement
             }
 
             ModConfigFloatHelper.SanitizeEntry(entry);
-            NotifyChanged();
+            NotifyChanged(entry);
         }
 
         private static void OnSpawnMultiplierChanged(MelonLogger.Instance logger, float value, MelonPreferences_Entry<float> entry)
@@ -1344,7 +1348,7 @@ namespace MimesisPlayerEnhancement
             }
 
             ModConfigFloatHelper.SanitizeEntry(entry);
-            NotifyChanged();
+            NotifyChanged(entry);
         }
 
         private static void SanitizeShopDiscountPercents(MelonLogger.Instance logger)
@@ -1376,7 +1380,7 @@ namespace MimesisPlayerEnhancement
                 ShopDiscountMaxPercent.Value = ShopDiscountMinPercent.Value;
             }
 
-            NotifyChanged();
+            NotifyChanged(entry);
         }
 
         private static void OnDungeonPickPoolModeChanged(MelonLogger.Instance logger, string value)
@@ -1389,7 +1393,7 @@ namespace MimesisPlayerEnhancement
                 return;
             }
 
-            NotifyChanged();
+            NotifyChanged(DungeonPickPoolMode);
         }
 
         private static void OnFakeActorDyingDropChancePercentChanged(MelonLogger.Instance logger, int value)
@@ -1401,7 +1405,7 @@ namespace MimesisPlayerEnhancement
                 return;
             }
 
-            NotifyChanged();
+            NotifyChanged(ConvertFakeActorDyingDropChancePercent);
         }
 
         private static void OnLootItemFilterModeChanged(MelonLogger.Instance logger, string value)
@@ -1415,7 +1419,7 @@ namespace MimesisPlayerEnhancement
                 return;
             }
 
-            NotifyChanged();
+            NotifyChanged(LootItemFilterMode);
         }
 
 
@@ -1440,10 +1444,9 @@ namespace MimesisPlayerEnhancement
             return entry;
         }
 
-        private static void NotifyChanged()
+        private static void NotifyChanged(MelonPreferences_Entry entry)
         {
-            ModConfigRegistry.NotifyRuntimeChange();
-            Changed?.Invoke();
+            ModConfigChangeTracker.NotifyEntryChanged(entry);
         }
     }
 }

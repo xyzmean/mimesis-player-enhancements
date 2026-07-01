@@ -12,7 +12,11 @@ namespace MimesisPlayerEnhancement
     /// </summary>
     internal static class ModConfigRegistry
     {
+        internal const string MainSectionId = "MimesisPlayerEnhancement";
         internal const string WebDashboardSectionId = "MimesisPlayerEnhancement_WebDashboard";
+        internal const string StatisticsSectionId = "MimesisPlayerEnhancement_Statistics";
+        internal const string MoneyMultiplierSectionId = "MimesisPlayerEnhancement_MoneyMultiplier";
+        private const string SectionPrefix = "MimesisPlayerEnhancement_";
 
         private static readonly Dictionary<string, Dictionary<string, MelonPreferences_Entry>> EntriesBySection =
             new(StringComparer.OrdinalIgnoreCase);
@@ -172,6 +176,11 @@ namespace MimesisPlayerEnhancement
                 return false;
             }
 
+            if (BoxedValuesEqual(entry, parsed))
+            {
+                return true;
+            }
+
             try
             {
                 if (!TrySetBoxedValue(entry, parsed))
@@ -202,6 +211,37 @@ namespace MimesisPlayerEnhancement
         internal static void NotifyRuntimeChange()
         {
             Version++;
+        }
+
+        internal static bool TryGetFeatureModuleName(string sectionId, out string moduleName)
+        {
+            moduleName = "";
+            if (string.Equals(sectionId, MainSectionId, StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            if (!sectionId.StartsWith(SectionPrefix, StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            moduleName = sectionId.Substring(SectionPrefix.Length);
+            return moduleName.Length > 0;
+        }
+
+        internal static HashSet<string> GetAffectedModuleNames(ModConfigChangeInfo info)
+        {
+            HashSet<string> modules = new(StringComparer.Ordinal);
+            foreach (ModConfigKeyChange change in info.ChangedKeys)
+            {
+                if (TryGetFeatureModuleName(change.SectionId, out string moduleName))
+                {
+                    _ = modules.Add(moduleName);
+                }
+            }
+
+            return modules;
         }
 
         internal static bool TryGetFeatureToggleKey(string sectionId, out string key)
@@ -354,6 +394,37 @@ namespace MimesisPlayerEnhancement
             }
 
             return Convert.ToString(parsed, CultureInfo.InvariantCulture) ?? "";
+        }
+
+        private static bool BoxedValuesEqual(MelonPreferences_Entry entry, object? parsed)
+        {
+            object? current = entry.BoxedValue;
+            if (current == null && parsed == null)
+            {
+                return true;
+            }
+
+            if (current == null || parsed == null)
+            {
+                return false;
+            }
+
+            if (current.Equals(parsed))
+            {
+                return true;
+            }
+
+            if (current is float floatCurrent && parsed is float floatParsed)
+            {
+                return Math.Abs(floatCurrent - floatParsed) < 0.0001f;
+            }
+
+            if (current is double doubleCurrent && parsed is double doubleParsed)
+            {
+                return Math.Abs(doubleCurrent - doubleParsed) < 0.0001d;
+            }
+
+            return false;
         }
 
         private static bool TrySetBoxedValue(MelonPreferences_Entry entry, object? parsed)
