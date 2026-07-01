@@ -512,21 +512,70 @@ document.addEventListener('alpine:init', () => {
       return !this.playerBlindMode || p.isLocal;
     },
 
-    overviewPlayers() {
-      const list = [...(this.players || [])];
+    isPlayerConnected(p) {
+      return !!p.playerUid;
+    },
+
+    sortPlayersByName(a, b) {
+      return String(a.displayName || '').localeCompare(String(b.displayName || ''), undefined, {
+        sensitivity: 'base',
+      });
+    },
+
+    sortConnectedPlayers(list) {
       list.sort((a, b) => {
-        const tier = (p) => {
-          if (!p.playerUid) return 2;
-          return p.isAlive ? 0 : 1;
-        };
+        const tier = (p) => (p.isAlive ? 0 : 1);
         const tierCmp = tier(a) - tier(b);
         if (tierCmp !== 0) return tierCmp;
         if (a.isHost !== b.isHost) return a.isHost ? -1 : 1;
-        return String(a.displayName || '').localeCompare(String(b.displayName || ''), undefined, {
-          sensitivity: 'base',
-        });
+        return this.sortPlayersByName(a, b);
       });
       return list;
+    },
+
+    overviewPlayers() {
+      return this.sortConnectedPlayers([...(this.players || [])]);
+    },
+
+    connectedOverviewPlayers() {
+      return this.sortConnectedPlayers(
+        (this.players || []).filter((p) => this.isPlayerConnected(p)),
+      );
+    },
+
+    storedOverviewPlayers() {
+      const list = (this.players || []).filter((p) => !this.isPlayerConnected(p));
+      list.sort((a, b) => this.sortPlayersByName(a, b));
+      return list;
+    },
+
+    playerRowStateClass(p) {
+      if (!this.showPlayerAliveState(p)) return '';
+      return p.isAlive ? 'alive' : 'dead';
+    },
+
+    playerDetailLines(p) {
+      const parts = [];
+      if (this.showPlayerSessionStats(p)) {
+        const session = this.sessionLine(p);
+        if (session) parts.push(session);
+      }
+      return {
+        connection: this.connectionMeta(p),
+        stats: parts.join(' · '),
+      };
+    },
+
+    vitalsPercent(p) {
+      if (p.health == null) return null;
+      const healthPercent = p.maxHealth > 0
+        ? (Number(p.health) / Number(p.maxHealth)) * 100
+        : null;
+      const toxic = p.toxicPercent != null ? Number(p.toxicPercent) : null;
+      return {
+        health: healthPercent,
+        toxic: Number.isFinite(toxic) ? toxic : null,
+      };
     },
 
     showPlayerSessionStats(p) {
