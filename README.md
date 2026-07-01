@@ -184,53 +184,32 @@ Upgrading from older configs: legacy `FixedSpawnRespawn*` keys are copied once a
 
 ### Loot Multiplicator — `[MimesisPlayerEnhancement_LootMultiplicator]`
 
-Host-only. Each setting is a **source × item type** pair. The multiplier (`1` = vanilla, `2` = double) stacks with the matching **Auto Scale … By Player Count** toggle when player-count scaling is enabled.
+Host-only. Scale how much loot appears on the map and from enemy deaths, and optionally convert mimic fake drops to real pickup loot. Each multiplier (`1` = vanilla, `2` = double) stacks with its **Auto Scale … By Player Count** toggle when player-count scaling is enabled (`players / 4` above 4 players).
 
-**Loot sources** — where the item comes from:
+**Breaking change:** Per-item-type keys (`MapConsumableLootMultiplier`, `Trigger*`, etc.) were removed. Set `MapLootMultiplier` and `DropLootMultiplier` instead; old TOML keys are ignored.
 
-| Prefix | Source | What it affects |
-|--------|--------|-----------------|
-| **Map** | Map spawn points | Loot placed when a dungeon room loads. **Fixed** loot (specific item at a marker): activates unused loot markers of the same item, scales consumable stack size and `MaxRespawnCount`, and may respawn at the same marker when picked up (uses `MapPlacedEncounterDelay*` and `MapPlacedEncounterMinPlayerDistanceMeters` from Spawn Scaling). **Random** loot pools (weighted mix from the dungeon table): scales the dungeon misc budget so more markers fill with **random picks from the pool** — not clones of the same item. |
-| **Drop** | Enemy death drops | Items from enemy death tables when a monster is killed, plus inventory items dropped on death. Adds extra **weighted re-rolls** from the same drop table (more separate drops, not same-item clones). Consumable stack count is also scaled when the item spawns (`ActorDying`). Mimics often drop **fake** decoy items from inventory — see `ConvertFakeActorDyingDropChancePercent`. Monster drop-table loot is already real; many monsters have `drop_id = 0` (no table drops). |
-| **Trigger** | Map events / trigger volumes | Items spawned by map events (`EventAction`). Adds extra **weighted picks** from the event item table. Consumable stack count is scaled when the item appears. |
+**Loot sources:**
 
-**Item types** — from the game's item data (`Consumable`, `Equipment`, `Miscellany`):
+| Source | What it affects |
+|--------|-----------------|
+| **Map** | Loot placed when a dungeon room loads. **Fixed** loot (specific item at a marker): activates unused loot markers of the same item, scales consumable stack size and `MaxRespawnCount`, and may respawn at the same marker when picked up (uses `MapPlacedEncounterDelay*` and `MapPlacedEncounterMinPlayerDistanceMeters` from Spawn Scaling). **Random** loot pools: scales the dungeon misc budget so more markers fill with weighted random picks — not clones of the same item. |
+| **Drop** | Items from enemy death tables when a monster is killed, plus inventory items dropped on death. Adds extra **weighted re-rolls** from the same drop table. Consumable stack count is also scaled when the item spawns (`ActorDying`). Mimics often drop **fake** decoy items from inventory — see `ConvertFakeActorDyingDropChancePercent`. Monster drop-table loot is already real. |
 
-| Type | Examples |
-|------|----------|
-| **Consumable** | Ammo, healing, and other used-up items |
-| **Equipment** | Tools, weapons, and gear you equip |
-| **Miscellany** | Other pickups — keys, misc objects, etc. Unknown items fall back to Miscellany. |
-
-Each source has three multiplier + auto-scale pairs (Consumable, Equipment, Miscellany):
+Map events / trigger spawns are **not** scaled (vanilla).
 
 | Key | Type | Default | What it does |
 |-----|------|---------|--------------|
 | `EnableLootMultiplicator` | bool | `false` | Master toggle for all loot scaling below. |
-| `AutoScaleMapConsumableLootByPlayerCount` | bool | `true` | Player-count scaling for map consumables (see tables above). |
-| `MapConsumableLootMultiplier` | float | `1.0` | Base multiplier for map consumables. Minimum is `0`. |
-| `AutoScaleMapEquipmentLootByPlayerCount` | bool | `true` | Player-count scaling for map equipment. |
-| `MapEquipmentLootMultiplier` | float | `1.0` | Base multiplier for map equipment. Minimum is `0`. |
-| `AutoScaleMapMiscellanyLootByPlayerCount` | bool | `true` | Player-count scaling for map miscellany. |
-| `MapMiscellanyLootMultiplier` | float | `1.0` | Base multiplier for map miscellany. Minimum is `0`. |
-| `AutoScaleDropConsumableLootByPlayerCount` | bool | `true` | Player-count scaling for consumables from enemy deaths. |
-| `DropConsumableLootMultiplier` | float | `1.0` | Base multiplier for consumable death drops. Minimum is `0`. |
-| `AutoScaleDropEquipmentLootByPlayerCount` | bool | `true` | Player-count scaling for equipment from enemy deaths. |
-| `DropEquipmentLootMultiplier` | float | `1.0` | Base multiplier for equipment death drops. Minimum is `0`. |
-| `AutoScaleDropMiscellanyLootByPlayerCount` | bool | `true` | Player-count scaling for miscellany from enemy deaths. |
-| `DropMiscellanyLootMultiplier` | float | `1.0` | Base multiplier for miscellany death drops. Minimum is `0`. |
-| `AutoScaleTriggerConsumableLootByPlayerCount` | bool | `true` | Player-count scaling for consumables from map events/triggers. |
-| `TriggerConsumableLootMultiplier` | float | `1.0` | Base multiplier for event/trigger consumables. Minimum is `0`. |
-| `AutoScaleTriggerEquipmentLootByPlayerCount` | bool | `true` | Player-count scaling for equipment from map events/triggers. |
-| `TriggerEquipmentLootMultiplier` | float | `1.0` | Base multiplier for event/trigger equipment. Minimum is `0`. |
-| `AutoScaleTriggerMiscellanyLootByPlayerCount` | bool | `true` | Player-count scaling for miscellany from map events/triggers. |
-| `TriggerMiscellanyLootMultiplier` | float | `1.0` | Base multiplier for event/trigger miscellany. Minimum is `0`. |
+| `AutoScaleMapLootByPlayerCount` | bool | `true` | Player-count scaling for map loot. |
+| `MapLootMultiplier` | float | `1.0` | Multiplier for all map-placed pickup loot. Minimum is `0`. |
+| `AutoScaleDropLootByPlayerCount` | bool | `true` | Player-count scaling for enemy death drops. |
+| `DropLootMultiplier` | float | `1.0` | Multiplier for enemy death drops. Minimum is `0`. |
 | `LootItemFilterMode` | string | `All` | `All`, `AllowlistOnly`, or `BlocklistOnly` — restrict which item master IDs are scaled. |
 | `LootAllowlist` | string | `""` | Comma-separated item master IDs (e.g. `12345,67890`). Used when `LootItemFilterMode` is `AllowlistOnly`. See [docs/LOOT_ITEM_IDS.md](docs/LOOT_ITEM_IDS.md) for all IDs. |
 | `LootBlocklist` | string | `""` | Comma-separated item master IDs to exclude. Used when `LootItemFilterMode` is `BlocklistOnly`. See [docs/LOOT_ITEM_IDS.md](docs/LOOT_ITEM_IDS.md) for all IDs. |
 | `ConvertFakeActorDyingDropChancePercent` | int | `30` | Chance (0–100) that fake items dropped on enemy death (`ActorDying`, e.g. mimic inventory decoys) become real pickup loot. `0` = vanilla (vanish on grab), `100` = always real. |
 
-Does **not** scale: items you release from inventory, shop purchases, admin/cheat spawns, creature/monster spawns, or other spawn reasons (e.g. `Release`, `Buying`, `Admin`, `Skill`). Map loot budgets and spawn data are scaled once at room load; drop/trigger extras use table re-rolls at spawn time.
+Does **not** scale: map event/trigger spawns, items you release from inventory, shop purchases, admin/cheat spawns, creature/monster spawns, or other spawn reasons (e.g. `Release`, `Buying`, `Admin`, `Skill`). Map loot budgets and spawn data are scaled once at room load; drop extras use table re-rolls at spawn time.
 
 ### Money Multiplier — `[MimesisPlayerEnhancement_MoneyMultiplier]`
 
@@ -407,7 +386,9 @@ MimicSpawnMultiplier = 1.0
 
 [MimesisPlayerEnhancement_LootMultiplicator]
 EnableLootMultiplicator = false
-MapConsumableLootMultiplier = 1.0
+MapLootMultiplier = 1.0
+DropLootMultiplier = 1.0
+ConvertFakeActorDyingDropChancePercent = 30
 # … other loot keys …
 
 [MimesisPlayerEnhancement_MoneyMultiplier]

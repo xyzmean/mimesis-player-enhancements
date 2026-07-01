@@ -7,23 +7,12 @@ namespace MimesisPlayerEnhancement.Features.LootMultiplicator
     {
         internal static bool IsAutoScaleEnabled(LootSource source, ItemType itemType)
         {
-            return (source, ItemTypeLookup.NormalizeItemType(itemType)) switch
+            _ = itemType;
+            return source switch
             {
-                (LootSource.Map, var type) when type.Equals(ItemType.Consumable) =>
-                    ModConfig.AutoScaleMapConsumableLootByPlayerCount.Value,
-                (LootSource.Map, var type) when type.Equals(ItemType.Equipment) =>
-                    ModConfig.AutoScaleMapEquipmentLootByPlayerCount.Value,
-                (LootSource.Map, _) => ModConfig.AutoScaleMapMiscellanyLootByPlayerCount.Value,
-                (LootSource.Drop, var type) when type.Equals(ItemType.Consumable) =>
-                    ModConfig.AutoScaleDropConsumableLootByPlayerCount.Value,
-                (LootSource.Drop, var type) when type.Equals(ItemType.Equipment) =>
-                    ModConfig.AutoScaleDropEquipmentLootByPlayerCount.Value,
-                (LootSource.Drop, _) => ModConfig.AutoScaleDropMiscellanyLootByPlayerCount.Value,
-                (LootSource.Trigger, var type) when type.Equals(ItemType.Consumable) =>
-                    ModConfig.AutoScaleTriggerConsumableLootByPlayerCount.Value,
-                (LootSource.Trigger, var type) when type.Equals(ItemType.Equipment) =>
-                    ModConfig.AutoScaleTriggerEquipmentLootByPlayerCount.Value,
-                _ => ModConfig.AutoScaleTriggerMiscellanyLootByPlayerCount.Value,
+                LootSource.Map => ModConfig.AutoScaleMapLootByPlayerCount.Value,
+                LootSource.Drop => ModConfig.AutoScaleDropLootByPlayerCount.Value,
+                _ => false,
             };
         }
 
@@ -34,23 +23,12 @@ namespace MimesisPlayerEnhancement.Features.LootMultiplicator
 
         internal static float GetBaseMultiplier(LootSource source, ItemType itemType)
         {
-            return (source, ItemTypeLookup.NormalizeItemType(itemType)) switch
+            _ = itemType;
+            return source switch
             {
-                (LootSource.Map, var type) when type.Equals(ItemType.Consumable) =>
-                    ModConfig.MapConsumableLootMultiplier.Value,
-                (LootSource.Map, var type) when type.Equals(ItemType.Equipment) =>
-                    ModConfig.MapEquipmentLootMultiplier.Value,
-                (LootSource.Map, _) => ModConfig.MapMiscellanyLootMultiplier.Value,
-                (LootSource.Drop, var type) when type.Equals(ItemType.Consumable) =>
-                    ModConfig.DropConsumableLootMultiplier.Value,
-                (LootSource.Drop, var type) when type.Equals(ItemType.Equipment) =>
-                    ModConfig.DropEquipmentLootMultiplier.Value,
-                (LootSource.Drop, _) => ModConfig.DropMiscellanyLootMultiplier.Value,
-                (LootSource.Trigger, var type) when type.Equals(ItemType.Consumable) =>
-                    ModConfig.TriggerConsumableLootMultiplier.Value,
-                (LootSource.Trigger, var type) when type.Equals(ItemType.Equipment) =>
-                    ModConfig.TriggerEquipmentLootMultiplier.Value,
-                _ => ModConfig.TriggerMiscellanyLootMultiplier.Value,
+                LootSource.Map => ModConfig.MapLootMultiplier.Value,
+                LootSource.Drop => ModConfig.DropLootMultiplier.Value,
+                _ => FeatureToggleGate.NeutralMultiplier,
             };
         }
 
@@ -66,6 +44,11 @@ namespace MimesisPlayerEnhancement.Features.LootMultiplicator
             int masterId)
         {
             if (!ModConfig.EnableLootMultiplicator.Value)
+            {
+                return FeatureToggleGate.NeutralMultiplier;
+            }
+
+            if (source.Equals(LootSource.Trigger))
             {
                 return FeatureToggleGate.NeutralMultiplier;
             }

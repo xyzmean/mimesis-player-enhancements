@@ -48,17 +48,15 @@ namespace MimesisPlayerEnhancement.Features.PlayerAnnouncements
                 return;
             }
 
-            float mapLoot = AverageNonDefaultMultiplier(
-                LootMultiplierResolver.GetEffectiveMultiplier(LootSource.Map, ItemType.Consumable, playerCount),
-                LootMultiplierResolver.GetEffectiveMultiplier(LootSource.Map, ItemType.Equipment, playerCount),
-                LootMultiplierResolver.GetEffectiveMultiplier(LootSource.Map, ItemType.Miscellany, playerCount));
-            AppendMultiplier(parts, "map loot", mapLoot);
+            AppendMultiplier(
+                parts,
+                "map loot",
+                LootMultiplierResolver.GetEffectiveMultiplier(LootSource.Map, ItemType.Consumable, playerCount));
 
-            float dropLoot = AverageNonDefaultMultiplier(
-                LootMultiplierResolver.GetEffectiveMultiplier(LootSource.Drop, ItemType.Consumable, playerCount),
-                LootMultiplierResolver.GetEffectiveMultiplier(LootSource.Drop, ItemType.Equipment, playerCount),
-                LootMultiplierResolver.GetEffectiveMultiplier(LootSource.Drop, ItemType.Miscellany, playerCount));
-            AppendMultiplier(parts, "drop loot", dropLoot);
+            AppendMultiplier(
+                parts,
+                "drop loot",
+                LootMultiplierResolver.GetEffectiveMultiplier(LootSource.Drop, ItemType.Consumable, playerCount));
         }
 
         private static void AppendMoneySummary(List<string> parts, int playerCount)
@@ -112,24 +110,6 @@ namespace MimesisPlayerEnhancement.Features.PlayerAnnouncements
             }
 
             parts.Add($"{label} {FormatMultiplier(multiplier)}");
-        }
-
-        private static float AverageNonDefaultMultiplier(params float[] multipliers)
-        {
-            float sum = 0f;
-            int count = 0;
-            foreach (float multiplier in multipliers)
-            {
-                if (IsDefaultMultiplier(multiplier))
-                {
-                    continue;
-                }
-
-                sum += multiplier;
-                count++;
-            }
-
-            return count == 0 ? 1f : sum / count;
         }
 
         private static bool IsDefaultMultiplier(float multiplier)

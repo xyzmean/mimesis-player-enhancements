@@ -51,11 +51,6 @@ namespace MimesisPlayerEnhancement.Features.LootMultiplicator
             return AccessTools.Method(typeof(IVroom), "ExecuteLootingObjectSpawn", [typeof(SpawnedActorData)]);
         }
 
-        private static MethodBase? ResolveRunEventActionInternalMethod()
-        {
-            return AccessTools.Method(typeof(IVroom), "RunEventActionInternal", [typeof(IGameAction), typeof(List<IGameActionParam>)]);
-        }
-
         private static void LogPatchAudit(HarmonyLib.Harmony harmony)
         {
             HarmonyPatchHelper.LogPatchAudit(Feature, harmony,
@@ -63,7 +58,6 @@ namespace MimesisPlayerEnhancement.Features.LootMultiplicator
                 ("InitSpawn/DungeonRoom", AccessTools.Method(typeof(DungeonRoom), "InitSpawn")),
                 ("ManageSpawnData/DungeonRoom", AccessTools.Method(typeof(DungeonRoom), "ManageSpawnData")),
                 ("GetDropItemList/ItemDropInfo", AccessTools.Method(typeof(ItemDropInfo), "GetDropItemList")),
-                ("RunEventActionInternal/IVroom", ResolveRunEventActionInternalMethod()),
                 ("ExecuteLootingObjectSpawn/IVroom", ResolveExecuteLootingObjectSpawnMethod()),
                 ("SpawnLootingObject/IVroom", ResolveSpawnLootingObjectMethod()),
                 ("OnActorDead/SpawnedActorData", AccessTools.Method(typeof(SpawnedActorData), "OnActorDead")),
@@ -183,44 +177,6 @@ namespace MimesisPlayerEnhancement.Features.LootMultiplicator
                 catch (Exception ex)
                 {
                     ModLog.Warn(Feature, $"GetDropItemList postfix failed — {ex.Message}");
-                }
-            }
-        }
-
-        [HarmonyPatch]
-        public static class IVroomRunEventActionInternalPatch
-        {
-            public static MethodBase? TargetMethod()
-            {
-                return ResolveRunEventActionInternalMethod();
-            }
-
-            [HarmonyPostfix]
-            public static void Postfix(
-                IVroom __instance,
-                IGameAction action,
-                List<IGameActionParam> paramList,
-                bool __result)
-            {
-                if (!__result || action is not GameActionSpawnItem spawnAction)
-                {
-                    return;
-                }
-
-                try
-                {
-                    GameActionParamPosition? positionParam =
-                        GameActionParamHelper.FindParam<GameActionParamPosition>(paramList);
-                    if (positionParam == null)
-                    {
-                        return;
-                    }
-
-                    TriggerLootTableScaler.TrySpawnExtraItems(__instance, spawnAction, positionParam);
-                }
-                catch (Exception ex)
-                {
-                    ModLog.Warn(Feature, $"RunEventActionInternal trigger loot scaling failed — {ex.Message}");
                 }
             }
         }

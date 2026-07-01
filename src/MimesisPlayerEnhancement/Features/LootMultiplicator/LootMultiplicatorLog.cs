@@ -15,15 +15,8 @@ namespace MimesisPlayerEnhancement.Features.LootMultiplicator
             ModLog.Info(
                 Feature,
                 $"Loot scaling applied — players={playerCount} (shared playerScale={sharedPlayerScale:0.##}× when auto enabled), " +
-                $"mapConsumable={ModConfig.MapConsumableLootMultiplier.Value:0.##}× auto={ModConfig.AutoScaleMapConsumableLootByPlayerCount.Value}, " +
-                $"mapEquipment={ModConfig.MapEquipmentLootMultiplier.Value:0.##}× auto={ModConfig.AutoScaleMapEquipmentLootByPlayerCount.Value}, " +
-                $"mapMiscellany={ModConfig.MapMiscellanyLootMultiplier.Value:0.##}× auto={ModConfig.AutoScaleMapMiscellanyLootByPlayerCount.Value}, " +
-                $"dropConsumable={ModConfig.DropConsumableLootMultiplier.Value:0.##}× auto={ModConfig.AutoScaleDropConsumableLootByPlayerCount.Value}, " +
-                $"dropEquipment={ModConfig.DropEquipmentLootMultiplier.Value:0.##}× auto={ModConfig.AutoScaleDropEquipmentLootByPlayerCount.Value}, " +
-                $"dropMiscellany={ModConfig.DropMiscellanyLootMultiplier.Value:0.##}× auto={ModConfig.AutoScaleDropMiscellanyLootByPlayerCount.Value}, " +
-                $"triggerConsumable={ModConfig.TriggerConsumableLootMultiplier.Value:0.##}× auto={ModConfig.AutoScaleTriggerConsumableLootByPlayerCount.Value}, " +
-                $"triggerEquipment={ModConfig.TriggerEquipmentLootMultiplier.Value:0.##}× auto={ModConfig.AutoScaleTriggerEquipmentLootByPlayerCount.Value}, " +
-                $"triggerMiscellany={ModConfig.TriggerMiscellanyLootMultiplier.Value:0.##}× auto={ModConfig.AutoScaleTriggerMiscellanyLootByPlayerCount.Value}");
+                $"mapLoot={ModConfig.MapLootMultiplier.Value:0.##}× auto={ModConfig.AutoScaleMapLootByPlayerCount.Value}, " +
+                $"dropLoot={ModConfig.DropLootMultiplier.Value:0.##}× auto={ModConfig.AutoScaleDropLootByPlayerCount.Value}");
         }
 
         internal static void InfoRuntimeScaled(

@@ -69,24 +69,10 @@ namespace MimesisPlayerEnhancement
         public static MelonPreferences_Entry<float> OtherSpawnMultiplier { get; private set; } = null!;
 
         public static MelonPreferences_Entry<bool> EnableLootMultiplicator { get; private set; } = null!;
-        public static MelonPreferences_Entry<bool> AutoScaleMapConsumableLootByPlayerCount { get; private set; } = null!;
-        public static MelonPreferences_Entry<float> MapConsumableLootMultiplier { get; private set; } = null!;
-        public static MelonPreferences_Entry<bool> AutoScaleMapEquipmentLootByPlayerCount { get; private set; } = null!;
-        public static MelonPreferences_Entry<float> MapEquipmentLootMultiplier { get; private set; } = null!;
-        public static MelonPreferences_Entry<bool> AutoScaleMapMiscellanyLootByPlayerCount { get; private set; } = null!;
-        public static MelonPreferences_Entry<float> MapMiscellanyLootMultiplier { get; private set; } = null!;
-        public static MelonPreferences_Entry<bool> AutoScaleDropConsumableLootByPlayerCount { get; private set; } = null!;
-        public static MelonPreferences_Entry<float> DropConsumableLootMultiplier { get; private set; } = null!;
-        public static MelonPreferences_Entry<bool> AutoScaleDropEquipmentLootByPlayerCount { get; private set; } = null!;
-        public static MelonPreferences_Entry<float> DropEquipmentLootMultiplier { get; private set; } = null!;
-        public static MelonPreferences_Entry<bool> AutoScaleDropMiscellanyLootByPlayerCount { get; private set; } = null!;
-        public static MelonPreferences_Entry<float> DropMiscellanyLootMultiplier { get; private set; } = null!;
-        public static MelonPreferences_Entry<bool> AutoScaleTriggerConsumableLootByPlayerCount { get; private set; } = null!;
-        public static MelonPreferences_Entry<float> TriggerConsumableLootMultiplier { get; private set; } = null!;
-        public static MelonPreferences_Entry<bool> AutoScaleTriggerEquipmentLootByPlayerCount { get; private set; } = null!;
-        public static MelonPreferences_Entry<float> TriggerEquipmentLootMultiplier { get; private set; } = null!;
-        public static MelonPreferences_Entry<bool> AutoScaleTriggerMiscellanyLootByPlayerCount { get; private set; } = null!;
-        public static MelonPreferences_Entry<float> TriggerMiscellanyLootMultiplier { get; private set; } = null!;
+        public static MelonPreferences_Entry<bool> AutoScaleMapLootByPlayerCount { get; private set; } = null!;
+        public static MelonPreferences_Entry<float> MapLootMultiplier { get; private set; } = null!;
+        public static MelonPreferences_Entry<bool> AutoScaleDropLootByPlayerCount { get; private set; } = null!;
+        public static MelonPreferences_Entry<float> DropLootMultiplier { get; private set; } = null!;
         public static MelonPreferences_Entry<string> LootItemFilterMode { get; private set; } = null!;
         public static MelonPreferences_Entry<string> LootAllowlist { get; private set; } = null!;
         public static MelonPreferences_Entry<string> LootBlocklist { get; private set; } = null!;
@@ -385,115 +371,31 @@ namespace MimesisPlayerEnhancement
                 "EnableLootMultiplicator",
                 false,
                 "Enable Loot Multiplicator",
-                "Scale how much loot appears in a run. Host only. See each Map/Drop/Trigger entry below for what it affects.");
+                "Scale map loot and enemy death drops, and optionally convert mimic fake drops to real loot. Host only.");
 
-            AutoScaleMapConsumableLootByPlayerCount = CreateTrackedEntry(_lootMultiplicatorCategory,
-                "AutoScaleMapConsumableLootByPlayerCount",
+            AutoScaleMapLootByPlayerCount = CreateTrackedEntry(_lootMultiplicatorCategory,
+                "AutoScaleMapLootByPlayerCount",
                 true,
-                "Auto Scale Map Consumable Loot By Player Count",
-                "Map loot = items placed on the dungeon map (spawn markers, shelves, floors). Consumables = ammo, healing, and other used-up items. When enabled, multiply by player count / 4 above 4 players (stacks with MapConsumableLootMultiplier).");
+                "Auto Scale Map Loot By Player Count",
+                "Map loot = items placed on the dungeon map (spawn markers, shelves, floors). When enabled, multiply by player count / 4 above 4 players (stacks with MapLootMultiplier).");
 
-            MapConsumableLootMultiplier = CreateTrackedEntry(_lootMultiplicatorCategory,
-                "MapConsumableLootMultiplier",
+            MapLootMultiplier = CreateTrackedEntry(_lootMultiplicatorCategory,
+                "MapLootMultiplier",
                 1f,
-                "Map Consumable Loot Multiplier",
-                "Multiplier for consumables on map spawn points: stack size on fixed markers and respawn count at room load. Random pools scale via dungeon misc budget. 1 = vanilla, 2 = double.");
+                "Map Loot Multiplier",
+                "Multiplier for all map-placed pickup loot: fixed markers, respawn counts, and random pool budgets. 1 = vanilla, 2 = double.");
 
-            AutoScaleMapEquipmentLootByPlayerCount = CreateTrackedEntry(_lootMultiplicatorCategory,
-                "AutoScaleMapEquipmentLootByPlayerCount",
+            AutoScaleDropLootByPlayerCount = CreateTrackedEntry(_lootMultiplicatorCategory,
+                "AutoScaleDropLootByPlayerCount",
                 true,
-                "Auto Scale Map Equipment Loot By Player Count",
-                "Map loot = items placed on the dungeon map. Equipment = tools, weapons, and gear you equip. When enabled, multiply by player count / 4 above 4 players (stacks with MapEquipmentLootMultiplier).");
+                "Auto Scale Drop Loot By Player Count",
+                "Drop loot = items from enemy death tables when killed. When enabled, multiply by player count / 4 above 4 players (stacks with DropLootMultiplier).");
 
-            MapEquipmentLootMultiplier = CreateTrackedEntry(_lootMultiplicatorCategory,
-                "MapEquipmentLootMultiplier",
+            DropLootMultiplier = CreateTrackedEntry(_lootMultiplicatorCategory,
+                "DropLootMultiplier",
                 1f,
-                "Map Equipment Loot Multiplier",
-                "Multiplier for equipment on map spawn points: respawn count at room load and fixed-loot marker activation. Random pools scale via dungeon misc budget. 1 = vanilla, 2 = double.");
-
-            AutoScaleMapMiscellanyLootByPlayerCount = CreateTrackedEntry(_lootMultiplicatorCategory,
-                "AutoScaleMapMiscellanyLootByPlayerCount",
-                true,
-                "Auto Scale Map Miscellany Loot By Player Count",
-                "Map loot = items placed on the dungeon map. Miscellany = other pickup items (keys, misc objects). When enabled, multiply by player count / 4 above 4 players (stacks with MapMiscellanyLootMultiplier).");
-
-            MapMiscellanyLootMultiplier = CreateTrackedEntry(_lootMultiplicatorCategory,
-                "MapMiscellanyLootMultiplier",
-                1f,
-                "Map Miscellany Loot Multiplier",
-                "Multiplier for miscellany on map spawn points: respawn count at room load and fixed-loot marker activation. Random pools scale via dungeon misc budget. 1 = vanilla, 2 = double.");
-
-            AutoScaleDropConsumableLootByPlayerCount = CreateTrackedEntry(_lootMultiplicatorCategory,
-                "AutoScaleDropConsumableLootByPlayerCount",
-                true,
-                "Auto Scale Drop Consumable Loot By Player Count",
-                "Drop loot = items from enemy death tables when killed. Consumables = ammo, healing, and other used-up items. When enabled, multiply by player count / 4 above 4 players (stacks with DropConsumableLootMultiplier).");
-
-            DropConsumableLootMultiplier = CreateTrackedEntry(_lootMultiplicatorCategory,
-                "DropConsumableLootMultiplier",
-                1f,
-                "Drop Consumable Loot Multiplier",
-                "Multiplier for consumables in enemy death drops: extra weighted re-rolls from the drop table and consumable stack count on spawn. 1 = vanilla, 2 = double.");
-
-            AutoScaleDropEquipmentLootByPlayerCount = CreateTrackedEntry(_lootMultiplicatorCategory,
-                "AutoScaleDropEquipmentLootByPlayerCount",
-                true,
-                "Auto Scale Drop Equipment Loot By Player Count",
-                "Drop loot = items from enemy death tables when killed. Equipment = tools, weapons, and gear you equip. When enabled, multiply by player count / 4 above 4 players (stacks with DropEquipmentLootMultiplier).");
-
-            DropEquipmentLootMultiplier = CreateTrackedEntry(_lootMultiplicatorCategory,
-                "DropEquipmentLootMultiplier",
-                1f,
-                "Drop Equipment Loot Multiplier",
-                "Multiplier for equipment in enemy death drops: extra weighted re-rolls from the drop table. 1 = vanilla, 2 = double.");
-
-            AutoScaleDropMiscellanyLootByPlayerCount = CreateTrackedEntry(_lootMultiplicatorCategory,
-                "AutoScaleDropMiscellanyLootByPlayerCount",
-                true,
-                "Auto Scale Drop Miscellany Loot By Player Count",
-                "Drop loot = items from enemy death tables when killed. Miscellany = other pickup items. When enabled, multiply by player count / 4 above 4 players (stacks with DropMiscellanyLootMultiplier).");
-
-            DropMiscellanyLootMultiplier = CreateTrackedEntry(_lootMultiplicatorCategory,
-                "DropMiscellanyLootMultiplier",
-                1f,
-                "Drop Miscellany Loot Multiplier",
-                "Multiplier for miscellany in enemy death drops: extra weighted re-rolls from the drop table. 1 = vanilla, 2 = double.");
-
-            AutoScaleTriggerConsumableLootByPlayerCount = CreateTrackedEntry(_lootMultiplicatorCategory,
-                "AutoScaleTriggerConsumableLootByPlayerCount",
-                true,
-                "Auto Scale Trigger Consumable Loot By Player Count",
-                "Trigger loot = items spawned by map events/trigger volumes (EventAction spawns only). Consumables = ammo, healing, and other used-up items. When enabled, multiply by player count / 4 above 4 players (stacks with TriggerConsumableLootMultiplier).");
-
-            TriggerConsumableLootMultiplier = CreateTrackedEntry(_lootMultiplicatorCategory,
-                "TriggerConsumableLootMultiplier",
-                1f,
-                "Trigger Consumable Loot Multiplier",
-                "Multiplier for consumables from map events/triggers: extra weighted picks and consumable stack count on spawn. 1 = vanilla, 2 = double.");
-
-            AutoScaleTriggerEquipmentLootByPlayerCount = CreateTrackedEntry(_lootMultiplicatorCategory,
-                "AutoScaleTriggerEquipmentLootByPlayerCount",
-                true,
-                "Auto Scale Trigger Equipment Loot By Player Count",
-                "Trigger loot = items spawned by map events/trigger volumes (EventAction spawns only). Equipment = tools, weapons, and gear you equip. When enabled, multiply by player count / 4 above 4 players (stacks with TriggerEquipmentLootMultiplier).");
-
-            TriggerEquipmentLootMultiplier = CreateTrackedEntry(_lootMultiplicatorCategory,
-                "TriggerEquipmentLootMultiplier",
-                1f,
-                "Trigger Equipment Loot Multiplier",
-                "Multiplier for equipment from map events/triggers: extra weighted picks from the event item table. 1 = vanilla, 2 = double.");
-
-            AutoScaleTriggerMiscellanyLootByPlayerCount = CreateTrackedEntry(_lootMultiplicatorCategory,
-                "AutoScaleTriggerMiscellanyLootByPlayerCount",
-                true,
-                "Auto Scale Trigger Miscellany Loot By Player Count",
-                "Trigger loot = items spawned by map events/trigger volumes (EventAction spawns only). Miscellany = other pickup items. When enabled, multiply by player count / 4 above 4 players (stacks with TriggerMiscellanyLootMultiplier).");
-
-            TriggerMiscellanyLootMultiplier = CreateTrackedEntry(_lootMultiplicatorCategory,
-                "TriggerMiscellanyLootMultiplier",
-                1f,
-                "Trigger Miscellany Loot Multiplier",
-                "Multiplier for miscellany from map events/triggers: extra weighted picks from the event item table. 1 = vanilla, 2 = double.");
+                "Drop Loot Multiplier",
+                "Multiplier for enemy death drops: extra weighted re-rolls from drop tables and consumable stack count on spawn. 1 = vanilla, 2 = double.");
 
             LootItemFilterMode = CreateTrackedEntry(_lootMultiplicatorCategory,
                 "LootItemFilterMode",
@@ -897,15 +799,8 @@ namespace MimesisPlayerEnhancement
             AutoScaleOtherSpawnsByPlayerCount.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged(AutoScaleOtherSpawnsByPlayerCount));
 
             EnableLootMultiplicator.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged(EnableLootMultiplicator));
-            AutoScaleMapConsumableLootByPlayerCount.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged(AutoScaleMapConsumableLootByPlayerCount));
-            AutoScaleMapEquipmentLootByPlayerCount.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged(AutoScaleMapEquipmentLootByPlayerCount));
-            AutoScaleMapMiscellanyLootByPlayerCount.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged(AutoScaleMapMiscellanyLootByPlayerCount));
-            AutoScaleDropConsumableLootByPlayerCount.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged(AutoScaleDropConsumableLootByPlayerCount));
-            AutoScaleDropEquipmentLootByPlayerCount.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged(AutoScaleDropEquipmentLootByPlayerCount));
-            AutoScaleDropMiscellanyLootByPlayerCount.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged(AutoScaleDropMiscellanyLootByPlayerCount));
-            AutoScaleTriggerConsumableLootByPlayerCount.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged(AutoScaleTriggerConsumableLootByPlayerCount));
-            AutoScaleTriggerEquipmentLootByPlayerCount.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged(AutoScaleTriggerEquipmentLootByPlayerCount));
-            AutoScaleTriggerMiscellanyLootByPlayerCount.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged(AutoScaleTriggerMiscellanyLootByPlayerCount));
+            AutoScaleMapLootByPlayerCount.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged(AutoScaleMapLootByPlayerCount));
+            AutoScaleDropLootByPlayerCount.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged(AutoScaleDropLootByPlayerCount));
 
             MimicSpawnMultiplier.OnEntryValueChanged.Subscribe((_, value) => OnSpawnMultiplierChanged(logger, value, MimicSpawnMultiplier));
             BossSpawnMultiplier.OnEntryValueChanged.Subscribe((_, value) => OnSpawnMultiplierChanged(logger, value, BossSpawnMultiplier));
@@ -914,15 +809,8 @@ namespace MimesisPlayerEnhancement
             TrapSpawnMultiplier.OnEntryValueChanged.Subscribe((_, value) => OnSpawnMultiplierChanged(logger, value, TrapSpawnMultiplier));
             OtherSpawnMultiplier.OnEntryValueChanged.Subscribe((_, value) => OnSpawnMultiplierChanged(logger, value, OtherSpawnMultiplier));
 
-            MapConsumableLootMultiplier.OnEntryValueChanged.Subscribe((_, value) => OnSpawnMultiplierChanged(logger, value, MapConsumableLootMultiplier));
-            MapEquipmentLootMultiplier.OnEntryValueChanged.Subscribe((_, value) => OnSpawnMultiplierChanged(logger, value, MapEquipmentLootMultiplier));
-            MapMiscellanyLootMultiplier.OnEntryValueChanged.Subscribe((_, value) => OnSpawnMultiplierChanged(logger, value, MapMiscellanyLootMultiplier));
-            DropConsumableLootMultiplier.OnEntryValueChanged.Subscribe((_, value) => OnSpawnMultiplierChanged(logger, value, DropConsumableLootMultiplier));
-            DropEquipmentLootMultiplier.OnEntryValueChanged.Subscribe((_, value) => OnSpawnMultiplierChanged(logger, value, DropEquipmentLootMultiplier));
-            DropMiscellanyLootMultiplier.OnEntryValueChanged.Subscribe((_, value) => OnSpawnMultiplierChanged(logger, value, DropMiscellanyLootMultiplier));
-            TriggerConsumableLootMultiplier.OnEntryValueChanged.Subscribe((_, value) => OnSpawnMultiplierChanged(logger, value, TriggerConsumableLootMultiplier));
-            TriggerEquipmentLootMultiplier.OnEntryValueChanged.Subscribe((_, value) => OnSpawnMultiplierChanged(logger, value, TriggerEquipmentLootMultiplier));
-            TriggerMiscellanyLootMultiplier.OnEntryValueChanged.Subscribe((_, value) => OnSpawnMultiplierChanged(logger, value, TriggerMiscellanyLootMultiplier));
+            MapLootMultiplier.OnEntryValueChanged.Subscribe((_, value) => OnSpawnMultiplierChanged(logger, value, MapLootMultiplier));
+            DropLootMultiplier.OnEntryValueChanged.Subscribe((_, value) => OnSpawnMultiplierChanged(logger, value, DropLootMultiplier));
             LootItemFilterMode.OnEntryValueChanged.Subscribe((_, value) => OnLootItemFilterModeChanged(logger, value));
             LootAllowlist.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged(LootAllowlist));
             LootBlocklist.OnEntryValueChanged.Subscribe((_, _) => NotifyChanged(LootBlocklist));
@@ -1080,15 +968,8 @@ namespace MimesisPlayerEnhancement
                 MapPlacedEncounterDelayMaxSeconds,
                 MapPlacedEncounterMinPlayerDistanceMeters,
                 OtherSpawnMultiplier,
-                MapConsumableLootMultiplier,
-                MapEquipmentLootMultiplier,
-                MapMiscellanyLootMultiplier,
-                DropConsumableLootMultiplier,
-                DropEquipmentLootMultiplier,
-                DropMiscellanyLootMultiplier,
-                TriggerConsumableLootMultiplier,
-                TriggerEquipmentLootMultiplier,
-                TriggerMiscellanyLootMultiplier,
+                MapLootMultiplier,
+                DropLootMultiplier,
                 StartupMoneyMultiplier,
                 RoundGoalMoneyMultiplier,
                 ScrapSellValueMultiplier,
