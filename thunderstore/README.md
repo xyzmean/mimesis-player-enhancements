@@ -50,7 +50,7 @@ While the game is running, the mod serves a **browser dashboard** by default —
 The dashboard is not only for admin actions. From the same interface you can:
 
 - **Global Settings** (header) — edit default mod config anytime, even before joining a session; saved to `UserData/MimesisPlayerEnhancement.cfg`.
-- **Settings** (in-game nav, host only) — per-save-slot overrides stored sparsely under `MimesisData/Slot{N}/MimesisPlayerEnhancement.overrides.cfg`; values that match global are removed automatically.
+- **Settings** (in-game nav, host only) — per-save-slot overrides stored sparsely as `Save/{SteamID}/MMGameData{N}.mpe-overrides.sav`; values that match global are removed automatically.
 - **View statistics** — session leaderboard and per-player stats when Statistics is enabled.
 - **Use the minimap** — live dungeon layout and player positions during a run.
 - **Moderate the lobby** — kick, ban, and unban players (host only).

@@ -15,8 +15,6 @@ namespace MimesisPlayerEnhancement.Features.Persistence
     public static class SpeechEventPoolManager
     {
         private const string Feature = "Persistence";
-        private const string PlayerMappingFile = "player_mapping.json";
-
         public enum EventState { Pending, Injected }
 
         private static readonly Dictionary<long, (SpeechEvent ev, EventState state, string originalPlayerName)> _pool
@@ -469,17 +467,17 @@ namespace MimesisPlayerEnhancement.Features.Persistence
             filePath = string.Empty;
             json = string.Empty;
 
-            string? slotPath = MimesisSaveManager.GetMimesisSlotPath(slotId);
-            if (string.IsNullOrEmpty(slotPath))
+            string? mappingPath = SaveSidecarPaths.GetSpeechMappingPath(slotId);
+            if (string.IsNullOrEmpty(mappingPath))
             {
-                ModLog.Warn(Feature, "TryBuildPlayerMappingJson: slot path is null/empty!");
+                ModLog.Warn(Feature, "TryBuildPlayerMappingJson: sidecar path is null/empty!");
                 return false;
             }
 
             try
             {
                 Dictionary<ulong, string> mapping = BuildPlayerMapping();
-                filePath = Path.Combine(slotPath, PlayerMappingFile);
+                filePath = mappingPath;
                 json = ModJson.Serialize(mapping);
                 ModLog.Debug(Feature, $"Built player mapping: {mapping.Count} entries -> {filePath}");
                 return true;
@@ -532,17 +530,16 @@ namespace MimesisPlayerEnhancement.Features.Persistence
         {
             _steamToDissonance.Clear();
 
-            string? slotPath = MimesisSaveManager.GetMimesisSlotPath(slotId);
-            if (string.IsNullOrEmpty(slotPath))
+            string? filePath = SaveSidecarPaths.GetSpeechMappingPath(slotId);
+            if (string.IsNullOrEmpty(filePath))
             {
                 return;
             }
 
-            string filePath = Path.Combine(slotPath, PlayerMappingFile);
             string? json = AtomicFileIO.ReadText(filePath, Feature);
             if (string.IsNullOrEmpty(json))
             {
-                ModLog.Debug(Feature, $"No player_mapping.json at {filePath}");
+                ModLog.Debug(Feature, $"No player mapping sidecar at {filePath}");
                 return;
             }
 

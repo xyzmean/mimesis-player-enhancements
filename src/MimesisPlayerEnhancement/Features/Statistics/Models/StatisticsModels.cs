@@ -148,4 +148,12 @@ namespace MimesisPlayerEnhancement.Features.Statistics.Models
         public DateTime UpdatedAtUtc;
         public List<LeaderboardEntry> Entries = [];
     }
+
+    public sealed class SlotStatisticsDocument
+    {
+        public const int CurrentVersion = 1;
+
+        public int Version = CurrentVersion;
+        public Dictionary<ulong, PlayerStatisticsDocument> Players = [];
+    }
 }

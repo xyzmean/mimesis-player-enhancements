@@ -1,20 +1,17 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using MimesisPlayerEnhancement.Features.Persistence;
 using MimesisPlayerEnhancement.Util;
 
 namespace MimesisPlayerEnhancement
 {
     /// <summary>
-    /// Sparse per-save-slot config overrides stored beside other Mimesis slot data.
+    /// Sparse per-save-slot config overrides stored as a Steam-cloud sidecar beside vanilla saves.
     /// Keys matching global values are omitted automatically.
     /// </summary>
     internal static class SaveSlotConfigStore
     {
         private const string Feature = "SaveSlotConfig";
-        private const string OverrideFileName = "MimesisPlayerEnhancement.overrides.cfg";
-
         private static int _activeSlotId = -1;
         private static bool _isApplyingOverrides;
 
@@ -24,8 +21,7 @@ namespace MimesisPlayerEnhancement
 
         internal static string? GetOverrideFilePath(int slotId)
         {
-            string? slotPath = MimesisSaveManager.GetMimesisSlotPath(slotId);
-            return string.IsNullOrEmpty(slotPath) ? null : Path.Combine(slotPath, OverrideFileName);
+            return SaveSidecarPaths.GetOverridesPath(slotId);
         }
 
         internal static SparseTomlConfig.Document LoadOverrides(int slotId)
@@ -254,12 +250,6 @@ namespace MimesisPlayerEnhancement
         {
             try
             {
-                string? slotPath = MimesisSaveManager.GetMimesisSlotPath(slotId);
-                if (!string.IsNullOrEmpty(slotPath))
-                {
-                    _ = Directory.CreateDirectory(slotPath);
-                }
-
                 if (SparseTomlConfig.IsEmpty(doc))
                 {
                     BackgroundFileWriteQueue.EnqueueDelete(filePath, Feature, waitForCompletion);

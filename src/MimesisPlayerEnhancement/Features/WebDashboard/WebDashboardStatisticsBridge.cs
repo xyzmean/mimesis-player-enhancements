@@ -97,21 +97,9 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
 
         private static LeaderboardDocument? TryLoadLeaderboardFromDisk(int saveSlotId)
         {
-            string? path = StatisticsStore.GetLeaderboardFilePath(saveSlotId);
-            if (string.IsNullOrEmpty(path))
-            {
-                return null;
-            }
-
-            string? json = StatisticsStore.SafeReadText(path);
-            if (string.IsNullOrEmpty(json))
-            {
-                Dictionary<ulong, PlayerStatisticsDocument> players = [];
-                StatisticsStore.LoadAllPlayersForSlot(saveSlotId, players);
-                return players.Count == 0 ? null : LeaderboardBuilder.Build(saveSlotId, players.Values);
-            }
-
-            return StatisticsJson.DeserializeLeaderboard(json);
+            Dictionary<ulong, PlayerStatisticsDocument> players = [];
+            StatisticsStore.LoadAllPlayersForSlot(saveSlotId, players);
+            return players.Count == 0 ? null : LeaderboardBuilder.Build(saveSlotId, players.Values);
         }
     }
 }

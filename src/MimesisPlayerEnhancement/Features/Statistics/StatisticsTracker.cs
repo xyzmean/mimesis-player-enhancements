@@ -39,6 +39,7 @@ namespace MimesisPlayerEnhancement.Features.Statistics
 
             if (slotId == _loadedSlotId)
             {
+                StatisticsWriteQueue.Configure(slotId, () => _players);
                 return;
             }
 
@@ -49,10 +50,7 @@ namespace MimesisPlayerEnhancement.Features.Statistics
                 _connectedSince.Clear();
                 _voiceEventBaselines.Clear();
                 StatisticsStore.LoadAllPlayersForSlot(slotId, _players);
-                StatisticsWriteQueue.Configure(
-                    slotId,
-                    steamId => _players.TryGetValue(steamId, out PlayerStatisticsDocument? doc) ? doc : null,
-                    PersistLeaderboardDocument);
+                StatisticsWriteQueue.Configure(slotId, () => _players);
                 ModLog.Info(Feature, $"Loaded statistics for save slot {slotId} ({_players.Count} players).");
             }
             catch (Exception ex)
@@ -143,8 +141,7 @@ namespace MimesisPlayerEnhancement.Features.Statistics
 
             _connectedSince[steamId] = now;
             EnsureVoiceBaseline(steamId);
-            StatisticsWriteQueue.SavePlayerImmediate(slotId, doc);
-            PersistLeaderboardImmediate(slotId);
+            PersistSlot(slotId);
 
             bool isNewSession = !resumeSession;
             int reconnectCount = doc.CurrentSession?.ReconnectCount ?? 0;
@@ -179,8 +176,7 @@ namespace MimesisPlayerEnhancement.Features.Statistics
 
             ModLog.Info(Feature, $"Player disconnected — steamId={steamId} displayName={doc.DisplayName}");
             StatisticsWriteQueue.FlushPendingWrites();
-            StatisticsWriteQueue.SavePlayerImmediate(_loadedSlotId, doc);
-            PersistLeaderboardImmediate(_loadedSlotId);
+            PersistSlot(_loadedSlotId);
             StatisticsMessages.OnPlayerLeftSession(steamId, doc.DisplayName, doc);
             WebDashboardSnapshotCache.MarkDirty();
         }
@@ -218,7 +214,7 @@ namespace MimesisPlayerEnhancement.Features.Statistics
 
                 ModLog.Info(Feature, $"Session finalized — steamId={kvp.Key} session={session.SessionId} after grace period");
                 FinalizeOpenSession(doc, countAsCompleted: true);
-                StatisticsWriteQueue.SavePlayerImmediate(slotId, doc);
+                StatisticsWriteQueue.MarkDirty(kvp.Key);
                 changed = true;
             }
 
@@ -240,7 +236,7 @@ namespace MimesisPlayerEnhancement.Features.Statistics
 
             if (changed)
             {
-                PersistLeaderboardImmediate(slotId);
+                StatisticsWriteQueue.FlushPendingWrites();
             }
         }
 
@@ -282,11 +278,10 @@ namespace MimesisPlayerEnhancement.Features.Statistics
                 doc.DisplayName = ResolveDisplayName(steamId, doc.DisplayName);
                 ApplyVoiceDelta(steamId, doc, voiceCounts);
                 FlushConnectedTime(steamId, doc);
-                StatisticsWriteQueue.SavePlayerImmediate(slotId, doc);
             }
 
             UpdateVoiceBaselines(affected, voiceCounts);
-            PersistLeaderboardImmediate(slotId);
+            PersistSlot(slotId);
 
             int cycleNumber = manager.AccumulatedCycleCount;
             if (ModConfig.ShowStatisticsToasts.Value)
@@ -425,7 +420,6 @@ namespace MimesisPlayerEnhancement.Features.Statistics
             }
 
             StatisticsWriteQueue.FlushPendingWrites();
-            PersistLeaderboardImmediate(_loadedSlotId);
             WebDashboardSnapshotCache.MarkDirty();
         }
 
@@ -448,7 +442,6 @@ namespace MimesisPlayerEnhancement.Features.Statistics
 
             IncrementCounter(steamId, counters => counters.DeathmatchWins++);
             StatisticsWriteQueue.FlushPendingWrites();
-            PersistLeaderboardImmediate(_loadedSlotId);
             WebDashboardSnapshotCache.MarkDirty();
         }
 
@@ -481,13 +474,8 @@ namespace MimesisPlayerEnhancement.Features.Statistics
 
             LoadForSlot(slotId);
             StatisticsWriteQueue.FlushPendingWrites();
-            foreach (PlayerStatisticsDocument doc in _players.Values)
-            {
-                StatisticsWriteQueue.SavePlayerImmediate(slotId, doc);
-            }
-
-            PersistLeaderboardImmediate(slotId);
-            ModLog.Debug(Feature, $"Statistics persisted on game save for slot {slotId}.");
+            PersistSlot(slotId, waitForCompletion: false);
+            ModLog.Debug(Feature, $"Statistics queued on game save for slot {slotId}.");
             WebDashboardSnapshotCache.MarkDirty();
         }
 
@@ -937,6 +925,30 @@ namespace MimesisPlayerEnhancement.Features.Statistics
             return string.IsNullOrWhiteSpace(fallback) ? steamId.ToString() : fallback;
         }
 
+        internal static void PersistSlot(int slotId, bool waitForCompletion = false)
+        {
+            if (!ModConfig.EnableStatistics.Value || !MimesisSaveManager.IsValidSaveSlotId(slotId))
+            {
+                return;
+            }
+
+            if (_loadedSlotId != slotId)
+            {
+                LoadForSlot(slotId);
+            }
+
+            StatisticsWriteQueue.Configure(slotId, () => _players);
+            StatisticsStore.SaveSlot(slotId, _players, waitForCompletion);
+        }
+
+        internal static void PersistLoadedSlot(bool waitForCompletion = false)
+        {
+            if (TryGetLoadedSlotId(out int slotId))
+            {
+                PersistSlot(slotId, waitForCompletion);
+            }
+        }
+
         private static bool HasOpenDisconnectedSessions()
         {
             foreach (PlayerStatisticsDocument doc in _players.Values)
@@ -949,17 +961,6 @@ namespace MimesisPlayerEnhancement.Features.Statistics
             }
 
             return false;
-        }
-
-        private static LeaderboardDocument PersistLeaderboardDocument(int slotId)
-        {
-            return LeaderboardBuilder.Build(slotId, _players.Values);
-        }
-
-        private static void PersistLeaderboardImmediate(int slotId)
-        {
-            LeaderboardDocument leaderboard = PersistLeaderboardDocument(slotId);
-            StatisticsWriteQueue.SaveLeaderboardImmediate(slotId, leaderboard);
         }
     }
 }

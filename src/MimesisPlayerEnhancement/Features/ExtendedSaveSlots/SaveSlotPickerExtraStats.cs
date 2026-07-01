@@ -93,18 +93,6 @@ namespace MimesisPlayerEnhancement.Features.ExtendedSaveSlots
 
         private static LeaderboardDocument? LoadLeaderboard(int slotId)
         {
-            string? path = StatisticsStore.GetLeaderboardFilePath(slotId);
-            if (string.IsNullOrEmpty(path))
-            {
-                return null;
-            }
-
-            string? json = StatisticsStore.SafeReadText(path);
-            if (!string.IsNullOrEmpty(json))
-            {
-                return StatisticsJson.DeserializeLeaderboard(json);
-            }
-
             Dictionary<ulong, PlayerStatisticsDocument> players = [];
             StatisticsStore.LoadAllPlayersForSlot(slotId, players);
             return players.Count == 0 ? null : LeaderboardBuilder.Build(slotId, players.Values);
@@ -112,13 +100,7 @@ namespace MimesisPlayerEnhancement.Features.ExtendedSaveSlots
 
         private static int TryGetSavedVoiceCount(int slotId)
         {
-            string? slotPath = MimesisSaveManager.GetMimesisSlotPath(slotId);
-            if (string.IsNullOrEmpty(slotPath))
-            {
-                return 0;
-            }
-
-            int count = SpeechEventFileStore.TryGetSavedSpeechEventCount(slotPath);
+            int count = SpeechEventFileStore.TryGetSavedSpeechEventCount(slotId);
             if (count > 0 || !MimesisSaveManager.HasMimesisData(slotId))
             {
                 return count;

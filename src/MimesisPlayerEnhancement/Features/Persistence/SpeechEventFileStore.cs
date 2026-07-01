@@ -14,8 +14,6 @@ namespace MimesisPlayerEnhancement.Features.Persistence
     internal static class SpeechEventFileStore
     {
         private const string Feature = "Persistence";
-        private const string SpeechEventsFile = "speech_events.bin";
-        private const string MetadataFile = "metadata.json";
         private const int MetadataVersion = 3;
 
         private static readonly byte[] FileMagic = Encoding.ASCII.GetBytes("MPEV");
@@ -24,36 +22,32 @@ namespace MimesisPlayerEnhancement.Features.Persistence
         private static readonly FieldInfo? CompressedAudioDataField =
             typeof(SpeechEvent).GetField("CompressedAudioData", BindingFlags.Public | BindingFlags.Instance);
 
-        internal static string GetSpeechEventsPath(string slotPath)
+        internal static bool HasSpeechEventsFile(int slotId)
         {
-            return Path.Combine(slotPath, SpeechEventsFile);
+            string? filePath = SaveSidecarPaths.GetSpeechPath(slotId);
+            return !string.IsNullOrEmpty(filePath)
+                && (File.Exists(filePath) || File.Exists(filePath + ".bak"));
         }
 
-        internal static bool HasSpeechEventsFile(string slotPath)
+        internal static int TryGetSavedSpeechEventCount(int slotId)
         {
-            string filePath = GetSpeechEventsPath(slotPath);
-            return File.Exists(filePath) || File.Exists(filePath + ".bak");
-        }
-
-        internal static int TryGetSavedSpeechEventCount(string slotPath)
-        {
-            if (string.IsNullOrEmpty(slotPath))
-            {
-                return 0;
-            }
-
-            int fromMetadata = TryReadSpeechCountFromMetadata(slotPath);
+            int fromMetadata = TryReadSpeechCountFromMetadata(slotId);
             if (fromMetadata > 0)
             {
                 return fromMetadata;
             }
 
-            return TryReadSpeechCountFromBinary(slotPath);
+            return TryReadSpeechCountFromBinary(slotId);
         }
 
-        private static int TryReadSpeechCountFromMetadata(string slotPath)
+        private static int TryReadSpeechCountFromMetadata(int slotId)
         {
-            string metaPath = Path.Combine(slotPath, MetadataFile);
+            string? metaPath = SaveSidecarPaths.GetSpeechMetadataPath(slotId);
+            if (string.IsNullOrEmpty(metaPath))
+            {
+                return 0;
+            }
+
             string? json = AtomicFileIO.ReadText(metaPath, Feature);
             if (string.IsNullOrEmpty(json))
             {
@@ -79,9 +73,14 @@ namespace MimesisPlayerEnhancement.Features.Persistence
                 : 0;
         }
 
-        private static int TryReadSpeechCountFromBinary(string slotPath)
+        private static int TryReadSpeechCountFromBinary(int slotId)
         {
-            string filePath = GetSpeechEventsPath(slotPath);
+            string? filePath = SaveSidecarPaths.GetSpeechPath(slotId);
+            if (string.IsNullOrEmpty(filePath))
+            {
+                return 0;
+            }
+
             if (!File.Exists(filePath))
             {
                 filePath += ".bak";
@@ -133,14 +132,15 @@ namespace MimesisPlayerEnhancement.Features.Persistence
             return stream.Read(countBytes, 0, 4) == 4 ? BitConverter.ToInt32(countBytes, 0) : 0;
         }
 
-        internal static SpeechEventSaveSnapshot Serialize(string slotPath, List<SpeechEvent> speechEvents)
+        internal static SpeechEventSaveSnapshot Serialize(int slotId, List<SpeechEvent> speechEvents)
         {
-            string speechPath = GetSpeechEventsPath(slotPath);
+            string? speechPath = SaveSidecarPaths.GetSpeechPath(slotId);
+            string? metadataPath = SaveSidecarPaths.GetSpeechMetadataPath(slotId);
             byte[]? speechBytes = null;
             int serializedCount = 0;
             long totalAudioBytes = 0;
 
-            if (speechEvents.Count > 0)
+            if (speechEvents.Count > 0 && !string.IsNullOrEmpty(speechPath))
             {
                 using MemoryStream ms = new();
                 using BinaryWriter bw = new(ms);
@@ -179,18 +179,23 @@ namespace MimesisPlayerEnhancement.Features.Persistence
 
             return new SpeechEventSaveSnapshot
             {
-                SpeechPath = speechPath,
+                SpeechPath = speechPath ?? string.Empty,
                 SpeechBytes = speechBytes,
-                MetadataPath = Path.Combine(slotPath, MetadataFile),
+                MetadataPath = metadataPath ?? string.Empty,
                 MetadataJson = $"{{\"version\":{MetadataVersion},\"timestamp\":\"{DateTime.UtcNow:O}\",\"speechCount\":{serializedCount}}}",
                 SerializedCount = serializedCount,
             };
         }
 
-        internal static List<SpeechEvent>? Load(int slotId, string slotPath)
+        internal static List<SpeechEvent>? Load(int slotId)
         {
-            string filePath = GetSpeechEventsPath(slotPath);
-            if (!HasSpeechEventsFile(slotPath))
+            if (!HasSpeechEventsFile(slotId))
+            {
+                return null;
+            }
+
+            string? filePath = SaveSidecarPaths.GetSpeechPath(slotId);
+            if (string.IsNullOrEmpty(filePath))
             {
                 return null;
             }

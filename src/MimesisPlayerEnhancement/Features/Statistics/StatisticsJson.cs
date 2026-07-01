@@ -5,24 +5,14 @@ namespace MimesisPlayerEnhancement.Features.Statistics
 {
     internal static class StatisticsJson
     {
-        public static string SerializePlayer(PlayerStatisticsDocument doc)
+        internal static string SerializeSlot(SlotStatisticsDocument slot)
         {
-            return ModJson.Serialize(doc);
+            return ModJson.Serialize(slot);
         }
 
-        public static PlayerStatisticsDocument? DeserializePlayer(string json)
+        internal static SlotStatisticsDocument? DeserializeSlot(string json)
         {
-            return ModJson.Deserialize<PlayerStatisticsDocument>(json);
-        }
-
-        public static string SerializeLeaderboard(LeaderboardDocument doc)
-        {
-            return ModJson.Serialize(doc);
-        }
-
-        public static LeaderboardDocument? DeserializeLeaderboard(string json)
-        {
-            return ModJson.Deserialize<LeaderboardDocument>(json);
+            return ModJson.Deserialize<SlotStatisticsDocument>(json);
         }
     }
 }

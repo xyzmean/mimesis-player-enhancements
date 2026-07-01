@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using ReluProtocol;
 using Mimic.Voice.SpeechSystem;
 using MimesisPlayerEnhancement.Util;
@@ -9,26 +8,12 @@ namespace MimesisPlayerEnhancement.Features.Persistence
 {
     /// <summary>
     /// Manages persistence of Mimesis data per save slot. Only the host saves.
-    /// Data stored under Save/{SteamID}/MimesisData/Slot{N}/ where N is the campaign slot
-    /// (1..99 manual slots when extended save slots are enabled; 0 for autosave sidecar data).
+    /// Data stored as flat sidecar files in Save/{SteamID}/ (MMGameData{N}.mpe-*.sav)
+    /// so Steam Auto-Cloud syncs them alongside vanilla saves.
     /// </summary>
     public static class MimesisSaveManager
     {
         private const string Feature = "Persistence";
-        private const string MimesisDataFolder = "MimesisData";
-        private const string SlotPrefix = "Slot";
-
-        public static string? GetMimesisSlotPath(int slotId)
-        {
-            PlatformMgr platformMgr = MonoSingleton<PlatformMgr>.Instance;
-            if (platformMgr == null)
-            {
-                return null;
-            }
-
-            string baseFolder = platformMgr.GetSaveFileFolderPath();
-            return string.IsNullOrEmpty(baseFolder) ? null : Path.Combine(baseFolder, MimesisDataFolder, SlotPrefix + slotId);
-        }
 
         public static bool IsHost()
         {
@@ -108,26 +93,22 @@ namespace MimesisPlayerEnhancement.Features.Persistence
                 return;
             }
 
-            string? slotPath = GetMimesisSlotPath(slotId);
-            if (string.IsNullOrEmpty(slotPath))
+            if (string.IsNullOrEmpty(SaveSidecarPaths.GetSpeechPath(slotId)))
             {
-                ModLog.Warn(Feature, "Skip save: slot path unavailable.");
+                ModLog.Warn(Feature, "Skip save: sidecar path unavailable.");
                 return;
             }
 
             try
             {
-                _ = Directory.CreateDirectory(slotPath);
-
                 List<SpeechEvent> speechEvents = CollectAllSpeechEvents();
-                SpeechEventSaveSnapshot snapshot = SpeechEventFileStore.Serialize(slotPath, speechEvents);
                 if (!SpeechEventPoolManager.TryBuildPlayerMappingJson(slotId, out string playerMappingPath, out string playerMappingJson))
                 {
                     ModLog.Warn(Feature, "Skip save: player mapping path unavailable.");
                     return;
                 }
 
-                PersistenceWriteQueue.EnqueueSave(slotId, snapshot, playerMappingPath, playerMappingJson);
+                PersistenceWriteQueue.EnqueueSave(slotId, speechEvents, playerMappingPath, playerMappingJson);
             }
             catch (Exception ex)
             {
@@ -137,27 +118,24 @@ namespace MimesisPlayerEnhancement.Features.Persistence
 
         public static List<SpeechEvent>? LoadSpeechEvents(int slotId)
         {
-            string? slotPath = GetMimesisSlotPath(slotId);
-            return string.IsNullOrEmpty(slotPath) ? null : SpeechEventFileStore.Load(slotId, slotPath);
+            return SpeechEventFileStore.Load(slotId);
         }
 
         public static bool HasMimesisData(int slotId)
         {
-            string? slotPath = GetMimesisSlotPath(slotId);
-            return !string.IsNullOrEmpty(slotPath) && SpeechEventFileStore.HasSpeechEventsFile(slotPath);
+            return SpeechEventFileStore.HasSpeechEventsFile(slotId);
         }
 
         public static void DeleteMimesisData(int slotId)
         {
-            string? slotPath = GetMimesisSlotPath(slotId);
-            if (string.IsNullOrEmpty(slotPath) || !Directory.Exists(slotPath))
-            {
-                return;
-            }
-
             try
             {
-                Directory.Delete(slotPath, true);
+                SaveSidecarPaths.DeleteSidecars(
+                    slotId,
+                    SidecarKind.Speech,
+                    SidecarKind.SpeechMetadata,
+                    SidecarKind.SpeechMapping,
+                    SidecarKind.Overrides);
             }
             catch (Exception ex)
             {
