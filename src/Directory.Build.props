@@ -9,9 +9,10 @@
     <DepsPath Condition="'$(DepsPath)' == ''">$(RepoRoot)deps</DepsPath>
     <ReferenceRoot>$(DepsPath)/reference</ReferenceRoot>
 
-    <!-- Output: dist/debug (Debug) or dist/prod (Release) -->
-    <DistFolder Condition="'$(Configuration)' == 'Debug'">debug</DistFolder>
+    <!-- Output: dist/debug (Debug) or dist/prod (Release). Directory.Build.props runs before SDK defaults Configuration. -->
+    <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
     <DistFolder Condition="'$(Configuration)' == 'Release'">prod</DistFolder>
+    <DistFolder Condition="'$(DistFolder)' == ''">debug</DistFolder>
     <BaseOutputPath>$(RepoRoot)dist\$(DistFolder)\</BaseOutputPath>
     <OutputPath>$(BaseOutputPath)</OutputPath>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
