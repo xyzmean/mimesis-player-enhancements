@@ -39,7 +39,7 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
             }
 
             if (action.SteamId != 0 && LocalPlayerHelper.IsLocalSteamId(action.SteamId)
-                && action.Type != WebDashboardActionType.Respawn)
+                && action.Type is not WebDashboardActionType.Respawn and not WebDashboardActionType.Heal)
             {
                 return Fail("Cannot moderate the local host player.");
             }
@@ -53,6 +53,7 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
                     WebDashboardActionType.Ban => Ban(sessionManager, action),
                     WebDashboardActionType.Unban => Unban(sessionManager, action),
                     WebDashboardActionType.Respawn => Respawn(action),
+                    WebDashboardActionType.Heal => Heal(action),
                     _ => Fail("Unknown action."),
                 };
         }
@@ -202,10 +203,9 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
 
                 if (vPlayer.StatControlUnit != null)
                 {
-                    vPlayer.StatControlUnit.AdjustHP(0L, full: true);
+                    ApplyFullHealthAndClearConta(vPlayer);
                     vPlayer.StatControlUnit.RecoverStamina(
                         vPlayer.StatControlUnit.GetSpecificStatValue(StatType.Stamina));
-                    vPlayer.StatControlUnit.AdjustConta(0);
                 }
 
                 vPlayer.VRoom.IterateAllMonster(monster =>
@@ -225,6 +225,55 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
                 ModLog.Warn(Feature, $"Respawn failed: {ex.Message}");
                 return Fail("Respawn failed.");
             }
+        }
+
+        private static WebDashboardActionResult Heal(WebDashboardPendingAction action)
+        {
+            if (!TryResolveTarget(action, out SessionContext? targetContext, out _))
+            {
+                return Fail("Player not found.");
+            }
+
+            VPlayer? vPlayer = WebDashboardSessionAccess.GetVPlayer(targetContext!);
+            if (vPlayer == null)
+            {
+                return Fail("Player not in game.");
+            }
+
+            if (!vPlayer.IsAliveStatus())
+            {
+                return Fail("Player is dead. Use respawn instead.");
+            }
+
+            if (vPlayer.StatControlUnit == null)
+            {
+                return Fail("Player stats unavailable.");
+            }
+
+            try
+            {
+                ApplyFullHealthAndClearConta(vPlayer);
+                ModLog.Info(Feature, $"Healed player uid={vPlayer.UID}.");
+                WebDashboardSnapshotCache.MarkDirty();
+                return Ok("Player healed.");
+            }
+            catch (System.Exception ex)
+            {
+                ModLog.Warn(Feature, $"Heal failed: {ex.Message}");
+                return Fail("Heal failed.");
+            }
+        }
+
+        private static void ApplyFullHealthAndClearConta(VPlayer vPlayer)
+        {
+            StatController? stats = vPlayer.StatControlUnit;
+            if (stats == null)
+            {
+                return;
+            }
+
+            stats.AdjustHP(0L, full: true);
+            stats.AdjustConta(0);
         }
 
         private static WebDashboardActionResult Unban(SessionManager sessionManager, WebDashboardPendingAction action)

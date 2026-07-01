@@ -151,6 +151,7 @@
                       </small>
                       <small class="player-session-stats" x-show="showPlayerSessionStats(p)"
                         x-text="sessionLine(p)"></small>
+                      <small class="player-vitals" x-show="showPlayerVitals(p)" x-text="vitalsLine(p)"></small>
                     </div>
                     <div class="player-status">
                       <span class="ping-label" x-text="pingLabel(p)"></span>
@@ -162,7 +163,9 @@
                       <span class="ping-bars" x-show="pingActive(p) === 0" title="Unknown">—</span>
                       <a class="btn-text btn" x-show="status.isHost" :href="'#/player/' + p.steamId">Stats</a>
                     </div>
-                    <div class="player-actions" x-show="status.isHost && (canModerate(p) || canRespawn(p))">
+                    <div class="player-actions" x-show="status.isHost && (canModerate(p) || canRespawn(p) || canHeal(p))">
+                      <button class="btn btn-outlined" x-show="canHeal(p)"
+                        @click="moderate(p.steamId, 'heal')">Heal</button>
                       <button class="btn btn-outlined" x-show="canRespawn(p)"
                         @click="moderate(p.steamId, 'respawn')">Respawn</button>
                       <button class="btn btn-outlined" x-show="p.playerUid"

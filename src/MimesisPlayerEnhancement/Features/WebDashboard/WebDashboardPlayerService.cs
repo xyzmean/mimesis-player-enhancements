@@ -366,6 +366,89 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
             }
         }
 
+        private static void ApplyVitals(WebDashboardPlayerDto dto, SessionContext? context)
+        {
+            if (dto.PlayerUid == 0)
+            {
+                return;
+            }
+
+            VPlayer? vPlayer = context != null ? WebDashboardSessionAccess.GetVPlayer(context) : null;
+            if (vPlayer?.StatControlUnit != null)
+            {
+                StatController stats = vPlayer.StatControlUnit;
+                dto.Health = stats.GetCurrentHP();
+                dto.MaxHealth = stats.GetSpecificStatValue(StatType.HP);
+                dto.ToxicPercent = (int)stats.GetMutableStatPercent(MutableStatType.Conta);
+                return;
+            }
+
+            if (TryGetVitalsFromProtoActor(dto.PlayerUid, dto.SteamId, out long health, out long maxHealth, out int toxicPercent))
+            {
+                dto.Health = health;
+                dto.MaxHealth = maxHealth;
+                dto.ToxicPercent = toxicPercent;
+            }
+        }
+
+        private static bool TryGetVitalsFromProtoActor(
+            long playerUid,
+            ulong steamId,
+            out long health,
+            out long maxHealth,
+            out int toxicPercent)
+        {
+            health = 0;
+            maxHealth = 0;
+            toxicPercent = 0;
+            try
+            {
+                Hub.PersistentData? pdata = JoinAnytimeHub.GetPdata();
+                GameMainBase? main = pdata?.main;
+                if (main == null)
+                {
+                    return false;
+                }
+
+                Dictionary<int, ProtoActor>? map = main.GetProtoActorMap();
+                if (map == null)
+                {
+                    return false;
+                }
+
+                List<ProtoActor?> actors = [.. map.Values];
+                foreach (ProtoActor? actor in actors)
+                {
+                    if (actor == null || actor.ActorType != ActorType.Player)
+                    {
+                        continue;
+                    }
+
+                    bool match = (playerUid != 0 && actor.UID == playerUid)
+                        || (steamId != 0 && StatisticsTracker.TryResolveSteamId(actor) == steamId);
+                    if (!match)
+                    {
+                        continue;
+                    }
+
+                    health = actor.netSyncActorData.hp;
+                    maxHealth = actor.netSyncActorData.maxHP;
+                    long conta = actor.netSyncActorData.conta;
+                    long maxConta = actor.netSyncActorData.maxConta;
+                    toxicPercent = maxConta > 0
+                        ? (int)System.Math.Clamp(conta * 100 / maxConta, 0, 100)
+                        : 0;
+                    return true;
+                }
+            }
+            catch
+            {
+                /* scene may be transitioning */
+            }
+
+            return false;
+        }
+
         private static bool TryGetAliveFromProtoActor(long playerUid, ulong steamId, out bool isAlive)
         {
             isAlive = true;
@@ -498,6 +581,11 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
             ApplyConnectionInfo(dto, context);
 
             ApplyAliveStatus(dto, context);
+
+            if (WebDashboardGameState.IsHost())
+            {
+                ApplyVitals(dto, context);
+            }
 
             if (WebDashboardGameState.IsHost() && ModConfig.EnableStatistics.Value)
             {

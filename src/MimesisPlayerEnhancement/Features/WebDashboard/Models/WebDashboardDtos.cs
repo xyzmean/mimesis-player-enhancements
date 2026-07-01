@@ -45,6 +45,9 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard.Models
         public string ConnectionAddress = "";
         public int VoiceLineCount;
         public WebDashboardSessionStatsDto? CurrentSession;
+        public long? Health;
+        public long? MaxHealth;
+        public int? ToxicPercent;
     }
 
     internal sealed class WebDashboardMinimapBoundsDto
@@ -148,6 +151,7 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard.Models
         Ban,
         Unban,
         Respawn,
+        Heal,
     }
 
     internal sealed class WebDashboardPendingAction

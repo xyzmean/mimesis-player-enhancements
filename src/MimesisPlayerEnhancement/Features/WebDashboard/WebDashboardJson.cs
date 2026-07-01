@@ -170,6 +170,9 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
                 ConnectionAddress = player.ConnectionAddress,
                 VoiceLineCount = player.VoiceLineCount,
                 CurrentSession = player.CurrentSession == null ? null : MapSessionStats(player.CurrentSession),
+                Health = player.Health,
+                MaxHealth = player.MaxHealth,
+                ToxicPercent = player.ToxicPercent,
             };
         }
 
@@ -256,6 +259,9 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
             public string ConnectionAddress = "";
             public int VoiceLineCount;
             public SessionStatsApiDto? CurrentSession;
+            public long? Health;
+            public long? MaxHealth;
+            public int? ToxicPercent;
         }
 
         private sealed class SessionStatsApiDto

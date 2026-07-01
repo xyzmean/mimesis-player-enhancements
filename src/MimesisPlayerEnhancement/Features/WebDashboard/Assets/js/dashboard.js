@@ -526,6 +526,24 @@ document.addEventListener('alpine:init', () => {
       return !this.playerBlindMode && p.currentSession;
     },
 
+    showPlayerVitals(p) {
+      return this.status.isHost
+        && p.playerUid
+        && p.health != null
+        && (!this.playerBlindMode || p.isLocal);
+    },
+
+    vitalsLine(p) {
+      if (p.health == null) return '';
+      const max = p.maxHealth != null ? p.maxHealth : '?';
+      const toxic = p.toxicPercent != null ? p.toxicPercent : '?';
+      return 'HP ' + p.health + '/' + max + ' · Toxic ' + toxic + '%';
+    },
+
+    canHeal(p) {
+      return this.status.isHost && p.playerUid && p.isAlive;
+    },
+
     togglePlayerBlindMode() {
       this.playerBlindMode = !this.playerBlindMode;
       localStorage.setItem('playerBlindMode', this.playerBlindMode ? '1' : '0');

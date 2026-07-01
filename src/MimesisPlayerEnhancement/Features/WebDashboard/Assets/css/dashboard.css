@@ -506,12 +506,14 @@ body.connected .app-content {
 }
 
 .player-connection,
-.player-session-stats {
+.player-session-stats,
+.player-vitals {
   margin-top: 0.2rem;
   word-break: break-word;
 }
 
-.player-session-stats {
+.player-session-stats,
+.player-vitals {
   color: var(--md-text-primary);
   opacity: 0.85;
 }

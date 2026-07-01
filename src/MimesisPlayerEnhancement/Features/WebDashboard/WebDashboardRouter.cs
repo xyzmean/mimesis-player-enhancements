@@ -282,6 +282,7 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
                 "ban" => WebDashboardActionType.Ban,
                 "unban" => WebDashboardActionType.Unban,
                 "respawn" => WebDashboardActionType.Respawn,
+                "heal" => WebDashboardActionType.Heal,
                 _ => null,
             };
 
