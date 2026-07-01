@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
+using MimesisPlayerEnhancement.Util;
 
 namespace MimesisPlayerEnhancement.Features.LootMultiplicator
 {
@@ -14,7 +15,7 @@ namespace MimesisPlayerEnhancement.Features.LootMultiplicator
             typeof(DungeonRoom).GetField("_spawnedActorDatas", InstanceFlags)
             ?? throw new InvalidOperationException("DungeonRoom._spawnedActorDatas not found");
 
-        private static readonly Dictionary<DungeonRoom, Dictionary<int, SpawnedActorData>> IndexByRoom = [];
+        private static readonly DungeonRoomStateRegistry<Dictionary<int, SpawnedActorData>> IndexByRoom = new();
 
         internal static void RebuildIndex(DungeonRoom room)
         {
@@ -33,7 +34,7 @@ namespace MimesisPlayerEnhancement.Features.LootMultiplicator
                 }
             }
 
-            IndexByRoom[room] = index;
+            IndexByRoom.Register(room, index);
         }
 
         internal static bool TryFindByMarkerIndex(DungeonRoom room, int markerIndex, out SpawnedActorData? spawnData)
@@ -44,10 +45,13 @@ namespace MimesisPlayerEnhancement.Features.LootMultiplicator
                 return false;
             }
 
-            if (!IndexByRoom.TryGetValue(room, out Dictionary<int, SpawnedActorData>? index))
+            if (!IndexByRoom.TryGet(room, out Dictionary<int, SpawnedActorData>? index))
             {
                 RebuildIndex(room);
-                index = IndexByRoom[room];
+                if (!IndexByRoom.TryGet(room, out index))
+                {
+                    return false;
+                }
             }
 
             if (!index.TryGetValue(markerIndex, out SpawnedActorData? candidate))

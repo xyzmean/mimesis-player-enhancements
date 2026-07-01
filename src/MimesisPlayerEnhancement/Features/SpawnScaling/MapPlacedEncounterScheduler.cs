@@ -25,12 +25,11 @@ namespace MimesisPlayerEnhancement.Features.SpawnScaling
             ])
             ?? throw new InvalidOperationException("IVroom.SpawnMonster not found");
 
-        private static readonly HashSet<DungeonRoom> AppliedRooms = [];
         private static readonly List<PendingEncounterSpawn> PendingEncounters = [];
 
         internal static void ApplyAfterInit(DungeonRoom room)
         {
-            if (!ModConfig.EnableSpawnScaling.Value || AppliedRooms.Contains(room))
+            if (!ModConfig.EnableSpawnScaling.Value || DungeonRoomAppliedSet.IsApplied(room))
             {
                 return;
             }
@@ -40,7 +39,7 @@ namespace MimesisPlayerEnhancement.Features.SpawnScaling
                 return;
             }
 
-            _ = AppliedRooms.Add(room);
+            DungeonRoomAppliedSet.MarkApplied(room);
 
             if (SpawnScalingFields.SpawnedActorDatasField.GetValue(room) is not IDictionary spawnDatas || spawnDatas.Count == 0)
             {

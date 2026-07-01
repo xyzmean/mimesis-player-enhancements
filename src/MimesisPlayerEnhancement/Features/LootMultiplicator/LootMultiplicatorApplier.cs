@@ -17,24 +17,21 @@ namespace MimesisPlayerEnhancement.Features.LootMultiplicator
         private static readonly FieldInfo SpawnedActorDatasField =
             AccessToolsField(typeof(DungeonRoom), "_spawnedActorDatas");
 
-        private static readonly HashSet<DungeonRoom> AppliedRooms = [];
-        private static readonly HashSet<DungeonRoom> SkippedClientRooms = [];
-
         internal static bool IsApplied(DungeonRoom room)
         {
-            return AppliedRooms.Contains(room);
+            return DungeonRoomAppliedSet.IsApplied(room);
         }
 
         internal static void EnsureApplied(DungeonRoom room)
         {
-            if (AppliedRooms.Contains(room))
+            if (DungeonRoomAppliedSet.IsApplied(room))
             {
                 return;
             }
 
             if (HostApplyGate.IsParticipantClient())
             {
-                if (SkippedClientRooms.Add(room))
+                if (DungeonRoomAppliedSet.MarkSkippedOnce(room))
                 {
                     ModLog.Debug(Feature, "Loot scaling skipped — participant client");
                 }
@@ -49,7 +46,7 @@ namespace MimesisPlayerEnhancement.Features.LootMultiplicator
             }
 
             Apply(room);
-            _ = AppliedRooms.Add(room);
+            DungeonRoomAppliedSet.MarkApplied(room);
             FixedLootSpawnCoordinator.ApplyAfterInit(room);
         }
 

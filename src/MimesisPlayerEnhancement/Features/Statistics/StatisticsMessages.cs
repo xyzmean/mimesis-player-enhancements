@@ -27,6 +27,13 @@ namespace MimesisPlayerEnhancement.Features.Statistics
         private static readonly HashSet<ulong> PendingJoinStats = [];
         private static readonly Dictionary<(ulong SteamId, bool IsJoin), DateTime> GlobalStatsShownAt = [];
 
+        internal static void ClearRuntimeState()
+        {
+            _localIntroScheduled = false;
+            PendingJoinStats.Clear();
+            GlobalStatsShownAt.Clear();
+        }
+
         internal static void OnLocalPlayerArchiveStarted()
         {
             if (!ShouldShow())

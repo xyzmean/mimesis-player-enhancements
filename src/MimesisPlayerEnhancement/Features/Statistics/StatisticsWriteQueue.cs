@@ -76,6 +76,7 @@ namespace MimesisPlayerEnhancement.Features.Statistics
         internal static void FlushAllSync()
         {
             StatisticsTracker.PersistLoadedSlot(waitForCompletion: true);
+            StatisticsStore.FlushAllSync();
             BackgroundFileWriteQueue.FlushAllSync();
         }
 

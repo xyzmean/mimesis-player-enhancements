@@ -30,6 +30,16 @@ namespace MimesisPlayerEnhancement.Features.MimicTuning
         private static readonly MethodInfo ScalePossessionCooltimeMsMethod =
             AccessTools.Method(typeof(MimicTuningResolver), nameof(MimicTuningResolver.ScalePossessionCooltimeMs));
 
+        private static readonly Dictionary<int, ProgressBarRestartState> ProgressBarRestartStates = [];
+
+        private static readonly object[] ProgressBarCoArgs = new object[3];
+
+        private sealed class ProgressBarRestartState
+        {
+            internal float TargetLeftTime;
+            internal float TotalSeconds;
+        }
+
         public static void Apply(HarmonyLib.Harmony harmony)
         {
             _ = GameNetworkApi.GetGameAssembly();
@@ -112,21 +122,38 @@ namespace MimesisPlayerEnhancement.Features.MimicTuning
 
                 try
                 {
+                    float totalSeconds = MimicTuningResolver.GetProgressBarTotalSeconds(
+                        __instance.ActorID,
+                        inServerLeftTime);
+                    float targetLeftTime = inServerLeftTime * 0.001f;
+
+                    if (____progressCoroutine != null
+                        && ProgressBarRestartStates.TryGetValue(__instance.ActorID, out ProgressBarRestartState? last)
+                        && last.TargetLeftTime == targetLeftTime
+                        && last.TotalSeconds == totalSeconds)
+                    {
+                        return false;
+                    }
+
                     if (____progressCoroutine != null)
                     {
                         __instance.StopCoroutine(____progressCoroutine);
                     }
 
-                    float totalSeconds = MimicTuningResolver.GetProgressBarTotalSeconds(
-                        __instance.ActorID,
-                        inServerLeftTime);
-                    float targetLeftTime = inServerLeftTime * 0.001f;
                     float currentLeftTime = ____possessionProgressbar.fillAmount * totalSeconds;
 
+                    ProgressBarCoArgs[0] = targetLeftTime;
+                    ProgressBarCoArgs[1] = currentLeftTime;
+                    ProgressBarCoArgs[2] = totalSeconds;
                     IEnumerator routine = (IEnumerator)PossessionProgressbarCoMethod.Invoke(
                         __instance,
-                        new object[] { targetLeftTime, currentLeftTime, totalSeconds });
+                        ProgressBarCoArgs);
                     ____progressCoroutine = __instance.StartCoroutine(routine);
+                    ProgressBarRestartStates[__instance.ActorID] = new ProgressBarRestartState
+                    {
+                        TargetLeftTime = targetLeftTime,
+                        TotalSeconds = totalSeconds,
+                    };
                     return false;
                 }
                 catch (Exception ex)
@@ -198,6 +225,7 @@ namespace MimesisPlayerEnhancement.Features.MimicTuning
                 try
                 {
                     MimicTuningPossessionSessions.ClearSession(__instance.ActorID);
+                    _ = ProgressBarRestartStates.Remove(__instance.ActorID);
                 }
                 catch (Exception ex)
                 {

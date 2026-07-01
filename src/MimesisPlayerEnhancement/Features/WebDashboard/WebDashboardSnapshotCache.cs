@@ -11,11 +11,13 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
         private const int FullRefreshIntervalMs = 1000;
         private const int MinDirtyRefreshMs = 500;
         private const int MinimapRefreshIntervalMs = 250;
+        private const int TickIntervalMs = 100;
 
         private static WebDashboardSnapshot _snapshot = new();
         private static int _version;
         private static volatile bool _dirty = true;
         private static bool _lastConnected;
+        private static long _lastTickMs;
         private static long _lastFullRefreshMs;
         private static long _lastMinimapRefreshMs;
         private static string _minimapFingerprint = "";
@@ -37,6 +39,14 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
 
         internal static void Tick(string listenUrl)
         {
+            long tickNowMs = UtcNowMs();
+            if (tickNowMs - _lastTickMs < TickIntervalMs)
+            {
+                return;
+            }
+
+            _lastTickMs = tickNowMs;
+
             bool connected = WebDashboardGameState.IsConnected();
             if (connected != _lastConnected)
             {
@@ -47,7 +57,7 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
 
             if (connected)
             {
-                long nowMs = UtcNowMs();
+                long nowMs = tickNowMs;
                 if (nowMs - _lastMinimapRefreshMs >= MinimapRefreshIntervalMs)
                 {
                     RefreshMinimapLive();
@@ -180,6 +190,7 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
                 _lastConnectedSteamIds = [];
                 _minimapFingerprint = "";
                 WebDashboardAvatarService.Clear();
+                WebDashboardLeaderboardCache.Clear();
             }
             else
             {
@@ -218,9 +229,10 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
 
                     next.ConnectedSteamIds = connectedSteamIds;
                     LeaderboardDocument? leaderboard = WebDashboardStatisticsBridge.GetLeaderboardDocument(saveSlotId);
-                    string? leaderboardJson = leaderboard == null
-                        ? null
-                        : WebDashboardJson.SerializeLeaderboardResponse(leaderboard, connectedSteamIds);
+                    string? leaderboardJson = WebDashboardLeaderboardCache.GetOrSchedule(
+                        saveSlotId,
+                        leaderboard,
+                        connectedSteamIds);
                     if (!string.IsNullOrEmpty(leaderboardJson))
                     {
                         _lastLeaderboardJson = leaderboardJson;

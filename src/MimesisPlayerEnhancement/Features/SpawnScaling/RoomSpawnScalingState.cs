@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using MimesisPlayerEnhancement.Util;
 
 namespace MimesisPlayerEnhancement.Features.SpawnScaling
 {
@@ -139,35 +140,26 @@ namespace MimesisPlayerEnhancement.Features.SpawnScaling
 
     internal static class RoomSpawnScalingRegistry
     {
-        private static readonly Dictionary<DungeonRoom, RoomSpawnScalingState> States = [];
+        private static readonly DungeonRoomStateRegistry<RoomSpawnScalingState> States = new();
 
         internal static RoomSpawnScalingState GetOrCreate(DungeonRoom room)
         {
-            if (!States.TryGetValue(room, out RoomSpawnScalingState? state))
-            {
-                state = new RoomSpawnScalingState(room);
-                States[room] = state;
-            }
-
-            return state;
+            return States.GetOrCreate(room, () => new RoomSpawnScalingState(room));
         }
 
         internal static bool TryGet(DungeonRoom room, out RoomSpawnScalingState state)
         {
-            return States.TryGetValue(room, out state!);
+            return States.TryGet(room, out state);
         }
 
         internal static void Register(DungeonRoom room, RoomSpawnScalingState state)
         {
-            States[room] = state;
+            States.Register(room, state);
         }
 
         internal static IEnumerable<KeyValuePair<DungeonRoom, RoomSpawnScalingState>> EnumerateAll()
         {
-            foreach (KeyValuePair<DungeonRoom, RoomSpawnScalingState> entry in States)
-            {
-                yield return entry;
-            }
+            return States.EnumerateAll();
         }
     }
 }

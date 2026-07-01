@@ -66,18 +66,17 @@ namespace MimesisPlayerEnhancement.Features.LootMultiplicator
         private static readonly FieldInfo SpawnDataIndexField =
             AccessToolsField(typeof(SpawnedActorData), "Index");
 
-        private static readonly HashSet<DungeonRoom> AppliedRooms = [];
-        private static readonly Dictionary<DungeonRoom, RoomState> RoomStates = [];
+        private static readonly DungeonRoomStateRegistry<RoomState> RoomStates = new();
         private static readonly List<PendingRespawn> PendingRespawns = [];
 
         internal static void ApplyAfterInit(DungeonRoom room)
         {
-            if (!LootScalingGate.ShouldScale(room) || AppliedRooms.Contains(room))
+            if (!LootScalingGate.ShouldScale(room) || DungeonRoomAppliedSet.IsApplied(room))
             {
                 return;
             }
 
-            _ = AppliedRooms.Add(room);
+            DungeonRoomAppliedSet.MarkApplied(room);
 
             if (SpawnedActorDatasField.GetValue(room) is not IDictionary spawnDatas || spawnDatas.Count == 0)
             {
@@ -155,7 +154,7 @@ namespace MimesisPlayerEnhancement.Features.LootMultiplicator
 
             if (state.HasQuotas || state.SlotCount > 0)
             {
-                RoomStates[room] = state;
+                RoomStates.Register(room, state);
             }
 
             LootSpawnDataLookup.RebuildIndex(room);
@@ -233,7 +232,7 @@ namespace MimesisPlayerEnhancement.Features.LootMultiplicator
                     continue;
                 }
 
-                if (!RoomStates.TryGetValue(pending.Room, out _))
+                if (!RoomStates.TryGet(pending.Room, out _))
                 {
                     PendingRespawns.RemoveAt(i);
                     continue;
@@ -474,7 +473,7 @@ namespace MimesisPlayerEnhancement.Features.LootMultiplicator
 
         private static bool TryFindRoomState(SpawnedActorData spawnData, out RoomState state, out DungeonRoom room)
         {
-            foreach (KeyValuePair<DungeonRoom, RoomState> entry in RoomStates)
+            foreach (KeyValuePair<DungeonRoom, RoomState> entry in RoomStates.EnumerateAll())
             {
                 if (entry.Value.TryGetRoomForSpawnData(spawnData, out room))
                 {

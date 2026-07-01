@@ -7,6 +7,8 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
 {
     internal static class WebDashboardAvatarService
     {
+        private const int MaxPrewarmPerRefresh = 2;
+
         private static readonly Dictionary<ulong, CachedAvatar> ServeCache = [];
         private static string _assetsRoot = "";
         private static byte[]? _defaultAvatarBytes;
@@ -46,6 +48,7 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
                 WebDashboardSnapshotCache.MarkDirty();
             }
 
+            int encodedThisRefresh = 0;
             foreach (ulong steamId in steamIds)
             {
                 if (steamId == 0)
@@ -58,9 +61,15 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
                     continue;
                 }
 
+                if (encodedThisRefresh >= MaxPrewarmPerRefresh)
+                {
+                    break;
+                }
+
                 if (WebDashboardGameAvatarSource.TryGetPng(steamId, out byte[] png))
                 {
                     StoreServeCache(steamId, new CachedAvatar(png, "image/png"));
+                    encodedThisRefresh++;
                 }
             }
         }

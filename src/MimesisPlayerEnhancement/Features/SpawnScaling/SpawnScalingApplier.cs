@@ -9,24 +9,21 @@ namespace MimesisPlayerEnhancement.Features.SpawnScaling
     {
         private const string Feature = "SpawnScaling";
 
-        private static readonly HashSet<DungeonRoom> AppliedRooms = [];
-        private static readonly HashSet<DungeonRoom> SkippedClientRooms = [];
-
         internal static bool IsApplied(DungeonRoom room)
         {
-            return AppliedRooms.Contains(room);
+            return DungeonRoomAppliedSet.IsApplied(room);
         }
 
         internal static void EnsureApplied(DungeonRoom room)
         {
-            if (AppliedRooms.Contains(room))
+            if (DungeonRoomAppliedSet.IsApplied(room))
             {
                 return;
             }
 
             if (HostApplyGate.IsParticipantClient())
             {
-                if (SkippedClientRooms.Add(room))
+                if (DungeonRoomAppliedSet.MarkSkippedOnce(room))
                 {
                     ModLog.Debug(Feature, "Spawn scaling skipped — participant client");
                 }
@@ -41,7 +38,7 @@ namespace MimesisPlayerEnhancement.Features.SpawnScaling
             }
 
             Apply(room);
-            _ = AppliedRooms.Add(room);
+            DungeonRoomAppliedSet.MarkApplied(room);
         }
 
         internal static void Apply(DungeonRoom room)

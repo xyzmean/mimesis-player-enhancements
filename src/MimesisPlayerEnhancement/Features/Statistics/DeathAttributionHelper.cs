@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using MimesisPlayerEnhancement.Util;
 using ReluProtocol.Enum;
 using UnityEngine;
@@ -12,8 +13,30 @@ namespace MimesisPlayerEnhancement.Features.Statistics
         private const BindingFlags InstanceFlags =
             BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
 
+        private const float TrapSearchRadius = 8f;
+
         private static readonly FieldInfo? LevelObjectsField =
             typeof(IVroom).GetField("_levelObjects", InstanceFlags);
+
+        private static readonly ConditionalWeakTable<IVroom, RoomTrapIndex> TrapIndexByRoom = new();
+
+        private sealed class RoomTrapIndex
+        {
+            internal readonly List<TrapCandidate> Traps = [];
+        }
+
+        private readonly struct TrapCandidate
+        {
+            internal TrapCandidate(Vector3 position, TrapType trapType)
+            {
+                Position = position;
+                TrapType = trapType;
+            }
+
+            internal Vector3 Position { get; }
+
+            internal TrapType TrapType { get; }
+        }
 
         internal static bool TryResolveTrapDeath(VPlayer victim, ActorDyingSig sig, IVroom room, out TrapType trapType)
         {
@@ -95,34 +118,26 @@ namespace MimesisPlayerEnhancement.Features.Statistics
         private static bool TryFindTrapNearPosition(IVroom room, Vector3 position, out TrapType trapType)
         {
             trapType = TrapType.Default;
-            if (!TryGetLevelObjects(room, out Dictionary<int, ILevelObjectInfo>? levelObjects))
+            RoomTrapIndex index = GetOrBuildTrapIndex(room);
+            if (index.Traps.Count == 0)
             {
                 return false;
             }
 
-            const float maxDistance = 8f;
             float bestDistance = float.MaxValue;
             TrapType bestType = TrapType.Default;
             bool found = false;
 
-            foreach (ILevelObjectInfo info in levelObjects!.Values)
+            foreach (TrapCandidate candidate in index.Traps)
             {
-                if (!TryGetTrapTypeFromLevelObject(info, out TrapType candidate))
-                {
-                    continue;
-                }
-
-                Vector3 trapPos = info is StateLevelObjectInfo state
-                    ? new Vector3(state.Pos.x, state.Pos.y, state.Pos.z)
-                    : Vector3.zero;
-                float distance = Vector3.Distance(position, trapPos);
-                if (distance > maxDistance || distance >= bestDistance)
+                float distance = Vector3.Distance(position, candidate.Position);
+                if (distance > TrapSearchRadius || distance >= bestDistance)
                 {
                     continue;
                 }
 
                 bestDistance = distance;
-                bestType = candidate;
+                bestType = candidate.TrapType;
                 found = true;
             }
 
@@ -132,6 +147,34 @@ namespace MimesisPlayerEnhancement.Features.Statistics
             }
 
             return found;
+        }
+
+        private static RoomTrapIndex GetOrBuildTrapIndex(IVroom room)
+        {
+            if (TrapIndexByRoom.TryGetValue(room, out RoomTrapIndex? existing))
+            {
+                return existing;
+            }
+
+            RoomTrapIndex index = new();
+            if (TryGetLevelObjects(room, out Dictionary<int, ILevelObjectInfo>? levelObjects))
+            {
+                foreach (ILevelObjectInfo info in levelObjects!.Values)
+                {
+                    if (!TryGetTrapTypeFromLevelObject(info, out TrapType candidate))
+                    {
+                        continue;
+                    }
+
+                    Vector3 trapPos = info is StateLevelObjectInfo state
+                        ? new Vector3(state.Pos.x, state.Pos.y, state.Pos.z)
+                        : Vector3.zero;
+                    index.Traps.Add(new TrapCandidate(trapPos, candidate));
+                }
+            }
+
+            TrapIndexByRoom.Add(room, index);
+            return index;
         }
 
         private static bool TryGetLevelObjects(IVroom room, out Dictionary<int, ILevelObjectInfo>? levelObjects)
