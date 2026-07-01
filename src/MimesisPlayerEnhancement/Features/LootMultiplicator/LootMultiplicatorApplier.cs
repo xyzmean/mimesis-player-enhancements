@@ -19,19 +19,19 @@ namespace MimesisPlayerEnhancement.Features.LootMultiplicator
 
         internal static bool IsApplied(DungeonRoom room)
         {
-            return DungeonRoomAppliedSet.IsApplied(room);
+            return DungeonRoomAppliedSet.IsApplied(room, DungeonRoomApplyKind.LootScaling);
         }
 
         internal static void EnsureApplied(DungeonRoom room)
         {
-            if (DungeonRoomAppliedSet.IsApplied(room))
+            if (DungeonRoomAppliedSet.IsApplied(room, DungeonRoomApplyKind.LootScaling))
             {
                 return;
             }
 
             if (HostApplyGate.IsParticipantClient())
             {
-                if (DungeonRoomAppliedSet.MarkSkippedOnce(room))
+                if (DungeonRoomAppliedSet.MarkSkippedOnce(room, DungeonRoomApplyKind.LootScalingSkippedOnce))
                 {
                     ModLog.Debug(Feature, "Loot scaling skipped — participant client");
                 }
@@ -46,7 +46,7 @@ namespace MimesisPlayerEnhancement.Features.LootMultiplicator
             }
 
             Apply(room);
-            DungeonRoomAppliedSet.MarkApplied(room);
+            DungeonRoomAppliedSet.MarkApplied(room, DungeonRoomApplyKind.LootScaling);
             FixedLootSpawnCoordinator.ApplyAfterInit(room);
         }
 

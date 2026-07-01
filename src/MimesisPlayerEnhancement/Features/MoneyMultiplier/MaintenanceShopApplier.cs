@@ -20,10 +20,86 @@ namespace MimesisPlayerEnhancement.Features.MoneyMultiplier
         private static int _configGeneration;
         private static readonly ConditionalWeakTable<MaintenanceRoom, RoomState> States = [];
         private static readonly ConditionalWeakTable<MaintenanceRoom, Dictionary<int, int>> BasePricesByRoom = [];
+        private static readonly List<WeakReference<MaintenanceRoom>> TouchedRooms = [];
 
         internal static void NotifyConfigChanged()
         {
             _ = Interlocked.Increment(ref _configGeneration);
+        }
+
+        /// <summary>
+        /// Reverts scaled shop prices back to their cached vanilla base when the feature is
+        /// toggled off mid-session. Vanilla discount rates cannot be recovered once mod
+        /// discounts overwrote them, so prices revert to the undiscounted base.
+        /// </summary>
+        internal static void RestoreVanillaPrices()
+        {
+            for (int i = TouchedRooms.Count - 1; i >= 0; i--)
+            {
+                if (!TouchedRooms[i].TryGetTarget(out MaintenanceRoom? room) || room == null)
+                {
+                    TouchedRooms.RemoveAt(i);
+                    continue;
+                }
+
+                if (!BasePricesByRoom.TryGetValue(room, out Dictionary<int, int>? basePrices)
+                    || basePrices == null
+                    || basePrices.Count == 0)
+                {
+                    continue;
+                }
+
+                if (MaintenanceRoomAccess.GetPriceForItems(room) is not Dictionary<int, ShopItemPriceInfo> priceForItems
+                    || priceForItems.Count == 0)
+                {
+                    continue;
+                }
+
+                int restored = 0;
+                foreach (KeyValuePair<int, ShopItemPriceInfo> entry in priceForItems)
+                {
+                    ShopItemPriceInfo? info = entry.Value;
+                    if (info == null || !basePrices.TryGetValue(entry.Key, out int basePrice) || basePrice <= 0)
+                    {
+                        continue;
+                    }
+
+                    if (info.Price == basePrice && info.DiscountRate == 0f)
+                    {
+                        continue;
+                    }
+
+                    info.Price = basePrice;
+                    info.DiscountRate = 0f;
+                    restored++;
+                }
+
+                if (restored > 0)
+                {
+                    MaintenanceRoomAccess.SyncVendingMachines(room, priceForItems);
+                    MarkDirty(room);
+                    ModLog.Info(Feature, $"Shop prices restored to vanilla — {restored} items");
+                }
+            }
+        }
+
+        private static void TrackRoom(MaintenanceRoom room)
+        {
+            for (int i = TouchedRooms.Count - 1; i >= 0; i--)
+            {
+                if (!TouchedRooms[i].TryGetTarget(out MaintenanceRoom? existing))
+                {
+                    TouchedRooms.RemoveAt(i);
+                    continue;
+                }
+
+                if (ReferenceEquals(existing, room))
+                {
+                    return;
+                }
+            }
+
+            TouchedRooms.Add(new WeakReference<MaintenanceRoom>(room));
         }
 
         internal static void PrepareForShopInit(MaintenanceRoom room)
@@ -119,6 +195,7 @@ namespace MimesisPlayerEnhancement.Features.MoneyMultiplier
             bool modDiscountsEnabled = ModConfig.ShopDiscountChancePercent.Value > 0;
 
             Dictionary<int, int> basePrices = BasePricesByRoom.GetOrCreateValue(room);
+            TrackRoom(room);
 
             int scaledCount = 0;
             foreach (KeyValuePair<int, ShopItemPriceInfo> entry in priceForItems)

@@ -67,6 +67,13 @@ namespace MimesisPlayerEnhancement.Features.MorePlayers
         {
             if (!ModConfig.EnableMorePlayers.Value)
             {
+                // Revert an elevated live socket cap to vanilla so a disabled feature does not
+                // keep accepting more than 4 players on the current host session.
+                if (_lastAppliedMaxClients > VanillaMaxPlayers)
+                {
+                    ApplyMaxClientsToSocket(VanillaMaxPlayers);
+                }
+
                 _lastAppliedMaxClients = -1;
                 return;
             }
@@ -77,19 +84,30 @@ namespace MimesisPlayerEnhancement.Features.MorePlayers
                 return;
             }
 
+            if (ApplyMaxClientsToSocket(maxPlayers))
+            {
+                _lastAppliedMaxClients = maxPlayers;
+            }
+        }
+
+        private static bool ApplyMaxClientsToSocket(int maxClients)
+        {
             try
             {
                 object? socket = GameNetworkApi.GetServerSocket();
-                if (socket != null)
+                if (socket == null)
                 {
-                    GameNetworkApi.SetMaximumClients(socket, maxPlayers);
-                    _lastAppliedMaxClients = maxPlayers;
-                    ModLog.Debug(Feature, $"Server socket max clients refreshed to {maxPlayers}.");
+                    return false;
                 }
+
+                GameNetworkApi.SetMaximumClients(socket, maxClients);
+                ModLog.Debug(Feature, $"Server socket max clients refreshed to {maxClients}.");
+                return true;
             }
             catch (Exception ex)
             {
                 ModLog.Warn(Feature, $"Server socket refresh: {ex.Message}");
+                return false;
             }
         }
 

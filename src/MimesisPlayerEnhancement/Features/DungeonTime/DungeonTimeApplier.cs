@@ -7,14 +7,14 @@ namespace MimesisPlayerEnhancement.Features.DungeonTime
     {
         internal static void EnsureApplied(DungeonRoom room)
         {
-            if (DungeonRoomAppliedSet.IsApplied(room))
+            if (DungeonRoomAppliedSet.IsApplied(room, DungeonRoomApplyKind.DungeonTime))
             {
                 return;
             }
 
             if (!HostApplyGate.ShouldApplyHostOnlyFeature(() => ModConfig.EnableDungeonTime.Value))
             {
-                DungeonRoomAppliedSet.MarkApplied(room);
+                DungeonRoomAppliedSet.MarkApplied(room, DungeonRoomApplyKind.DungeonTime);
                 if (!ModConfig.EnableDungeonTime.Value)
                 {
                     DungeonTimeLog.DebugSkipped("EnableDungeonTime is off");
@@ -31,19 +31,19 @@ namespace MimesisPlayerEnhancement.Features.DungeonTime
             long bonusMs = DungeonTimeResolver.GetBonusMilliseconds(playerCount);
             if (bonusMs <= 0)
             {
-                DungeonRoomAppliedSet.MarkApplied(room);
+                DungeonRoomAppliedSet.MarkApplied(room, DungeonRoomApplyKind.DungeonTime);
                 DungeonTimeLog.DebugSkipped($"no bonus for players={playerCount}");
                 return;
             }
 
             if (!DungeonRoomSessionTime.TryExtendEndTime(room, bonusMs, out long newEndTime))
             {
-                DungeonRoomAppliedSet.MarkApplied(room);
+                DungeonRoomAppliedSet.MarkApplied(room, DungeonRoomApplyKind.DungeonTime);
                 DungeonTimeLog.DebugSkipped("failed to extend session end time");
                 return;
             }
 
-            DungeonRoomAppliedSet.MarkApplied(room);
+            DungeonRoomAppliedSet.MarkApplied(room, DungeonRoomApplyKind.DungeonTime);
             DungeonTimeLog.InfoApplied(playerCount, bonusMs, newEndTime);
         }
     }

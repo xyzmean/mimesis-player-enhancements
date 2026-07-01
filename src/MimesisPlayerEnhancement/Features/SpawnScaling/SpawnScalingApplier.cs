@@ -11,19 +11,19 @@ namespace MimesisPlayerEnhancement.Features.SpawnScaling
 
         internal static bool IsApplied(DungeonRoom room)
         {
-            return DungeonRoomAppliedSet.IsApplied(room);
+            return DungeonRoomAppliedSet.IsApplied(room, DungeonRoomApplyKind.SpawnScaling);
         }
 
         internal static void EnsureApplied(DungeonRoom room)
         {
-            if (DungeonRoomAppliedSet.IsApplied(room))
+            if (DungeonRoomAppliedSet.IsApplied(room, DungeonRoomApplyKind.SpawnScaling))
             {
                 return;
             }
 
             if (HostApplyGate.IsParticipantClient())
             {
-                if (DungeonRoomAppliedSet.MarkSkippedOnce(room))
+                if (DungeonRoomAppliedSet.MarkSkippedOnce(room, DungeonRoomApplyKind.SpawnScalingSkippedOnce))
                 {
                     ModLog.Debug(Feature, "Spawn scaling skipped — participant client");
                 }
@@ -38,7 +38,7 @@ namespace MimesisPlayerEnhancement.Features.SpawnScaling
             }
 
             Apply(room);
-            DungeonRoomAppliedSet.MarkApplied(room);
+            DungeonRoomAppliedSet.MarkApplied(room, DungeonRoomApplyKind.SpawnScaling);
         }
 
         internal static void Apply(DungeonRoom room)

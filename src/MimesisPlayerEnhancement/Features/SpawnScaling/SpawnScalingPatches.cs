@@ -38,6 +38,15 @@ namespace MimesisPlayerEnhancement.Features.SpawnScaling
             HarmonyPatchHelper.LogPatchSummary(Feature, result);
         }
 
+        /// <summary>Called via FeatureModule.SyncFromConfig when the SpawnScaling section changes.</summary>
+        public static void RefreshFromConfig()
+        {
+            if (!ModConfig.EnableSpawnScaling.Value)
+            {
+                MapPlacedEncounterScheduler.ClearPendingEncounters();
+            }
+        }
+
         private static MethodBase? ResolveSpawnMonsterMethod()
         {
             return AccessTools.Method(typeof(IVroom), "SpawnMonster", SpawnMonsterParameterTypes);
@@ -151,7 +160,9 @@ namespace MimesisPlayerEnhancement.Features.SpawnScaling
                 SpawnedActorData spawnData,
                 ref bool __result)
             {
-                if (!ModConfig.EnableSpawnScaling.Value || __instance is not DungeonRoom dungeonRoom)
+                if (!ModConfig.EnableSpawnScaling.Value
+                    || __instance is not DungeonRoom dungeonRoom
+                    || !HostApplyGate.ShouldApplyHostOnlyFeature())
                 {
                     return true;
                 }

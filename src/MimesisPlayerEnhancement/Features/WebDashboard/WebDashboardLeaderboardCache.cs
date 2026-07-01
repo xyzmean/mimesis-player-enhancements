@@ -13,7 +13,7 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
         private static string? _cachedJson;
         private static int _cachedSlotId = -1;
         private static long _cachedContentHash;
-        private static volatile bool _serializeInFlight;
+        private static int _serializeInFlight;
 
         internal static string? GetOrSchedule(
             int saveSlotId,
@@ -33,11 +33,10 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
                 return _cachedJson;
             }
 
-            if (!_serializeInFlight)
+            if (System.Threading.Interlocked.CompareExchange(ref _serializeInFlight, 1, 0) == 0)
             {
                 LeaderboardDocument snapshot = CloneDocument(doc);
                 List<ulong> connectedIds = [.. connectedSteamIds];
-                _serializeInFlight = true;
                 _ = Task.Run(() => SerializeBackground(saveSlotId, snapshot, connectedIds, contentHash));
             }
 
@@ -78,7 +77,7 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
             }
             finally
             {
-                _serializeInFlight = false;
+                _ = System.Threading.Interlocked.Exchange(ref _serializeInFlight, 0);
             }
         }
 

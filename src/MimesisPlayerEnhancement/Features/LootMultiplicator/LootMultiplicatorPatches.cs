@@ -41,6 +41,15 @@ namespace MimesisPlayerEnhancement.Features.LootMultiplicator
             HarmonyPatchHelper.LogPatchSummary(Feature, result);
         }
 
+        /// <summary>Called via FeatureModule.SyncFromConfig when the LootMultiplicator section changes.</summary>
+        public static void RefreshFromConfig()
+        {
+            if (!ModConfig.EnableLootMultiplicator.Value)
+            {
+                FixedLootSpawnCoordinator.ClearPendingRespawns();
+            }
+        }
+
         private static MethodBase? ResolveSpawnLootingObjectMethod()
         {
             return AccessTools.Method(typeof(IVroom), "SpawnLootingObject", SpawnLootingObjectParameterTypes);
@@ -73,7 +82,6 @@ namespace MimesisPlayerEnhancement.Features.LootMultiplicator
                 try
                 {
                     LootMultiplicatorApplier.EnsureApplied(__instance);
-                    FixedLootSpawnCoordinator.ApplyAfterInit(__instance);
                 }
                 catch (Exception ex)
                 {

@@ -69,14 +69,27 @@ namespace MimesisPlayerEnhancement.Features.LootMultiplicator
         private static readonly DungeonRoomStateRegistry<RoomState> RoomStates = new();
         private static readonly List<PendingRespawn> PendingRespawns = [];
 
-        internal static void ApplyAfterInit(DungeonRoom room)
+        /// <summary>Drops queued loot respawns so a disabled feature cannot spawn them later.</summary>
+        internal static void ClearPendingRespawns()
         {
-            if (!LootScalingGate.ShouldScale(room) || DungeonRoomAppliedSet.IsApplied(room))
+            if (PendingRespawns.Count == 0)
             {
                 return;
             }
 
-            DungeonRoomAppliedSet.MarkApplied(room);
+            ModLog.Debug(Feature, $"Pending loot respawns cleared — {PendingRespawns.Count} dropped");
+            PendingRespawns.Clear();
+        }
+
+        internal static void ApplyAfterInit(DungeonRoom room)
+        {
+            if (!LootScalingGate.ShouldScale(room)
+                || DungeonRoomAppliedSet.IsApplied(room, DungeonRoomApplyKind.FixedLootCoordination))
+            {
+                return;
+            }
+
+            DungeonRoomAppliedSet.MarkApplied(room, DungeonRoomApplyKind.FixedLootCoordination);
 
             if (SpawnedActorDatasField.GetValue(room) is not IDictionary spawnDatas || spawnDatas.Count == 0)
             {
@@ -192,7 +205,9 @@ namespace MimesisPlayerEnhancement.Features.LootMultiplicator
 
         internal static void ProcessPendingRespawns()
         {
-            if (PendingRespawns.Count == 0)
+            if (PendingRespawns.Count == 0
+                || !ModConfig.EnableLootMultiplicator.Value
+                || !HostApplyGate.ShouldApplyHostOnlyFeature())
             {
                 return;
             }

@@ -4,34 +4,60 @@ using System.Runtime.CompilerServices;
 
 namespace MimesisPlayerEnhancement.Util
 {
+    [Flags]
+    internal enum DungeonRoomApplyKind
+    {
+        SpawnScaling = 1 << 0,
+        MapPlacedEncounters = 1 << 1,
+        LootScaling = 1 << 2,
+        FixedLootCoordination = 1 << 3,
+        DungeonTime = 1 << 4,
+        SpawnScalingSkippedOnce = 1 << 8,
+        LootScalingSkippedOnce = 1 << 9,
+    }
+
     internal static class DungeonRoomAppliedSet
     {
-        private sealed class Marker
+        private sealed class RoomApplyState
         {
+            internal DungeonRoomApplyKind Flags;
         }
 
-        private static readonly ConditionalWeakTable<DungeonRoom, Marker> Applied = new();
-        private static readonly ConditionalWeakTable<DungeonRoom, Marker> SkippedOnce = new();
+        private static readonly ConditionalWeakTable<DungeonRoom, RoomApplyState> States = new();
 
-        internal static bool IsApplied(DungeonRoom room)
+        internal static bool IsApplied(DungeonRoom room, DungeonRoomApplyKind kind)
         {
-            return Applied.TryGetValue(room, out _);
+            return States.TryGetValue(room, out RoomApplyState? state)
+                && (state.Flags & kind) != 0;
         }
 
-        internal static void MarkApplied(DungeonRoom room)
+        internal static void MarkApplied(DungeonRoom room, DungeonRoomApplyKind kind)
         {
-            Applied.Add(room, new Marker());
+            RoomApplyState state = GetOrCreateState(room);
+            state.Flags |= kind;
         }
 
-        internal static bool MarkSkippedOnce(DungeonRoom room)
+        internal static bool MarkSkippedOnce(DungeonRoom room, DungeonRoomApplyKind skipKind)
         {
-            if (SkippedOnce.TryGetValue(room, out _))
+            RoomApplyState state = GetOrCreateState(room);
+            if ((state.Flags & skipKind) != 0)
             {
                 return false;
             }
 
-            SkippedOnce.Add(room, new Marker());
+            state.Flags |= skipKind;
             return true;
+        }
+
+        private static RoomApplyState GetOrCreateState(DungeonRoom room)
+        {
+            if (!States.TryGetValue(room, out RoomApplyState? state))
+            {
+                state = new RoomApplyState();
+                States.Add(room, state);
+            }
+
+            return state;
         }
     }
 

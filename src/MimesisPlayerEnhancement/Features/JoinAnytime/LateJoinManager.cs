@@ -22,6 +22,14 @@ namespace MimesisPlayerEnhancement.Features.JoinAnytime
 
         internal static bool IsEnabled => ModConfig.EnableJoinAnytime.Value;
 
+        /// <summary>Clears routing state so stale UIDs cannot leak across sessions or feature toggles.</summary>
+        internal static void Reset()
+        {
+            SentPreGameStateUids.Clear();
+            PendingTramRouteUids.Clear();
+            _nextTramRouteRetryTime = 0f;
+        }
+
         internal static void OnLevelLoadCompleted(VPlayer player)
         {
             TryRouteLateJoinerToTram(player, allowResend: false);

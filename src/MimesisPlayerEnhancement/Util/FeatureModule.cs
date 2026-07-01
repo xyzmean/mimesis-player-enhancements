@@ -88,14 +88,21 @@ namespace MimesisPlayerEnhancement.Util
                 if (ModConfig.EnableStatistics.Value) { StatisticsTracker.OnUpdate(); } }),
             new FeatureModule("PlayerAnnouncements", PlayerAnnouncementPatches.Apply),
             new FeatureModule("MorePlayers", MorePlayersPatches.Apply, MorePlayersPatches.RefreshFromConfig),
-            new FeatureModule("JoinAnytime", JoinAnytimePatches.Apply, onUpdate: JoinAnytimeRuntime.OnUpdate),
-            new FeatureModule("SpawnScaling", SpawnScalingPatches.Apply, onUpdate: () =>
+            new FeatureModule("JoinAnytime", JoinAnytimePatches.Apply,
+                syncFromConfig: JoinAnytimeRuntime.RefreshFromConfig,
+                onUpdate: JoinAnytimeRuntime.OnUpdate),
+            new FeatureModule("SpawnScaling", SpawnScalingPatches.Apply,
+                syncFromConfig: SpawnScalingPatches.RefreshFromConfig,
+                onUpdate: () =>
             {
                 if (ModConfig.EnableSpawnScaling.Value) { MapPlacedEncounterScheduler.ProcessPendingEncounters(); } }, throttledUpdate: true),
-            new FeatureModule("LootMultiplicator", LootMultiplicatorPatches.Apply, onUpdate: () =>
+            new FeatureModule("LootMultiplicator", LootMultiplicatorPatches.Apply,
+                syncFromConfig: LootMultiplicatorPatches.RefreshFromConfig,
+                onUpdate: () =>
             {
                 if (ModConfig.EnableLootMultiplicator.Value) { FixedLootSpawnCoordinator.ProcessPendingRespawns(); } }, throttledUpdate: true),
-            new FeatureModule("MoneyMultiplier", MoneyMultiplierPatches.Apply),
+            new FeatureModule("MoneyMultiplier", MoneyMultiplierPatches.Apply,
+                syncFromConfig: MoneyMultiplierPatches.RefreshFromConfig),
             new FeatureModule("DungeonTime", DungeonTimePatches.Apply),
             new FeatureModule("MimicTuning", MimicTuningPatches.Apply),
             new FeatureModule("PlayerTuning", PlayerTuningPatches.Apply,

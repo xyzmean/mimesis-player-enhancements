@@ -15,6 +15,12 @@ namespace MimesisPlayerEnhancement.Features.JoinAnytime
 
         private static int _blockingPendingCount;
 
+        internal static void Reset()
+        {
+            PendingByUid.Clear();
+            _blockingPendingCount = 0;
+        }
+
         internal static void OnServerLogin(SessionContext context)
         {
             if (!ModConfig.EnableJoinAnytime.Value || context == null)

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using MimesisPlayerEnhancement.Util;
 
 namespace MimesisPlayerEnhancement.Features.PlayerAnnouncements
 {
@@ -19,6 +20,11 @@ namespace MimesisPlayerEnhancement.Features.PlayerAnnouncements
             BossSpawnAnnouncer.BeginDungeonRun();
 
             if (!ModConfig.ShowPlayerAnnouncements.Value)
+            {
+                return;
+            }
+
+            if (!HostApplyGate.ShouldApplyHostOnlyFeature())
             {
                 return;
             }

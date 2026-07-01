@@ -48,9 +48,15 @@ namespace MimesisPlayerEnhancement.ModVersionDisplay
             }
 
             string current = textProp.GetValue(versionText) as string ?? string.Empty;
+            string prefix = $"MimesisPlayerEnhancement v{VersionInfo.ModuleVersion}";
+            if (current.StartsWith(prefix, StringComparison.Ordinal))
+            {
+                return;
+            }
+
             textProp.SetValue(
                 versionText,
-                $"MimesisPlayerEnhancement v{VersionInfo.ModuleVersion}\n{current}");
+                $"{prefix}\n{current}");
         }
 
         [HarmonyPatch(typeof(UIPrefab_MainMenu), "SetVersionText")]

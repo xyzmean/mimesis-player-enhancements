@@ -27,9 +27,22 @@ namespace MimesisPlayerEnhancement.Features.SpawnScaling
 
         private static readonly List<PendingEncounterSpawn> PendingEncounters = [];
 
+        /// <summary>Drops queued bonus encounters so a disabled feature cannot spawn them later.</summary>
+        internal static void ClearPendingEncounters()
+        {
+            if (PendingEncounters.Count == 0)
+            {
+                return;
+            }
+
+            ModLog.Debug(Feature, $"Pending bonus encounters cleared — {PendingEncounters.Count} dropped");
+            PendingEncounters.Clear();
+        }
+
         internal static void ApplyAfterInit(DungeonRoom room)
         {
-            if (!ModConfig.EnableSpawnScaling.Value || DungeonRoomAppliedSet.IsApplied(room))
+            if (!ModConfig.EnableSpawnScaling.Value
+                || DungeonRoomAppliedSet.IsApplied(room, DungeonRoomApplyKind.MapPlacedEncounters))
             {
                 return;
             }
@@ -39,7 +52,7 @@ namespace MimesisPlayerEnhancement.Features.SpawnScaling
                 return;
             }
 
-            DungeonRoomAppliedSet.MarkApplied(room);
+            DungeonRoomAppliedSet.MarkApplied(room, DungeonRoomApplyKind.MapPlacedEncounters);
 
             if (SpawnScalingFields.SpawnedActorDatasField.GetValue(room) is not IDictionary spawnDatas || spawnDatas.Count == 0)
             {
@@ -149,7 +162,9 @@ namespace MimesisPlayerEnhancement.Features.SpawnScaling
 
         internal static void ProcessPendingEncounters()
         {
-            if (PendingEncounters.Count == 0)
+            if (PendingEncounters.Count == 0
+                || !ModConfig.EnableSpawnScaling.Value
+                || !HostApplyGate.ShouldApplyHostOnlyFeature())
             {
                 return;
             }
@@ -266,7 +281,7 @@ namespace MimesisPlayerEnhancement.Features.SpawnScaling
         {
             return !spawnData.SpawnType.Equals(SpawnType.OnStartMap)
                 && (spawnData.MaxRespawnCount == 0
-                    || spawnData.CurrentSpawnCount <= spawnData.MaxRespawnCount
+                    || spawnData.CurrentSpawnCount < spawnData.MaxRespawnCount
                     || spawnData.EnableReset);
         }
 
