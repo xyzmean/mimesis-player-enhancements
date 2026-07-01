@@ -1,17 +1,11 @@
 using System;
-using System.Reflection;
-using Bifrost.Cooked;
 using MimesisPlayerEnhancement.Util;
 
 namespace MimesisPlayerEnhancement.Features.MimicTuning
 {
     internal static class MimicTuningResolver
     {
-        private const BindingFlags InstanceFlags =
-            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
-
-        private static readonly PropertyInfo? HubDatamanProperty =
-            typeof(Hub).GetProperty("dataman", InstanceFlags);
+        // Const.json POSSESSION_DURATION (12000 ms) -> C_PossessionDuration.
         internal const float VanillaPossessionDurationSeconds = 12f;
         internal const float MinDurationSeconds = 0.1f;
         internal const float MaxDurationSeconds = 120f;
@@ -31,6 +25,12 @@ namespace MimesisPlayerEnhancement.Features.MimicTuning
         internal static bool IsVanillaMultiplier(float multiplier) =>
             Math.Abs(multiplier - 1f) < VanillaEpsilon;
 
+        internal static float GetVanillaPossessionDurationSeconds()
+        {
+            long ms = GetVanillaPossessionDurationMs();
+            return ms > 0 ? ms * 0.001f : VanillaPossessionDurationSeconds;
+        }
+
         internal static long GetVanillaPossessionDurationMs() =>
             TryGetConsts(out Bifrost.ConstEnum.DataConsts consts)
                 ? consts.C_PossessionDuration
@@ -43,21 +43,8 @@ namespace MimesisPlayerEnhancement.Features.MimicTuning
 
         private static bool TryGetConsts(out Bifrost.ConstEnum.DataConsts consts)
         {
-            consts = null!;
-            try
-            {
-                if (Hub.s == null || HubDatamanProperty?.GetValue(Hub.s) is not DataManager dataman)
-                {
-                    return false;
-                }
-
-                consts = dataman.ExcelDataManager.Consts;
-                return consts != null;
-            }
-            catch
-            {
-                return false;
-            }
+            consts = HubGameDataAccess.Excel?.Consts!;
+            return consts != null;
         }
 
         internal static long RollPossessionDurationMs(long vanillaMs, int mimicActorId)
@@ -92,7 +79,7 @@ namespace MimesisPlayerEnhancement.Features.MimicTuning
 
         internal static float GetProgressBarTotalSeconds(int mimicActorId, float serverLeftTimeMs)
         {
-            float vanillaSeconds = GetVanillaPossessionDurationMs() * 0.001f;
+            float vanillaSeconds = GetVanillaPossessionDurationSeconds();
             if (!ModConfig.EnableMimicTuning.Value || !ModConfig.RandomizeMimicPossessionDuration.Value)
             {
                 return vanillaSeconds;
