@@ -3,7 +3,7 @@ using System.Reflection;
 using HarmonyLib;
 using MimesisPlayerEnhancement.Util;
 
-namespace MimesisPlayerEnhancement.ModVersionDisplay
+namespace MimesisPlayerEnhancement.Features.ModVersionDisplay
 {
     public static class ModVersionDisplayPatches
     {
