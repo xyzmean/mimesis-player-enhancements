@@ -6,7 +6,7 @@ namespace MimesisPlayerEnhancement.Features.MoneyMultiplier
 
         internal static void DebugScaled(MoneyType type, int vanilla, int scaled, int playerCount, float effectiveMultiplier)
         {
-            if (!ModConfig.EnableDebugLogging.Value)
+            if (!ModConfig.EnableDebugLogging.Value || scaled == vanilla)
             {
                 return;
             }

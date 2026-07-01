@@ -85,9 +85,19 @@ namespace MimesisPlayerEnhancement.Features.MoneyMultiplier
 
         internal static int ScaleScrapValue(int vanilla)
         {
-            return IsEnabled()
-                ? ScaleForType(MoneyType.ScrapSellValue, vanilla, SessionPlayerCountHelper.ResolveFromSession())
-                : vanilla;
+            if (!IsEnabled() || vanilla == 0)
+            {
+                return vanilla;
+            }
+
+            int playerCount = SessionPlayerCountHelper.ResolveFromSession();
+            float effective = MoneyMultiplierResolver.GetEffectiveMultiplier(MoneyType.ScrapSellValue, playerCount);
+            if (effective == 1f)
+            {
+                return vanilla;
+            }
+
+            return ScaleForType(MoneyType.ScrapSellValue, vanilla, playerCount);
         }
 
         internal static int ScaleReinforcePrice(MaintenanceRoom room, int vanilla)

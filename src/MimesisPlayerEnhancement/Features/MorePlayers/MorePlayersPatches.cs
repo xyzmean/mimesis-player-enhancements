@@ -50,7 +50,7 @@ namespace MimesisPlayerEnhancement.Features.MorePlayers
                 ("GetMaximumClients/ServerSocket", AccessTools.Method(typeof(FishySteamworks.Server.ServerSocket), "GetMaximumClients")),
                 ("SetMaximumClients/ServerSocket", AccessTools.Method(typeof(FishySteamworks.Server.ServerSocket), "SetMaximumClients")),
                 ("ServerSocket.ctor", AccessTools.Constructor(typeof(FishySteamworks.Server.ServerSocket))),
-                ("CreateLobby/SteamInviteDispatcher", AccessTools.Method(typeof(SteamInviteDispatcher), nameof(SteamInviteDispatcher.CreateLobby))),
+                ("CreateLobby/SteamInviteDispatcher", AccessTools.Method(typeof(SteamInviteDispatcher), nameof(SteamInviteDispatcher.CreateLobby), [typeof(bool), typeof(bool)])),
                 ("UpdatePlayerGroupSize/SteamInviteDispatcher", AccessTools.Method(typeof(SteamInviteDispatcher), nameof(SteamInviteDispatcher.UpdatePlayerGroupSize))),
                 ("SetRoomList/UIPrefab_PublicRoomList", AccessTools.Method(typeof(UIPrefab_PublicRoomList), nameof(UIPrefab_PublicRoomList.SetRoomList))),
                 ("SetRoomData/UiPrefab_RoomCard", AccessTools.Method(typeof(UiPrefab_RoomCard), "SetRoomData")),
@@ -207,11 +207,11 @@ namespace MimesisPlayerEnhancement.Features.MorePlayers
             }
         }
 
-        [HarmonyPatch(typeof(SteamInviteDispatcher), nameof(SteamInviteDispatcher.CreateLobby))]
+        [HarmonyPatch(typeof(SteamInviteDispatcher), nameof(SteamInviteDispatcher.CreateLobby), typeof(bool), typeof(bool))]
         internal static class SteamLobbyCreationPatch
         {
             [HarmonyPrefix]
-            internal static bool Prefix(bool isOpenForRandomMatch)
+            internal static bool Prefix(bool isOpenForRandomMatch, bool isRetryAttempt)
             {
                 if (!ModConfig.EnableMorePlayers.Value)
                 {
@@ -221,10 +221,14 @@ namespace MimesisPlayerEnhancement.Features.MorePlayers
                 try
                 {
                     SteamMatchmaking.CreateLobby(ELobbyType.k_ELobbyTypePublic, GetMaxPlayers());
-                    PlayerPrefs.SetInt("TempLobbyIsOpen", isOpenForRandomMatch ? 1 : 0);
+                    if (!isRetryAttempt)
+                    {
+                        PlayerPrefs.SetInt("TempLobbyIsOpen", isOpenForRandomMatch ? 1 : 0);
+                    }
+
                     ModLog.Info(
                         Feature,
-                        $"Steam lobby created — maxPlayers={GetMaxPlayers()}, openForMatchmaking={isOpenForRandomMatch}.");
+                        $"Steam lobby created — maxPlayers={GetMaxPlayers()}, openForMatchmaking={isOpenForRandomMatch}, retry={isRetryAttempt}.");
                     return false;
                 }
                 catch (Exception ex)

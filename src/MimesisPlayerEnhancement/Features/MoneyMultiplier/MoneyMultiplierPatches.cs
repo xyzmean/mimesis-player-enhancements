@@ -5,6 +5,7 @@ using System.Reflection.Emit;
 using Bifrost.Cooked;
 using HarmonyLib;
 using MimesisPlayerEnhancement.Util;
+using ReluProtocol;
 
 namespace MimesisPlayerEnhancement.Features.MoneyMultiplier
 {
@@ -44,6 +45,8 @@ namespace MimesisPlayerEnhancement.Features.MoneyMultiplier
                 ("ClampTargetCurrencyToMin/GameSessionInfo", AccessTools.Method(typeof(GameSessionInfo), "ClampTargetCurrencyToMin")),
                 ("InitMaintenenceRoom/VRoomManager", AccessTools.Method(typeof(VRoomManager), nameof(VRoomManager.InitMaintenenceRoom))),
                 ("FinalPrice/ItemElement", AccessTools.PropertyGetter(typeof(ItemElement), nameof(ItemElement.FinalPrice))),
+                ("toItemInfo/ConsumableItemElement", AccessTools.Method(typeof(ConsumableItemElement), nameof(ConsumableItemElement.toItemInfo))),
+                ("toItemInfo/MiscellanyItemElement", AccessTools.Method(typeof(MiscellanyItemElement), nameof(MiscellanyItemElement.toItemInfo))),
                 ("GetMeanPrice/ItemMasterInfo", AccessTools.Method(typeof(ItemMasterInfo), nameof(ItemMasterInfo.GetMeanPrice))),
                 ("TryGetShopItemPrice/MaintenanceRoom", AccessTools.Method(typeof(MaintenanceRoom), nameof(MaintenanceRoom.TryGetShopItemPrice))),
                 ("InitShopItems/MaintenanceRoom", AccessTools.Method(typeof(MaintenanceRoom), nameof(MaintenanceRoom.InitShopItems))),
@@ -136,16 +139,49 @@ namespace MimesisPlayerEnhancement.Features.MoneyMultiplier
             {
                 try
                 {
-                    if (!MoneyMultiplierApplier.IsEnabled())
+                    int scaled = MoneyMultiplierApplier.ScaleScrapValue(__result);
+                    if (scaled != __result)
                     {
-                        return;
+                        __result = scaled;
                     }
-
-                    __result = MoneyMultiplierApplier.ScaleScrapValue(__result);
                 }
                 catch (Exception ex)
                 {
                     ModLog.Warn(Feature, $"FinalPrice postfix failed — {ex.Message}");
+                }
+            }
+        }
+
+        [HarmonyPatch(typeof(ConsumableItemElement), nameof(ConsumableItemElement.toItemInfo))]
+        public static class ConsumableItemElementToItemInfoPatch
+        {
+            [HarmonyPostfix]
+            public static void Postfix(ref ItemInfo __result)
+            {
+                try
+                {
+                    __result.price = MoneyMultiplierApplier.ScaleScrapValue(__result.price);
+                }
+                catch (Exception ex)
+                {
+                    ModLog.Warn(Feature, $"ConsumableItemElement.toItemInfo postfix failed — {ex.Message}");
+                }
+            }
+        }
+
+        [HarmonyPatch(typeof(MiscellanyItemElement), nameof(MiscellanyItemElement.toItemInfo))]
+        public static class MiscellanyItemElementToItemInfoPatch
+        {
+            [HarmonyPostfix]
+            public static void Postfix(ref ItemInfo __result)
+            {
+                try
+                {
+                    __result.price = MoneyMultiplierApplier.ScaleScrapValue(__result.price);
+                }
+                catch (Exception ex)
+                {
+                    ModLog.Warn(Feature, $"MiscellanyItemElement.toItemInfo postfix failed — {ex.Message}");
                 }
             }
         }
@@ -158,12 +194,11 @@ namespace MimesisPlayerEnhancement.Features.MoneyMultiplier
             {
                 try
                 {
-                    if (!MoneyMultiplierApplier.IsEnabled())
+                    int scaled = MoneyMultiplierApplier.ScaleScrapValue(__result);
+                    if (scaled != __result)
                     {
-                        return;
+                        __result = scaled;
                     }
-
-                    __result = MoneyMultiplierApplier.ScaleScrapValue(__result);
                 }
                 catch (Exception ex)
                 {

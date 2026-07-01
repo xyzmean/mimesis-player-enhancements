@@ -1,4 +1,7 @@
+using System;
 using System.Reflection;
+using ReluNetwork.ConstEnum;
+using Steamworks;
 
 namespace MimesisPlayerEnhancement.Features.JoinAnytime
 {
@@ -54,7 +57,60 @@ namespace MimesisPlayerEnhancement.Features.JoinAnytime
 
         internal static bool IsHostLobbyPublic(SteamInviteDispatcher? dispatcher)
         {
-            return dispatcher != null && IsPublicRoomField != null && IsPublicRoomField.GetValue(dispatcher) is true;
+            if (dispatcher == null)
+            {
+                return false;
+            }
+
+            if (IsPublicRoomField != null && IsPublicRoomField.GetValue(dispatcher) is true)
+            {
+                return true;
+            }
+
+            return ReadPublicRoomFromSteam(dispatcher);
+        }
+
+        internal static bool ReadPublicRoomFromSteam(SteamInviteDispatcher dispatcher)
+        {
+            if (dispatcher.joinedLobbyID == CSteamID.Nil)
+            {
+                return false;
+            }
+
+            try
+            {
+                string value = SteamMatchmaking.GetLobbyData(
+                    dispatcher.joinedLobbyID,
+                    SteamInviteDispatcher.IS_PUBLIC_KEY);
+                return string.Equals(value, "true", StringComparison.OrdinalIgnoreCase);
+            }
+            catch (Exception ex)
+            {
+                ModLog.Debug(Feature, $"Read PublicRoom lobby data failed — {ex.Message}");
+                return false;
+            }
+        }
+
+        internal static void SyncIsPublicRoomField(SteamInviteDispatcher dispatcher, bool isPublic)
+        {
+            if (IsPublicRoomField == null)
+            {
+                return;
+            }
+
+            try
+            {
+                IsPublicRoomField.SetValue(dispatcher, isPublic);
+            }
+            catch (Exception ex)
+            {
+                ModLog.Debug(Feature, $"Sync isPublicRoom field failed — {ex.Message}");
+            }
+        }
+
+        internal static bool IsHost()
+        {
+            return GetPdata()?.ClientMode == NetworkClientMode.Host;
         }
 
         private static void WarnMissingFieldsOnce()

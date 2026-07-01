@@ -42,7 +42,7 @@ namespace MimesisPlayerEnhancement.Features.MoneyMultiplier
         internal static void ApplyAfterLoad(MaintenanceRoom room)
         {
             PrepareForShopInit(room);
-            ApplyDiscounts(room);
+            // Saved shop prices already include rolled discounts — do not re-roll on load.
             ApplyBuyPrices(room);
             MarkApplied(room);
         }

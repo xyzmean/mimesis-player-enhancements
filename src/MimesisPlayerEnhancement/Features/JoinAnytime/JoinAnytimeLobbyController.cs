@@ -76,11 +76,19 @@ namespace MimesisPlayerEnhancement.Features.JoinAnytime
             RefreshLobbyState(force: phaseChanged);
         }
 
-        internal static void OnLobbyCreated(SteamInviteDispatcher dispatcher, bool isOpenForRandomMatch)
+        internal static void OnLobbyCreated(
+            SteamInviteDispatcher dispatcher,
+            bool isOpenForRandomMatch,
+            bool isRetryAttempt)
         {
-            if (!ModConfig.EnableJoinAnytime.Value)
+            if (!ModConfig.EnableJoinAnytime.Value || isRetryAttempt)
             {
                 return;
+            }
+
+            if (isOpenForRandomMatch)
+            {
+                JoinAnytimeHub.SyncIsPublicRoomField(dispatcher, isPublic: true);
             }
 
             CaptureBaseFromDispatcher(dispatcher);
@@ -124,24 +132,28 @@ namespace MimesisPlayerEnhancement.Features.JoinAnytime
             bool hostWantsPublic = JoinAnytimeHub.IsHostLobbyPublic(dispatcher);
             ModLog.Debug(Feature, $"Steam lobby data refresh — hostWantsPublic={hostWantsPublic}");
 
-            try
+            if (hostWantsPublic)
             {
-                if (hostWantsPublic)
-                {
-                    dispatcher.SetLobbyPublic(true);
-                    ApplyLobbyPresence(dispatcher, wantsPublic: true);
-                }
-                else
-                {
-                    dispatcher.SetLobbyPublic(false);
-                }
-            }
-            catch (Exception ex)
-            {
-                ModLog.Debug(Feature, $"Lobby visibility refresh failed — {ex.Message}");
+                EnsurePublicLobbyVisible(dispatcher);
             }
 
             RefreshLobbyState(force: true);
+        }
+
+        internal static void EnsurePublicLobbyVisible(SteamInviteDispatcher dispatcher)
+        {
+            JoinAnytimeHub.SyncIsPublicRoomField(dispatcher, isPublic: true);
+
+            try
+            {
+                dispatcher.UpdateLobbyData(SteamInviteDispatcher.IS_PUBLIC_KEY, "true");
+            }
+            catch (Exception ex)
+            {
+                ModLog.Debug(Feature, $"PublicRoom lobby data refresh failed — {ex.Message}");
+            }
+
+            ApplyLobbyPresence(dispatcher, wantsPublic: true);
         }
 
         internal static void OnPublicRoomNameChanged(UIPrefab_InGameMenu menu, string rawLobbyName)

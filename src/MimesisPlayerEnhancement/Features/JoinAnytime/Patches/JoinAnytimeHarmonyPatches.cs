@@ -271,13 +271,13 @@ namespace MimesisPlayerEnhancement.Features.JoinAnytime.Patches
         }
     }
 
-    [HarmonyPatch(typeof(SteamInviteDispatcher), nameof(SteamInviteDispatcher.CreateLobby))]
+    [HarmonyPatch(typeof(SteamInviteDispatcher), nameof(SteamInviteDispatcher.CreateLobby), typeof(bool), typeof(bool))]
     internal static class SteamInviteDispatcherCreateLobbyPatch
     {
         [HarmonyPostfix]
-        private static void Postfix(SteamInviteDispatcher __instance, bool isOpenForRandomMatch)
+        private static void Postfix(SteamInviteDispatcher __instance, bool isOpenForRandomMatch, bool isRetryAttempt)
         {
-            JoinAnytimeLobbyController.OnLobbyCreated(__instance, isOpenForRandomMatch);
+            JoinAnytimeLobbyController.OnLobbyCreated(__instance, isOpenForRandomMatch, isRetryAttempt);
         }
     }
 
