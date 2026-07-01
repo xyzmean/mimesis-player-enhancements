@@ -210,7 +210,8 @@ namespace MimesisPlayerEnhancement.Features.Statistics
             int slotId = _loadedSlotId;
             bool changed = false;
 
-            foreach (KeyValuePair<ulong, PlayerStatisticsDocument> kvp in _players)
+            List<KeyValuePair<ulong, PlayerStatisticsDocument>> playersSnapshot = [.. _players];
+            foreach (KeyValuePair<ulong, PlayerStatisticsDocument> kvp in playersSnapshot)
             {
                 PlayerStatisticsDocument doc = kvp.Value;
                 SessionStats? session = doc.CurrentSession;
@@ -233,7 +234,8 @@ namespace MimesisPlayerEnhancement.Features.Statistics
             if (UnityEngine.Time.time >= _nextConnectedTimeFlushTime)
             {
                 _nextConnectedTimeFlushTime = UnityEngine.Time.time + ConnectedTimeFlushIntervalSeconds;
-                foreach (ulong steamId in _connectedSince.Keys)
+                List<ulong> connectedSteamIds = [.. _connectedSince.Keys];
+                foreach (ulong steamId in connectedSteamIds)
                 {
                     if (!_players.TryGetValue(steamId, out PlayerStatisticsDocument? doc))
                     {
@@ -279,7 +281,8 @@ namespace MimesisPlayerEnhancement.Features.Statistics
                 ApplyDungeonReportTotals(steamId, kvp.Value);
             }
 
-            foreach (ulong steamId in _connectedSince.Keys)
+            List<ulong> connectedSteamIds = [.. _connectedSince.Keys];
+            foreach (ulong steamId in connectedSteamIds)
             {
                 _ = affected.Add(steamId);
             }
@@ -590,7 +593,7 @@ namespace MimesisPlayerEnhancement.Features.Statistics
 
         internal static IReadOnlyCollection<ulong> GetConnectedSteamIds()
         {
-            return _connectedSince.Keys;
+            return [.. _connectedSince.Keys];
         }
 
         internal static bool TryGetLoadedSlotId(out int slotId)
@@ -1007,7 +1010,8 @@ namespace MimesisPlayerEnhancement.Features.Statistics
 
         private static bool HasOpenDisconnectedSessions()
         {
-            foreach (PlayerStatisticsDocument doc in _players.Values)
+            List<PlayerStatisticsDocument> playerDocs = [.. _players.Values];
+            foreach (PlayerStatisticsDocument doc in playerDocs)
             {
                 SessionStats? session = doc.CurrentSession;
                 if (session != null && session.IsOpen && session.LastDisconnectedAtUtc.HasValue)

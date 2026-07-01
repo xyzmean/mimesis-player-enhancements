@@ -34,7 +34,8 @@ namespace MimesisPlayerEnhancement.Features.JoinAnytime
                 return;
             }
 
-            foreach (KeyValuePair<int, ILevelObjectInfo> entry in levelObjects)
+            List<KeyValuePair<int, ILevelObjectInfo>> levelObjectEntries = [.. levelObjects];
+            foreach (KeyValuePair<int, ILevelObjectInfo> entry in levelObjectEntries)
             {
                 if (entry.Value is not StateLevelObjectInfo stateInfo || !IsTramDepartureLever(entry.Value))
                 {

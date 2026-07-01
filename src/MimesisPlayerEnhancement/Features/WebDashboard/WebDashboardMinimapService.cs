@@ -42,7 +42,8 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
 
                 DungeonRoom? dungeonRoom = JoinAnytimeRoomTools.GetActiveDungeonRoom() as DungeonRoom;
 
-                foreach (ProtoActor? actor in map.Values)
+                List<ProtoActor?> actors = [.. map.Values];
+                foreach (ProtoActor? actor in actors)
                 {
                     if (actor == null || actor.ActorType != ActorType.Player)
                     {

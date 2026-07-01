@@ -65,7 +65,8 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
 
             if (ContextsField?.GetValue(sessionManager) is Dictionary<long, SessionContext> contexts)
             {
-                foreach (SessionContext context in contexts.Values)
+                List<SessionContext> sessionContexts = [.. contexts.Values];
+                foreach (SessionContext context in sessionContexts)
                 {
                     if (context != null && seen.Add(context))
                     {

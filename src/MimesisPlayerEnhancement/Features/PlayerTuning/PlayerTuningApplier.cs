@@ -266,7 +266,8 @@ namespace MimesisPlayerEnhancement.Features.PlayerTuning
             }
 
             int refreshed = 0;
-            foreach (IVroom room in rooms.Values)
+            List<IVroom> roomSnapshot = [.. rooms.Values];
+            foreach (IVroom room in roomSnapshot)
             {
                 refreshed += RefreshPlayersInRoom(room);
             }
@@ -285,7 +286,8 @@ namespace MimesisPlayerEnhancement.Features.PlayerTuning
             }
 
             int count = 0;
-            foreach (VPlayer player in players.Values)
+            List<VPlayer> playerSnapshot = [.. players.Values];
+            foreach (VPlayer player in playerSnapshot)
             {
                 if (player == null)
                 {

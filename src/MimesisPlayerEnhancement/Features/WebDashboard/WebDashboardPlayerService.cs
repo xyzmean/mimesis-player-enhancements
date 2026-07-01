@@ -384,7 +384,8 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
                     return false;
                 }
 
-                foreach (ProtoActor? actor in map.Values)
+                List<ProtoActor?> actors = [.. map.Values];
+                foreach (ProtoActor? actor in actors)
                 {
                     if (actor == null || actor.ActorType != ActorType.Player)
                     {
@@ -462,7 +463,8 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
                     return null;
                 }
 
-                foreach (ProtoActor? actor in map.Values)
+                List<ProtoActor?> actors = [.. map.Values];
+                foreach (ProtoActor? actor in actors)
                 {
                     if (actor == null || string.IsNullOrWhiteSpace(actor.nickName))
                     {

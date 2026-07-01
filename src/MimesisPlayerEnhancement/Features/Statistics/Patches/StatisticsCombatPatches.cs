@@ -27,7 +27,7 @@ namespace MimesisPlayerEnhancement.Features.Statistics.Patches
                     return;
                 }
 
-                StatisticsTracker.OnSurvivalDungeonEnded(players.Values);
+                StatisticsTracker.OnSurvivalDungeonEnded([.. players.Values]);
             });
         }
     }

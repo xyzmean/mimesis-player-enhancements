@@ -73,7 +73,8 @@ namespace MimesisPlayerEnhancement.Util
         internal IEnumerable<KeyValuePair<DungeonRoom, T>> EnumerateAll()
         {
             PruneDead();
-            foreach (WeakReference<DungeonRoom> weak in _tracked)
+            List<WeakReference<DungeonRoom>> trackedSnapshot = [.. _tracked];
+            foreach (WeakReference<DungeonRoom> weak in trackedSnapshot)
             {
                 if (!weak.TryGetTarget(out DungeonRoom? room))
                 {
