@@ -20,11 +20,6 @@ namespace MimesisPlayerEnhancement.Features.JoinAnytime.Patches
         [HarmonyTranspiler]
         private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
         {
-            if (!ModConfig.EnableJoinAnytime.Value)
-            {
-                return instructions;
-            }
-
             List<CodeInstruction> codes = [.. instructions];
             MethodInfo? toStringMethod = AccessTools.Method(typeof(bool), nameof(bool.ToString), []);
 
@@ -81,11 +76,6 @@ namespace MimesisPlayerEnhancement.Features.JoinAnytime.Patches
             IEnumerable<CodeInstruction> instructions,
             ILGenerator generator)
         {
-            if (!ModConfig.EnableJoinAnytime.Value)
-            {
-                return instructions;
-            }
-
             List<CodeInstruction> codes = [.. instructions];
             Label skipLabel = generator.DefineLabel();
 

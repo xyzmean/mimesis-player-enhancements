@@ -62,6 +62,11 @@ namespace MimesisPlayerEnhancement.Features.JoinAnytime
                 return false;
             }
 
+            if (JoinAnytimeLobbyController.HostWantsPublicMatchmaking())
+            {
+                return true;
+            }
+
             if (IsPublicRoomField != null && IsPublicRoomField.GetValue(dispatcher) is true)
             {
                 return true;

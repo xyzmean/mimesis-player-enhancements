@@ -3,6 +3,7 @@ using HarmonyLib;
 using Mimic.Actors;
 using MimesisPlayerEnhancement.Util;
 using ReluProtocol;
+using ReluProtocol.C2S;
 using ReluProtocol.Enum;
 
 namespace MimesisPlayerEnhancement.Features.JoinAnytime
@@ -42,6 +43,7 @@ namespace MimesisPlayerEnhancement.Features.JoinAnytime
                 ("SetLobbyPublic/SteamInviteDispatcher", AccessTools.Method(typeof(SteamInviteDispatcher), nameof(SteamInviteDispatcher.SetLobbyPublic))),
                 ("SetLobbyPublicCoroutine/SteamInviteDispatcher", AccessTools.Method(typeof(SteamInviteDispatcher), "SetLobbyPublicCoroutine", [typeof(bool)])),
                 ("CheckPublicTramAndChangeGameState/MaintenanceScene", AccessTools.Method(typeof(MaintenanceScene), "CheckPublicTramAndChangeGameState", [typeof(float), typeof(Hub.PersistentData.eGameState)])),
+                ("OnPacket(MoveToWaitingRoomSig)/MaintenanceScene", AccessTools.Method(typeof(MaintenanceScene), "OnPacket", [typeof(MoveToWaitingRoomSig)])),
                 ("SetPresenceInLobby/SteamInviteDispatcher", AccessTools.Method(typeof(SteamInviteDispatcher), nameof(SteamInviteDispatcher.SetPresenceInLobby))),
                 ("SetPresencePlaying/SteamInviteDispatcher", AccessTools.Method(typeof(SteamInviteDispatcher), nameof(SteamInviteDispatcher.SetPresencePlaying))),
                 ("UpdateLobbyData/SteamInviteDispatcher", AccessTools.Method(typeof(SteamInviteDispatcher), nameof(SteamInviteDispatcher.UpdateLobbyData))),

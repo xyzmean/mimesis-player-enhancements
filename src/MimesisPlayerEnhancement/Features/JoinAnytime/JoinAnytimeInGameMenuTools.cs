@@ -51,6 +51,7 @@ namespace MimesisPlayerEnhancement.Features.JoinAnytime
             }
 
             ModLog.Debug(Feature, $"Public room toggle — isPublic={isPublic}");
+            JoinAnytimeLobbyController.SetHostWantsPublicMatchmaking(isPublic);
             dispatcher.SetLobbyPublic(isPublic);
         }
     }

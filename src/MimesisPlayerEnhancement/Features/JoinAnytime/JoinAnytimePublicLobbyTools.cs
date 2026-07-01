@@ -15,7 +15,7 @@ namespace MimesisPlayerEnhancement.Features.JoinAnytime
                 return toggleOrFallbackFlag;
             }
 
-            if (isPublicRequested)
+            if (isPublicRequested || JoinAnytimeLobbyController.HostWantsPublicMatchmaking())
             {
                 return true;
             }

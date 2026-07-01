@@ -7,6 +7,7 @@ using HarmonyLib;
 using Mimic.Actors;
 using MimesisPlayerEnhancement.Util;
 using ReluProtocol;
+using ReluProtocol.C2S;
 using ReluProtocol.Enum;
 using Steamworks;
 
@@ -284,10 +285,40 @@ namespace MimesisPlayerEnhancement.Features.JoinAnytime.Patches
     [HarmonyPatch(typeof(SteamInviteDispatcher), nameof(SteamInviteDispatcher.SetLobbyPublic))]
     internal static class SteamInviteDispatcherSetLobbyPublicPatch
     {
+        [HarmonyPrefix]
+        private static bool Prefix(bool isPublic)
+        {
+            if (!ModConfig.EnableJoinAnytime.Value)
+            {
+                return true;
+            }
+
+            if (!isPublic && JoinAnytimeLobbyController.ShouldBlockPublicRoomClose())
+            {
+                ModLog.Debug("JoinAnytime", "Blocked SetLobbyPublic(false) for join-anytime host.");
+                return false;
+            }
+
+            return true;
+        }
+
         [HarmonyPostfix]
         private static void Postfix(SteamInviteDispatcher __instance, bool isPublic)
         {
             JoinAnytimeLobbyController.OnSetLobbyPublicCompleted(__instance, isPublic);
+        }
+    }
+
+    [HarmonyPatch]
+    internal static class MaintenanceSceneMoveToWaitingRoomPatch
+    {
+        private static MethodBase? TargetMethod() =>
+            AccessTools.Method(typeof(MaintenanceScene), "OnPacket", [typeof(MoveToWaitingRoomSig)]);
+
+        [HarmonyPostfix]
+        private static void Postfix()
+        {
+            JoinAnytimeLobbyController.OnMaintenanceTransferToTram();
         }
     }
 

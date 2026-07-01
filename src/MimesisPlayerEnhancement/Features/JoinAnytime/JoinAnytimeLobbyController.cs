@@ -52,6 +52,14 @@ namespace MimesisPlayerEnhancement.Features.JoinAnytime
         private static JoinAnytimeSessionPhase _lastPhase = JoinAnytimeSessionPhase.None;
         private static float _nextRefreshTime;
         private static bool _refreshCoroutineRunning;
+        private static bool _hostWantsPublicMatchmaking;
+
+        internal static bool HostWantsPublicMatchmaking() => _hostWantsPublicMatchmaking;
+
+        internal static void SetHostWantsPublicMatchmaking(bool wantsPublic)
+        {
+            _hostWantsPublicMatchmaking = wantsPublic;
+        }
 
         internal static void OnUpdate()
         {
@@ -88,6 +96,7 @@ namespace MimesisPlayerEnhancement.Features.JoinAnytime
 
             if (isOpenForRandomMatch)
             {
+                SetHostWantsPublicMatchmaking(true);
                 JoinAnytimeHub.SyncIsPublicRoomField(dispatcher, isPublic: true);
             }
 
@@ -107,12 +116,28 @@ namespace MimesisPlayerEnhancement.Features.JoinAnytime
                 return;
             }
 
-            bool hostWantsPublic = JoinAnytimeHub.IsHostLobbyPublic(dispatcher);
+            if (!requestedPublic && _hostWantsPublicMatchmaking)
+            {
+                ModLog.Debug(Feature, "Ignored SetLobbyPublic(false) — host still wants public matchmaking.");
+                return;
+            }
+
+            SetHostWantsPublicMatchmaking(requestedPublic);
+
+            bool hostWantsPublic = requestedPublic || JoinAnytimeHub.ReadPublicRoomFromSteam(dispatcher);
             ModLog.Debug(
                 Feature,
                 $"SetLobbyPublic completed — hostWantsPublic={hostWantsPublic}, requested={requestedPublic}");
 
-            ApplyLobbyPresence(dispatcher, hostWantsPublic);
+            if (requestedPublic)
+            {
+                EnsurePublicLobbyVisible(dispatcher);
+            }
+            else
+            {
+                ApplyLobbyPresence(dispatcher, wantsPublic: false);
+            }
+
             RefreshLobbyState(force: true);
         }
 
@@ -249,8 +274,25 @@ namespace MimesisPlayerEnhancement.Features.JoinAnytime
                 return false;
             }
 
+            return _hostWantsPublicMatchmaking;
+        }
+
+        internal static void OnMaintenanceTransferToTram()
+        {
+            if (!ModConfig.EnableJoinAnytime.Value || !IsHost() || !_hostWantsPublicMatchmaking)
+            {
+                return;
+            }
+
             SteamInviteDispatcher? dispatcher = JoinAnytimeHub.GetSteamInviteDispatcher();
-            return dispatcher != null && JoinAnytimeHub.IsHostLobbyPublic(dispatcher);
+            if (dispatcher == null)
+            {
+                return;
+            }
+
+            ModLog.Debug(Feature, "Maintenance→tram transfer — re-asserting public lobby.");
+            EnsurePublicLobbyVisible(dispatcher);
+            ScheduleDeferredLobbyRefresh();
         }
 
         internal static void RefreshLobbyState(bool force)
@@ -377,6 +419,12 @@ namespace MimesisPlayerEnhancement.Features.JoinAnytime
             CaptureBaseFromDispatcher(dispatcher);
             _lastPhase = JoinAnytimeSessionPhase.None;
             _lastPublishedName = string.Empty;
+
+            if (_hostWantsPublicMatchmaking)
+            {
+                EnsurePublicLobbyVisible(dispatcher);
+            }
+
             RefreshLobbyState(force: true);
             LateJoinManager.OnHostSceneReady();
             ScheduleImmediateRefresh();
