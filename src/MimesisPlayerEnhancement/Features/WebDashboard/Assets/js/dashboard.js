@@ -169,7 +169,7 @@ document.addEventListener('alpine:init', () => {
         ['Deathmatch wins', c.deathmatchWins ?? 0],
         ['Deathmatch deaths', c.deathmatchDeaths ?? 0],
         ['Revives', c.revives ?? 0],
-        ['Voice events', c.voiceEvents ?? 0],
+        ['Voices recorded', c.voiceEvents ?? 0],
         ['Ally damage', c.damageToAlly ?? 0],
         ['Connected time', formatDuration(c.totalConnectedSeconds ?? 0)],
         ['Sessions', this.playerStats.global.sessionsCompleted ?? 0],
@@ -471,7 +471,7 @@ document.addEventListener('alpine:init', () => {
       if (p.playerUid) parts.push('#' + p.playerUid);
       if (p.connectionRole) parts.push(p.connectionRole);
       if (p.connectionAddress) parts.push(p.connectionAddress);
-      parts.push(p.voiceEventCount + ' voice events');
+      parts.push(p.voiceLineCount + ' voice lines');
       return parts.join(' · ');
     },
 
@@ -492,7 +492,6 @@ document.addEventListener('alpine:init', () => {
       if (s.totalConnectedSeconds) parts.push(formatDuration(s.totalConnectedSeconds));
       if (s.mimicEncounterCount) parts.push(s.mimicEncounterCount + ' mimics');
       if (s.itemCarryCount) parts.push(s.itemCarryCount + ' items');
-      if (s.voiceEvents) parts.push(s.voiceEvents + ' voice');
       if (s.damageToAlly) parts.push(s.damageToAlly + ' ally dmg');
       return parts.join(' · ');
     },

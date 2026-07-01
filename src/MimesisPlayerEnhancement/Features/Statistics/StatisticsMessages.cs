@@ -320,7 +320,7 @@ namespace MimesisPlayerEnhancement.Features.Statistics
 
             if (c.VoiceEvents > 0)
             {
-                parts.Add($"{c.VoiceEvents} voice events");
+                parts.Add($"{c.VoiceEvents} voices recorded");
             }
 
             if (c.CurrencyEarned > 0)

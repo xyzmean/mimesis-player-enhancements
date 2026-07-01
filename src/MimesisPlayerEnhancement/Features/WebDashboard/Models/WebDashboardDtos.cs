@@ -25,7 +25,6 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard.Models
         public long Revives;
         public long MimicEncounterCount;
         public long ItemCarryCount;
-        public long VoiceEvents;
         public long DamageToAlly;
         public long TotalConnectedSeconds;
         public Dictionary<string, long> MonsterKillsByMasterId = [];
@@ -44,7 +43,7 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard.Models
         public int NetworkGrade = -1;
         public string ConnectionRole = "";
         public string ConnectionAddress = "";
-        public int VoiceEventCount;
+        public int VoiceLineCount;
         public WebDashboardSessionStatsDto? CurrentSession;
     }
 

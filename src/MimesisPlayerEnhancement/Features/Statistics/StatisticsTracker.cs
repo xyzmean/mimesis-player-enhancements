@@ -759,6 +759,27 @@ namespace MimesisPlayerEnhancement.Features.Statistics
             _voiceEventBaselines[steamId] = CountVoiceEventsForSteamId(steamId);
         }
 
+        internal static void SyncVoiceBaseline(SpeechEventArchive archive)
+        {
+            if (!ModConfig.EnableStatistics.Value || archive == null)
+            {
+                return;
+            }
+
+            if (!IsArchiveIdentityReady(archive))
+            {
+                return;
+            }
+
+            ulong steamId = ResolveSteamIdFromArchive(archive);
+            if (steamId == 0)
+            {
+                return;
+            }
+
+            _voiceEventBaselines[steamId] = CountVoiceEventsForSteamId(steamId);
+        }
+
         private static PlayReportData? TryGetPlayReport(ulong steamId)
         {
             Dictionary<ulong, PlayReportData>? dict = GameSessionAccess.TryGetPlayReportManager()?.CurrentReportDict;
@@ -812,7 +833,7 @@ namespace MimesisPlayerEnhancement.Features.Statistics
                     }
 
                     _ = cache.TryGetValue(archiveSteam, out int current);
-                    cache[archiveSteam] = current + VoiceEventStats.GetEventCount(archive);
+                    cache[archiveSteam] = current + VoiceEventStats.GetVoiceLineCount(archive);
                 }
             }
             catch

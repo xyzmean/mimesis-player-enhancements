@@ -286,7 +286,6 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
                 : StatisticsStore.LoadPlayer(saveSlotId, dto.SteamId);
 
             dto.CurrentSession = BuildSessionStatsFromDocument(doc);
-            dto.VoiceEventCount = (int)(doc.Global?.Counters?.VoiceEvents ?? 0);
         }
 
         private static WebDashboardPlayerDto? TryBuildPlayerDto(
@@ -555,7 +554,7 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
 
             dto.ConnectionRole = dto.IsLocal && WebDashboardGameState.IsHost() ? "host" : "client";
             dto.ConnectionAddress = dto.IsLocal ? "local" : "(unavailable)";
-            dto.VoiceEventCount = archive != null ? VoiceEventStats.GetEventCount(archive) : 0;
+            dto.VoiceLineCount = archive != null ? VoiceEventStats.GetVoiceLineCount(archive) : 0;
         }
 
         private static bool IsUnavailableConnectionAddress(string address)
@@ -577,7 +576,7 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
 
             dto.ConnectionRole = info.ConnectionRole;
             dto.ConnectionAddress = info.ConnectionAddress;
-            dto.VoiceEventCount = info.VoiceEventCount;
+            dto.VoiceLineCount = info.VoiceLineCount;
 
             if (info.SteamId != 0)
             {
@@ -654,7 +653,6 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
                 Revives = c.Revives,
                 MimicEncounterCount = c.MimicEncounterCount,
                 ItemCarryCount = c.ItemCarryCount,
-                VoiceEvents = c.VoiceEvents,
                 DamageToAlly = c.DamageToAlly,
                 TotalConnectedSeconds = c.TotalConnectedSeconds,
                 MonsterKillsByMasterId = new Dictionary<string, long>(c.MonsterKillsByMasterId ?? []),

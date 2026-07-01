@@ -14,7 +14,7 @@ namespace MimesisPlayerEnhancement
         public string ConnectionRole = "";
         public ulong SteamId;
         public string ConnectionAddress = "";
-        public int VoiceEventCount;
+        public int VoiceLineCount;
     }
 
     public static class VoiceEventStats
@@ -22,7 +22,7 @@ namespace MimesisPlayerEnhancement
         private const BindingFlags InstanceMemberFlags =
             BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
 
-        public static int GetEventCount(SpeechEventArchive? archive)
+        public static int GetVoiceLineCount(SpeechEventArchive? archive)
         {
             if (archive == null)
             {
@@ -117,7 +117,7 @@ namespace MimesisPlayerEnhancement
 
             string uid = info.PlayerUid == 0 ? "(pending)" : info.PlayerUid.ToString();
             string steamId = info.SteamId == 0 ? "(pending)" : info.SteamId.ToString();
-            return $"uid={uid} name={info.DisplayName} role={info.ConnectionRole} steamId={steamId} ip={info.ConnectionAddress} voiceEvents={info.VoiceEventCount}";
+            return $"uid={uid} name={info.DisplayName} role={info.ConnectionRole} steamId={steamId} ip={info.ConnectionAddress} voiceLines={info.VoiceLineCount}";
         }
 
         public static bool TryGetConnectionInfo(SpeechEventArchive? archive, out PlayerConnectionInfo info)
@@ -228,7 +228,7 @@ namespace MimesisPlayerEnhancement
                 ConnectionRole = isLocal ? "host" : "client",
                 SteamId = steamIdValue,
                 ConnectionAddress = ResolveConnectionAddress(isLocal, session),
-                VoiceEventCount = GetEventCount(archive),
+                VoiceLineCount = GetVoiceLineCount(archive),
             };
 
             return true;

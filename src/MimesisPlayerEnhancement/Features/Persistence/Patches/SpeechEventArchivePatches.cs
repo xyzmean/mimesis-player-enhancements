@@ -80,7 +80,7 @@ namespace MimesisPlayerEnhancement.Features.Persistence.Patches
                 /* Player component may not be ready yet */
             }
 
-            int eventsBefore = VoiceEventStats.GetEventCount(__instance);
+            int eventsBefore = VoiceEventStats.GetVoiceLineCount(__instance);
 
             if (!isLocal && string.IsNullOrEmpty(playerId) && playerUID == 0)
             {
@@ -115,7 +115,7 @@ namespace MimesisPlayerEnhancement.Features.Persistence.Patches
             SpeechEventInjector.RestoreResult result = SpeechEventInjector.RestoreIntoArchive(
                 __instance, playerId, playerUID, isLocal);
 
-            int eventsAfter = VoiceEventStats.GetEventCount(__instance);
+            int eventsAfter = VoiceEventStats.GetVoiceLineCount(__instance);
 
             if (result.TotalAdded > 0)
             {
@@ -137,6 +137,8 @@ namespace MimesisPlayerEnhancement.Features.Persistence.Patches
                     Feature,
                     $"Player connected — {VoiceEventStats.DescribePlayer(__instance)} — no persistence data");
             }
+
+            StatisticsTracker.SyncVoiceBaseline(__instance);
 
             (int pendingCount, int injectedCount) = SpeechEventPoolManager.GetCounts();
             ModLog.Debug(

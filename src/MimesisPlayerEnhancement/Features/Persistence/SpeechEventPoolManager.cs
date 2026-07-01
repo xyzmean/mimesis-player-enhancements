@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using Mimic.Voice.SpeechSystem;
+using MimesisPlayerEnhancement.Features.Statistics;
 using MimesisPlayerEnhancement.Util;
 
 namespace MimesisPlayerEnhancement.Features.Persistence
@@ -209,6 +210,8 @@ namespace MimesisPlayerEnhancement.Features.Persistence
 
                     SpeechEventInjector.RestoreResult result = SpeechEventInjector.RestoreIntoArchive(
                         archive, playerId, playerUID, isLocal);
+
+                    StatisticsTracker.SyncVoiceBaseline(archive);
 
                     if (result.TotalAdded > 0)
                     {

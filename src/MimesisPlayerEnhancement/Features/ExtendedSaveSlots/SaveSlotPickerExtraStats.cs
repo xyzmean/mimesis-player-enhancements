@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using Mimic.Voice.SpeechSystem;
 using MimesisPlayerEnhancement.Features.Persistence;
 using MimesisPlayerEnhancement.Features.Statistics;
 using MimesisPlayerEnhancement.Features.Statistics.Models;
@@ -20,10 +19,10 @@ namespace MimesisPlayerEnhancement.Features.ExtendedSaveSlots
                 AppendLeaderboardSummary(parts, entries);
             }
 
-            int savedVoices = TryGetSavedVoiceCount(slotId);
-            if (savedVoices > 0)
+            int voiceEvents = SpeechEventFileStore.TryGetSavedSpeechEventCount(slotId);
+            if (voiceEvents > 0)
             {
-                parts.Add(savedVoices + " saved voices");
+                parts.Add(voiceEvents + " voice events");
             }
 
             return parts.Count == 0 ? NoStatisticsText : string.Join(" · ", parts);
@@ -44,7 +43,6 @@ namespace MimesisPlayerEnhancement.Features.ExtendedSaveSlots
             parts.Add(entries.Count + (entries.Count == 1 ? " player" : " players"));
 
             long sessions = 0;
-            long voiceEvents = 0;
             long survivalWins = 0;
             long survivalDeaths = 0;
             long revives = 0;
@@ -53,7 +51,6 @@ namespace MimesisPlayerEnhancement.Features.ExtendedSaveSlots
             foreach (LeaderboardEntry entry in entries)
             {
                 sessions += entry.SessionsCompleted;
-                voiceEvents += entry.VoiceEvents;
                 survivalWins += entry.SurvivalWins;
                 survivalDeaths += entry.SurvivalDeaths;
                 revives += entry.Revives;
@@ -80,11 +77,6 @@ namespace MimesisPlayerEnhancement.Features.ExtendedSaveSlots
                 parts.Add(revives + " revives");
             }
 
-            if (voiceEvents > 0)
-            {
-                parts.Add(voiceEvents + " voice events");
-            }
-
             if (playSeconds >= 60)
             {
                 parts.Add(FormatPlaytime(playSeconds));
@@ -96,18 +88,6 @@ namespace MimesisPlayerEnhancement.Features.ExtendedSaveSlots
             Dictionary<ulong, PlayerStatisticsDocument> players = [];
             StatisticsStore.LoadAllPlayersForSlot(slotId, players);
             return players.Count == 0 ? null : LeaderboardBuilder.Build(slotId, players.Values);
-        }
-
-        private static int TryGetSavedVoiceCount(int slotId)
-        {
-            int count = SpeechEventFileStore.TryGetSavedSpeechEventCount(slotId);
-            if (count > 0 || !MimesisSaveManager.HasMimesisData(slotId))
-            {
-                return count;
-            }
-
-            List<SpeechEvent>? events = MimesisSaveManager.LoadSpeechEvents(slotId);
-            return events?.Count ?? 0;
         }
 
         private static string FormatPlaytime(long totalSeconds)

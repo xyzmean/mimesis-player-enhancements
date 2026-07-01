@@ -168,7 +168,7 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
                 NetworkGrade = player.NetworkGrade,
                 ConnectionRole = player.ConnectionRole,
                 ConnectionAddress = player.ConnectionAddress,
-                VoiceEventCount = player.VoiceEventCount,
+                VoiceLineCount = player.VoiceLineCount,
                 CurrentSession = player.CurrentSession == null ? null : MapSessionStats(player.CurrentSession),
             };
         }
@@ -186,7 +186,6 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
                 Revives = stats.Revives,
                 MimicEncounterCount = stats.MimicEncounterCount,
                 ItemCarryCount = stats.ItemCarryCount,
-                VoiceEvents = stats.VoiceEvents,
                 DamageToAlly = stats.DamageToAlly,
                 TotalConnectedSeconds = stats.TotalConnectedSeconds,
                 MonsterKillsByMasterId = stats.MonsterKillsByMasterId,
@@ -255,7 +254,7 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
             public int NetworkGrade = -1;
             public string ConnectionRole = "";
             public string ConnectionAddress = "";
-            public int VoiceEventCount;
+            public int VoiceLineCount;
             public SessionStatsApiDto? CurrentSession;
         }
 
@@ -270,7 +269,6 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
             public long Revives;
             public long MimicEncounterCount;
             public long ItemCarryCount;
-            public long VoiceEvents;
             public long DamageToAlly;
             public long TotalConnectedSeconds;
             public Dictionary<string, long> MonsterKillsByMasterId = [];
