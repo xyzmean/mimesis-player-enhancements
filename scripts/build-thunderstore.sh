@@ -89,6 +89,7 @@ trap cleanup EXIT
 
 echo "==> Staging Thunderstore package"
 cp "$THUNDERSTORE_DIR/README.md" "$STAGING/README.md"
+cp "$THUNDERSTORE_DIR/CHANGELOG.md" "$STAGING/CHANGELOG.md"
 ensure_icon "$STAGING"
 write_manifest "$STAGING" "$VERSION"
 
