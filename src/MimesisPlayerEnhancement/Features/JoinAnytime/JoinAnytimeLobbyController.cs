@@ -410,7 +410,7 @@ namespace MimesisPlayerEnhancement.Features.JoinAnytime
                 : phase is JoinAnytimeSessionPhase.Maintenance
                     or JoinAnytimeSessionPhase.Tram
                     or JoinAnytimeSessionPhase.Dungeon
-                    ? " [open]"
+                    ? " [join now]"
                     : string.Empty;
 
             return $"{baseName}{tag} ({sessionCount}/{MorePlayersPatches.GetMaxPlayers()})";
