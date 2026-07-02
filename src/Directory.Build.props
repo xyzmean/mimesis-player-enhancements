@@ -23,12 +23,12 @@
     <!-- Default: compile against bootstrapped reference DLLs in deps/reference/ -->
     <GameAssemblyPath Condition="'$(GameAssemblyPath)' == ''">$(ReferenceRoot)/Managed</GameAssemblyPath>
     <MelonLoaderPath Condition="'$(MelonLoaderPath)' == ''">$(ReferenceRoot)/MelonLoader/net35</MelonLoaderPath>
-    <!-- Optional game install overrides (local dev / deploy to Mods/) -->
+    <!-- Optional local game install: use game Managed DLLs when present; MelonLoader only if installed in game. -->
     <GamePath Condition="'$(GamePath)' == ''">$(MIMESIS_PATH)</GamePath>
-    <UseGameReferences Condition="'$(UseGameReferences)' == '' and '$(GamePath)' != '' and Exists('$(GamePath)/MIMESIS_Data/Managed/Assembly-CSharp.dll')">true</UseGameReferences>
-    <GameAssemblyPath Condition="'$(UseGameReferences)' == 'true'">$(GamePath)/MIMESIS_Data/Managed</GameAssemblyPath>
-    <MelonLoaderPath Condition="'$(UseGameReferences)' == 'true'">$(GamePath)/MelonLoader/net35</MelonLoaderPath>
-    <PluginsPath Condition="'$(PluginsPath)' == '' and '$(UseGameReferences)' == 'true'">$(GamePath)/Mods</PluginsPath>
+    <UseGameManagedReferences Condition="'$(UseGameManagedReferences)' == '' and '$(GamePath)' != '' and Exists('$(GamePath)/MIMESIS_Data/Managed/Assembly-CSharp.dll')">true</UseGameManagedReferences>
+    <GameAssemblyPath Condition="'$(UseGameManagedReferences)' == 'true'">$(GamePath)/MIMESIS_Data/Managed</GameAssemblyPath>
+    <MelonLoaderPath Condition="'$(GamePath)' != '' and Exists('$(GamePath)/MelonLoader/net35/MelonLoader.dll')">$(GamePath)/MelonLoader/net35</MelonLoaderPath>
+    <PluginsPath Condition="'$(PluginsPath)' == '' and '$(GamePath)' != ''">$(GamePath)/Mods</PluginsPath>
   </PropertyGroup>
 
   <Target Name="ValidateReferenceAssemblies" BeforeTargets="ResolveReferences">

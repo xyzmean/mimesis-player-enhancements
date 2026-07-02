@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using System.Net;
-using System.Reflection;
 using System.Threading;
 
 namespace MimesisPlayerEnhancement.Features.WebDashboard
@@ -15,7 +14,6 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
         private static volatile bool _running;
         private static bool _syncDeferred;
         private static string _listenUrl = "";
-        private static string _assetsRoot = "";
 
         internal static void Apply(HarmonyLib.Harmony harmony)
         {
@@ -111,14 +109,12 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
 
         private static void Start(string prefix)
         {
-            _assetsRoot = ResolveAssetsRoot();
-            if (string.IsNullOrEmpty(_assetsRoot) || !Directory.Exists(_assetsRoot))
+            if (!WebDashboardEmbeddedAssets.IsAvailable)
             {
-                ModLog.Error(Feature, $"Assets folder not found at expected path next to the mod DLL.");
+                ModLog.Error(Feature, "Web dashboard assets are missing from the mod assembly.");
                 return;
             }
 
-            WebDashboardRouter.SetAssetsRoot(_assetsRoot);
             WebDashboardSseHub.Start();
 
             try
@@ -208,19 +204,6 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
                         ModLog.Warn(Feature, $"Accept loop error: {ex.Message}");
                     }
                 }
-            }
-        }
-
-        private static string ResolveAssetsRoot()
-        {
-            try
-            {
-                string? dllDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-                return string.IsNullOrEmpty(dllDir) ? "" : Path.Combine(dllDir, "MimesisPlayerEnhancement", "assets");
-            }
-            catch
-            {
-                return "";
             }
         }
 

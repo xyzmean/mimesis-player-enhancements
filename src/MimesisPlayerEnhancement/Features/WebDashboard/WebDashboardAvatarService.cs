@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.IO;
 using System.Net;
 using System.Threading;
 
@@ -10,7 +9,6 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
         private const int MaxPrewarmPerRefresh = 2;
 
         private static readonly Dictionary<ulong, CachedAvatar> ServeCache = [];
-        private static string _assetsRoot = "";
         private static byte[]? _defaultAvatarBytes;
 
         private sealed class CachedAvatar
@@ -23,12 +21,6 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
                 Bytes = bytes;
                 ContentType = contentType;
             }
-        }
-
-        internal static void SetAssetsRoot(string path)
-        {
-            _assetsRoot = path;
-            _defaultAvatarBytes = null;
         }
 
         internal static void StorePng(ulong steamId, byte[] png)
@@ -144,27 +136,16 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
                 return cached;
             }
 
-            byte[] bytes = LoadDefaultAvatarFromDisk();
+            byte[] bytes = LoadDefaultAvatar();
             _ = Interlocked.Exchange(ref _defaultAvatarBytes, bytes);
             return bytes;
         }
 
-        private static byte[] LoadDefaultAvatarFromDisk()
+        private static byte[] LoadDefaultAvatar()
         {
-            try
+            if (WebDashboardEmbeddedAssets.TryRead("img/default-avatar.svg", out byte[] bytes, out _))
             {
-                if (!string.IsNullOrEmpty(_assetsRoot))
-                {
-                    string path = Path.Combine(_assetsRoot, "img", "default-avatar.svg");
-                    if (File.Exists(path))
-                    {
-                        return File.ReadAllBytes(path);
-                    }
-                }
-            }
-            catch
-            {
-                /* fall through */
+                return bytes;
             }
 
             return DefaultAvatarSvgBytes;

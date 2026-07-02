@@ -4,10 +4,6 @@
   <Target Name="CopyToMods" AfterTargets="Build"
           Condition="'$(CopyToMods)' == 'true' and '$(PluginsPath)' != '' and Exists('$(PluginsPath)')">
     <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(PluginsPath)" SkipUnchangedFiles="true" />
-    <Copy SourceFiles="@(Content->'$(OutputPath)MimesisPlayerEnhancement\assets\%(RecursiveDir)%(Filename)%(Extension)')"
-          DestinationFolder="$(PluginsPath)\MimesisPlayerEnhancement\assets\%(RecursiveDir)"
-          SkipUnchangedFiles="true"
-          Condition="Exists('$(OutputPath)MimesisPlayerEnhancement\assets')" />
     <Message Importance="high" Text="Copied $(TargetFileName) to $(PluginsPath)" />
   </Target>
 </Project>

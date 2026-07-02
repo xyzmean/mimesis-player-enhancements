@@ -11,14 +11,6 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
 {
     internal static class WebDashboardRouter
     {
-        private static string _assetsRoot = "";
-
-        internal static void SetAssetsRoot(string path)
-        {
-            _assetsRoot = path;
-            WebDashboardAvatarService.SetAssetsRoot(path);
-        }
-
         internal static void Handle(HttpListenerContext context)
         {
             try
@@ -318,37 +310,14 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
 
         private static void ServeStatic(HttpListenerContext context, string path)
         {
-            if (string.IsNullOrEmpty(_assetsRoot) || !Directory.Exists(_assetsRoot))
+            if (!WebDashboardEmbeddedAssets.TryRead(path, out byte[] bytes, out string extension)
+                && !WebDashboardEmbeddedAssets.TryRead(WebDashboardEmbeddedAssets.IndexWebPath, out bytes, out extension))
             {
-                WriteText(context, 503, "text/plain", "Web dashboard assets not found.");
+                WriteText(context, 404, "text/plain", "Not found.");
                 return;
             }
 
-            string relative = path == "/" ? "index.html" : path.TrimStart('/');
-            string fullPath = Path.GetFullPath(Path.Combine(_assetsRoot, relative));
-            string rootFull = Path.GetFullPath(_assetsRoot);
-            if (!fullPath.StartsWith(rootFull, StringComparison.OrdinalIgnoreCase))
-            {
-                WriteText(context, 403, "text/plain", "Forbidden.");
-                return;
-            }
-
-            if (!File.Exists(fullPath))
-            {
-                string indexPath = Path.Combine(_assetsRoot, "index.html");
-                if (File.Exists(indexPath))
-                {
-                    fullPath = indexPath;
-                }
-                else
-                {
-                    WriteText(context, 404, "text/plain", "Not found.");
-                    return;
-                }
-            }
-
-            string contentType = GetContentType(Path.GetExtension(fullPath));
-            byte[] bytes = File.ReadAllBytes(fullPath);
+            string contentType = GetContentType(extension);
             context.Response.StatusCode = 200;
             context.Response.ContentType = contentType;
             context.Response.ContentLength64 = bytes.Length;

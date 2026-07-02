@@ -15,10 +15,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="Features\WebDashboard\Assets\**\*">
-      <Link>MimesisPlayerEnhancement\assets\%(RecursiveDir)%(Filename)%(Extension)</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
+    <EmbeddedResource Include="Assets\**\*">
+      <LogicalName>Assets.$([System.String]::Copy('%(RecursiveDir)').Replace('\','.').Replace('/','.'))%(Filename)%(Extension)</LogicalName>
+    </EmbeddedResource>
   </ItemGroup>
 
   <ItemGroup>

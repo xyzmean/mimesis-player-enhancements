@@ -1,11 +1,9 @@
 #!/usr/bin/env bash
 # Build a Thunderstore-ready zip: dist/thunderstore/mpe<version>.zip
 #
-# Package layout (MelonLoader 0.7+ via r2modman/Gale):
+# Package layout (MelonLoader 0.7+ via Thunderstore clients):
 #   manifest.json, icon.png, README.md  — zip root (required by Thunderstore)
-#   MimesisPlayerEnhancement.dll        — mod assembly
-#   MimesisPlayerEnhancement/assets/    — web dashboard static files
-#
+#   MimesisPlayerEnhancement.dll        — mod assembly (web dashboard assets embedded)
 # See: https://wiki.thunderstore.io/mods/creating-a-package
 #      https://wiki.thunderstore.io/mods/packaging-your-mods
 set -euo pipefail
@@ -78,11 +76,6 @@ if [[ ! -f "$BUILD_OUT/MimesisPlayerEnhancement.dll" ]]; then
   exit 1
 fi
 
-if [[ ! -d "$BUILD_OUT/MimesisPlayerEnhancement/assets" ]]; then
-  echo "Build output missing web dashboard assets under $BUILD_OUT/MimesisPlayerEnhancement/assets" >&2
-  exit 1
-fi
-
 STAGING="$(mktemp -d)"
 cleanup() { rm -rf "$STAGING"; }
 trap cleanup EXIT
@@ -94,7 +87,6 @@ ensure_icon "$STAGING"
 write_manifest "$STAGING" "$VERSION"
 
 cp "$BUILD_OUT/MimesisPlayerEnhancement.dll" "$STAGING/"
-cp -r "$BUILD_OUT/MimesisPlayerEnhancement" "$STAGING/"
 
 mkdir -p "$OUT_DIR"
 rm -f "$ZIP_PATH"
