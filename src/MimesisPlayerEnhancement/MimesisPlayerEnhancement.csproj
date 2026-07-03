@@ -56,8 +56,12 @@
       <HintPath>$(GameAssemblyPath)/UnityEngine.CoreModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
-    <Reference Include="UnityEngine.UI" Condition="Exists('$(GameAssemblyPath)/UnityEngine.UI.dll')">
+    <Reference Include="UnityEngine.UI">
       <HintPath>$(GameAssemblyPath)/UnityEngine.UI.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UIModule">
+      <HintPath>$(GameAssemblyPath)/UnityEngine.UIModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.ImageConversionModule" Condition="Exists('$(GameAssemblyPath)/UnityEngine.ImageConversionModule.dll')">
