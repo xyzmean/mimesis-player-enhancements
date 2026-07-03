@@ -1,4 +1,4 @@
-name: Build
+name: Build and Release
 
 on:
   push:
@@ -9,6 +9,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
     - uses: actions/checkout@v4
@@ -25,3 +27,28 @@ jobs:
 
     - name: Build
       run: ./scripts/build.sh Release
+
+    - name: Prepare Release Asset
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      run: |
+        mkdir -p release_build/MimesisPlayerEnhancement
+        cp dist/prod/MimesisPlayerEnhancement.dll release_build/MimesisPlayerEnhancement/
+        cp README.md release_build/MimesisPlayerEnhancement/
+        cd release_build
+        zip -r ../MimesisPlayerEnhancement.zip MimesisPlayerEnhancement
+
+    - name: Generate Version
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      run: |
+        # Format: yy.m.d (e.g. 26.7.3) as requested
+        VERSION=$(date +'%-y.%-m.%-d')
+        echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+    - name: Create Release
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: v${{ env.VERSION }}
+        name: Release v${{ env.VERSION }}
+        files: MimesisPlayerEnhancement.zip
+        generate_release_notes: true
