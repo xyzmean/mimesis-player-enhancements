@@ -93,11 +93,11 @@ namespace MimesisPlayerEnhancement.Features.PlayerAnnouncements
             string joined = segments.Count switch
             {
                 1 => segments[0],
-                2 => $"{segments[0]} and {segments[1]}",
-                _ => string.Join(", ", segments.GetRange(0, segments.Count - 1)) + $", and {segments[^1]}",
+                2 => $"{segments[0]} и {segments[1]}",
+                _ => string.Join(", ", segments.GetRange(0, segments.Count - 1)) + $", и {segments[^1]}",
             };
 
-            return $"{joined} appeared. Be careful!";
+            return $"Внимание! Появились: {joined}. Будьте осторожны!";
         }
 
         private static string FormatSegment(int count, string humanizedName, bool capitalizeArticle)

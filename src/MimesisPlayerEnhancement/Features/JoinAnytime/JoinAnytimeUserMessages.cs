@@ -13,11 +13,11 @@ namespace MimesisPlayerEnhancement.Features.JoinAnytime
     {
         private const string Feature = "JoinAnytime";
         private const string DungeonBlockedMessage =
-            "Can't depart yet — other players are still in the dungeon.";
+            "Нельзя отправиться — другие игроки все еще в подземелье.";
         private const string SplitBlockedMessage =
-            "Can't depart yet — other players are still outside the tram.";
+            "Нельзя отправиться — другие игроки не зашли в трамвай.";
         private const string ConnectingBlockedMessage =
-            "Can't depart yet — a player is still connecting.";
+            "Нельзя отправиться — игрок еще подключается.";
         private const float LeverFeedbackDelaySeconds = 0.5f;
         private const float LeverFeedbackDedupSeconds = 5f;
 

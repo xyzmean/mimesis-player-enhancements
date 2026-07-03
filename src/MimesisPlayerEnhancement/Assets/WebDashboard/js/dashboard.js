@@ -1,7 +1,7 @@
 const GRADE_LABELS = ['Сломано', 'Ужасно', 'Медленно', 'Средне', 'Нормально'];
 
 function formatDuration(seconds) {
-  if (!seconds) return '0m';
+  if (!seconds) return '0м';
   const h = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);
   return h > 0 ? h + 'ч ' + m + 'м' : m + 'м';
@@ -139,7 +139,7 @@ document.addEventListener('alpine:init', () => {
 
     get pageTitle() {
       const name = (this.status.lobbyName || '').trim();
-      return name || 'Mimesis Player Enhancement';
+      return name || 'Улучшения Mimesis';
     },
 
     get subtitle() {
@@ -411,7 +411,7 @@ document.addEventListener('alpine:init', () => {
           this.applyMinimapFilter(force);
         }
       } catch (e) {
-        this.pageError = e.message || 'Failed to load data';
+        this.pageError = e.message || 'Ошибка при загрузке данных';
       }
 
       this.lastRoute = this.route;
@@ -810,11 +810,11 @@ document.addEventListener('alpine:init', () => {
         } else {
           entry.isOverridden = res.isOverridden ?? this.settingDiffersFromGlobal(entry);
         }
-        this.showToast(res.message || 'Saved');
+        this.showToast(res.message || 'Сохранено');
       } catch (e) {
         entry.value = previousValue;
         entry.isOverridden = wasOverridden;
-        this.showToast(e.message || 'Failed to save setting');
+        this.showToast(e.message || 'Ошибка при сохранении настройки');
         await this.loadPageData(true);
       } finally {
         if (this.savingSettingKey === saveKey) {
@@ -1023,7 +1023,7 @@ document.addEventListener('alpine:init', () => {
       if (marker.areaId && marker.areaId !== this.minimap.activeAreaId) {
         parts.push(marker.areaId);
       }
-      if (!this.playerBlindMode && !marker.isAlive) parts.push('dead');
+      if (!this.playerBlindMode && !marker.isAlive) parts.push('мертв');
       return parts.join(' · ');
     },
   }));

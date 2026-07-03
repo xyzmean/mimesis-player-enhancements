@@ -86,7 +86,7 @@ namespace MimesisPlayerEnhancement.Features.Statistics
                 return;
             }
 
-            InGameMessageHelper.ShowModMessage($"Dungeon run recorded (cycle {cycleNumber}).");
+            InGameMessageHelper.ShowModMessage($"Статистика прохождения записана (цикл {cycleNumber}).");
         }
 
         internal static void OnGamePlayerInfoShown(string userName, bool isEntering)
@@ -196,13 +196,13 @@ namespace MimesisPlayerEnhancement.Features.Statistics
 
             if (isNewSession == true)
             {
-                lines.Add("A new stats session has been started.");
+                lines.Add("Начата новая сессия статистики.");
             }
             else if (isNewSession == false)
             {
                 lines.Add(reconnectCount > 0
-                    ? $"Stats session resumed (reconnect {reconnectCount})."
-                    : "Stats session resumed.");
+                    ? $"Сессия статистики возобновлена (переподключение {reconnectCount})."
+                    : "Сессия статистики возобновлена.");
             }
 
             return string.Join("\n", lines);
@@ -285,62 +285,19 @@ namespace MimesisPlayerEnhancement.Features.Statistics
             StatCounters c = global.Counters;
             List<string> parts = [];
 
-            if (global.SessionsCompleted > 0)
-            {
-                parts.Add($"{global.SessionsCompleted} sessions");
-            }
+            if (global.SessionsCompleted > 0) parts.Add($"Сессий: {global.SessionsCompleted}");
+            if (c.CyclesCompleted > 0) parts.Add($"Циклов: {c.CyclesCompleted}");
+            if (c.SurvivalWins > 0) parts.Add($"Побед (выживание): {c.SurvivalWins}");
+            if (c.SurvivalLeftBehind > 0) parts.Add($"Брошено: {c.SurvivalLeftBehind}");
+            if (c.SurvivalDeaths > 0) parts.Add($"Смертей (выживание): {c.SurvivalDeaths}");
+            if (c.DeathmatchWins > 0) parts.Add($"Побед (ДМ): {c.DeathmatchWins}");
+            if (c.DeathmatchDeaths > 0) parts.Add($"Смертей (ДМ): {c.DeathmatchDeaths}");
+            if (c.Revives > 0) parts.Add($"Воскрешений: {c.Revives}");
+            if (c.VoiceEvents > 0) parts.Add($"Записей голоса: {c.VoiceEvents}");
+            if (c.CurrencyEarned > 0) parts.Add($"Валюта: {c.CurrencyEarned}");
+            if (c.TotalConnectedSeconds > 0) parts.Add(FormatPlaytime(c.TotalConnectedSeconds));
 
-            if (c.CyclesCompleted > 0)
-            {
-                parts.Add($"{c.CyclesCompleted} cycles");
-            }
-
-            if (c.SurvivalWins > 0)
-            {
-                parts.Add($"{c.SurvivalWins} survival wins");
-            }
-
-            if (c.SurvivalLeftBehind > 0)
-            {
-                parts.Add($"{c.SurvivalLeftBehind} left behind");
-            }
-
-            if (c.SurvivalDeaths > 0)
-            {
-                parts.Add($"{c.SurvivalDeaths} survival deaths");
-            }
-
-            if (c.DeathmatchWins > 0)
-            {
-                parts.Add($"{c.DeathmatchWins} deathmatch wins");
-            }
-
-            if (c.DeathmatchDeaths > 0)
-            {
-                parts.Add($"{c.DeathmatchDeaths} deathmatch deaths");
-            }
-
-            if (c.Revives > 0)
-            {
-                parts.Add($"{c.Revives} revives");
-            }
-
-            if (c.VoiceEvents > 0)
-            {
-                parts.Add($"{c.VoiceEvents} voices recorded");
-            }
-
-            if (c.CurrencyEarned > 0)
-            {
-                parts.Add($"{c.CurrencyEarned} currency");
-            }
-
-            if (c.TotalConnectedSeconds > 0)
-            {
-                parts.Add(FormatPlaytime(c.TotalConnectedSeconds));
-            }
-
-            string summary = parts.Count > 0 ? string.Join(", ", parts) : "no recorded stats yet";
+            string summary = parts.Count > 0 ? string.Join(", ", parts) : "пока нет записанной статистики";
             return $"{displayName} — {summary}";
         }
 
@@ -348,12 +305,12 @@ namespace MimesisPlayerEnhancement.Features.Statistics
         {
             if (totalSeconds < 60)
             {
-                return $"{totalSeconds}s played";
+                return $"{totalSeconds} сек. в игре";
             }
 
             long hours = totalSeconds / 3600;
             long minutes = (totalSeconds % 3600) / 60;
-            return hours > 0 ? minutes > 0 ? $"{hours}h {minutes}m played" : $"{hours}h played" : $"{minutes}m played";
+            return hours > 0 ? minutes > 0 ? $"{hours}ч {minutes}м в игре" : $"{hours}ч в игре" : $"{minutes}м в игре";
         }
 
         private static ulong ResolveSteamIdFromDisplayName(string displayName)

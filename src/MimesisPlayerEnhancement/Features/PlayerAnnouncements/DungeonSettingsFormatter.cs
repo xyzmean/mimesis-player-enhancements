@@ -17,7 +17,7 @@ namespace MimesisPlayerEnhancement.Features.PlayerAnnouncements
 
             if (playerCount > ScalingMath.VanillaPlayerBaseline)
             {
-                parts.Add($"{playerCount} players");
+                parts.Add($"Игроков: {playerCount}");
             }
 
             AppendSpawnSummary(parts, playerCount);
@@ -26,7 +26,7 @@ namespace MimesisPlayerEnhancement.Features.PlayerAnnouncements
             AppendDungeonTime(parts, playerCount);
             AppendDungeonRandomizer(parts);
 
-            return parts.Count == 0 ? null : $"This run: {string.Join(", ", parts)}.";
+            return parts.Count == 0 ? null : $"Настройки: {string.Join(", ", parts)}.";
         }
 
         private static void AppendSpawnSummary(List<string> parts, int playerCount)
@@ -36,9 +36,9 @@ namespace MimesisPlayerEnhancement.Features.PlayerAnnouncements
                 return;
             }
 
-            AppendMultiplier(parts, "boss spawns", SpawnMultiplierResolver.GetEffectiveMultiplier(SpawnCategory.Boss, playerCount));
-            AppendMultiplier(parts, "special spawns", SpawnMultiplierResolver.GetEffectiveMultiplier(SpawnCategory.Special, playerCount));
-            AppendMultiplier(parts, "monster spawns", SpawnMultiplierResolver.GetEffectiveMultiplier(SpawnCategory.Jako, playerCount));
+            AppendMultiplier(parts, "боссы", SpawnMultiplierResolver.GetEffectiveMultiplier(SpawnCategory.Boss, playerCount));
+            AppendMultiplier(parts, "особые враги", SpawnMultiplierResolver.GetEffectiveMultiplier(SpawnCategory.Special, playerCount));
+            AppendMultiplier(parts, "монстры", SpawnMultiplierResolver.GetEffectiveMultiplier(SpawnCategory.Jako, playerCount));
         }
 
         private static void AppendLootSummary(List<string> parts, int playerCount)
@@ -50,12 +50,12 @@ namespace MimesisPlayerEnhancement.Features.PlayerAnnouncements
 
             AppendMultiplier(
                 parts,
-                "map loot",
+                "лут на карте",
                 LootMultiplierResolver.GetEffectiveMultiplier(LootSource.Map, ItemType.Consumable, playerCount));
 
             AppendMultiplier(
                 parts,
-                "drop loot",
+                "лут с врагов",
                 LootMultiplierResolver.GetEffectiveMultiplier(LootSource.Drop, ItemType.Consumable, playerCount));
         }
 
@@ -68,11 +68,11 @@ namespace MimesisPlayerEnhancement.Features.PlayerAnnouncements
 
             AppendMultiplier(
                 parts,
-                "quota",
+                "квота",
                 MoneyMultiplierResolver.GetEffectiveMultiplier(MoneyType.RoundGoal, playerCount));
             AppendMultiplier(
                 parts,
-                "scrap value",
+                "ценность лома",
                 MoneyMultiplierResolver.GetEffectiveMultiplier(MoneyType.ScrapSellValue, playerCount));
         }
 
@@ -89,7 +89,7 @@ namespace MimesisPlayerEnhancement.Features.PlayerAnnouncements
                 return;
             }
 
-            parts.Add($"+{(int)bonusSeconds}s shift time");
+            parts.Add($"+{(int)bonusSeconds} сек. ко времени");
         }
 
         private static void AppendDungeonRandomizer(List<string> parts)
@@ -99,7 +99,7 @@ namespace MimesisPlayerEnhancement.Features.PlayerAnnouncements
                 return;
             }
 
-            parts.Add("dungeon randomizer on");
+            parts.Add("рандомизатор подземелий вкл.");
         }
 
         private static void AppendMultiplier(List<string> parts, string label, float multiplier)

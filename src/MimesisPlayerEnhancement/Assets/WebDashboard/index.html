@@ -71,14 +71,12 @@
             <h2 class="page-heading">Поддержка</h2>
             <div class="donation-panel surface-card">
               <p class="donation-lead">
-                Please support my work with a small donation if you can. Maintaining this mod takes a lot of dedicated
-                time.
+                Пожалуйста, поддержите мою работу небольшим пожертвованием, если можете. Поддержка этого мода требует много времени.
               </p>
               <p>
-                Mimesis Player Enhancement - это не быстрый патч — it merges several community mods into one maintained
-                package
-                and adds original work on top: Harmony patches across the game, this web dashboard, session statistics,
-                spawn/loot/money scaling, dungeon tweaks, and ongoing compatibility testing with new MIMESIS releases.
+                Mimesis Player Enhancement - это не быстрый патч — он объединяет несколько модов от сообщества в один поддерживаемый пакет
+                и добавляет оригинальные функции: патчи Harmony для всей игры, эту веб-панель, статистику сессий,
+                масштабирование врагов/лута/денег, настройки подземелий и постоянное тестирование совместимости с новыми версиями игры MIMESIS.
               </p>
               <p>
                 Если вам нравится играть с ним и вы хотите сказать спасибо, небольшое пожертвование искренне приветствуется
@@ -92,8 +90,7 @@
                 </a>
               </p>
               <p class="donation-footnote">
-                Мод остается бесплатным и с открытым исходным кодом в любом случае. Please also support the original mod authors listed in
-                the
+                Мод остается бесплатным и с открытым исходным кодом в любом случае. Пожалуйста, также поддержите оригинальных авторов модов, перечисленных в
                 <a class="external-link" href="https://github.com/Kandru/mimesis-player-enhancements" target="_blank"
                   rel="noopener noreferrer">GitHub README</a>.
               </p>
@@ -499,8 +496,8 @@
                                 :id="settingInputId(section.id, entry)" :value="settingDraftValue(entry)"
                                 :disabled="isSavingSetting(section.id, entry)"
                                 @change="onBooleanSettingChange(section.id, entry, $event)">
-                                <option value="true">On</option>
-                                <option value="false">Off</option>
+                                <option value="true">Вкл</option>
+                                <option value="false">Выкл</option>
                               </select>
                             </template>
                             <template x-if="entry.type === 'Int32'">
@@ -650,8 +647,8 @@
                                     :id="settingInputId(section.id, entry)" :value="settingDraftValue(entry)"
                                     :disabled="isSavingSetting(section.id, entry)"
                                     @change="onBooleanSettingChange(section.id, entry, $event)">
-                                    <option value="true">On</option>
-                                    <option value="false">Off</option>
+                                    <option value="true">Вкл</option>
+                                    <option value="false">Выкл</option>
                                   </select>
                                 </template>
                                 <template x-if="entry.type === 'Int32'">

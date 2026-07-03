@@ -144,22 +144,22 @@ namespace MimesisPlayerEnhancement.Features.PlayerAnnouncements
 
             if (stats.SurvivalDeaths > 0)
             {
-                parts.Add($"{stats.SurvivalDeaths} death{(stats.SurvivalDeaths == 1 ? "" : "s")}");
+                parts.Add($"Смертей: {stats.SurvivalDeaths}");
             }
 
             if (stats.SurvivalWins > 0)
             {
-                parts.Add($"{stats.SurvivalWins} win{(stats.SurvivalWins == 1 ? "" : "s")}");
+                parts.Add($"Побед: {stats.SurvivalWins}");
             }
 
             if (stats.SurvivalLeftBehind > 0)
             {
-                parts.Add($"{stats.SurvivalLeftBehind} left behind");
+                parts.Add($"Брошено: {stats.SurvivalLeftBehind}");
             }
 
             if (stats.Revives > 0)
             {
-                parts.Add($"{stats.Revives} revive{(stats.Revives == 1 ? "" : "s")}");
+                parts.Add($"Воскрешений: {stats.Revives}");
             }
 
             long monsterKills = 0;
@@ -170,25 +170,25 @@ namespace MimesisPlayerEnhancement.Features.PlayerAnnouncements
 
             if (monsterKills > 0)
             {
-                parts.Add($"{monsterKills} monster kill{(monsterKills == 1 ? "" : "s")}");
+                parts.Add($"Убито монстров: {monsterKills}");
             }
 
             if (stats.ItemCarryCount > 0)
             {
-                parts.Add($"{stats.ItemCarryCount} item{(stats.ItemCarryCount == 1 ? "" : "s")} carried");
+                parts.Add($"Перенесено предметов: {stats.ItemCarryCount}");
             }
 
             if (stats.MimicEncounterCount > 0)
             {
-                parts.Add($"{stats.MimicEncounterCount} mimic encounter{(stats.MimicEncounterCount == 1 ? "" : "s")}");
+                parts.Add($"Встреч с мимиками: {stats.MimicEncounterCount}");
             }
 
             if (stats.DamageToAlly > 0)
             {
-                parts.Add($"{stats.DamageToAlly} ally damage");
+                parts.Add($"Урон по своим: {stats.DamageToAlly}");
             }
 
-            return parts.Count == 0 ? "Your run this map: no recorded activity yet." : $"Your run this map: {string.Join(", ", parts)}.";
+            return parts.Count == 0 ? "Ваша статистика на этой карте пока пуста." : $"Ваша статистика: {string.Join(", ", parts)}.";
         }
     }
 }
