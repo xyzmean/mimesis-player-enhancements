@@ -13,7 +13,7 @@ namespace MimesisPlayerEnhancement.Features.Persistence
 {
     internal static class SpeechEventFileStore
     {
-        private const string Feature = "Persistence";
+        private const string Feature = "Сохранение данных";
         private const int MetadataVersion = 3;
 
         private static readonly byte[] FileMagic = Encoding.ASCII.GetBytes("MPEV");

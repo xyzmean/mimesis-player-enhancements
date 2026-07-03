@@ -14,7 +14,7 @@ namespace MimesisPlayerEnhancement.Features.LootMultiplicator
 
         internal static void CreateCategory()
         {
-            _category = ModConfig.CreateCategory("MimesisPlayerEnhancement_LootMultiplicator", "Loot Multiplicator");
+            _category = ModConfig.CreateCategory("MimesisPlayerEnhancement_LootMultiplicator", "Умножитель лута");
         }
 
         internal static void CreateEntries()
@@ -22,56 +22,56 @@ namespace MimesisPlayerEnhancement.Features.LootMultiplicator
             ModConfig.EnableLootMultiplicator = ModConfig.CreateTrackedEntry(_category,
                 "EnableLootMultiplicator",
                 false,
-                "Enable Loot Multiplicator",
-                "Scale map loot and enemy death drops, and optionally convert mimic fake drops to real loot. Host only.");
+                "Включить умножитель лута",
+                "Масштабирует лут на карте и предметы с врагов. Только для хоста.");
 
             ModConfig.AutoScaleMapLootByPlayerCount = ModConfig.CreateTrackedEntry(_category,
                 "AutoScaleMapLootByPlayerCount",
                 true,
-                "Auto Scale Map Loot By Player Count",
-                "Map loot = items placed on the dungeon map (spawn markers, shelves, floors). When enabled, multiply by player count / 4 above 4 players (stacks with MapLootMultiplier).");
+                "Авто-масштабирование лута на карте",
+                "Умножает лут на полках и полу на (игроков / 4) при онлайне больше 4.");
 
             ModConfig.MapLootMultiplier = ModConfig.CreateTrackedEntry(_category,
                 "MapLootMultiplier",
                 1f,
-                "Map Loot Multiplier",
-                "Multiplier for all map-placed pickup loot: fixed markers, respawn counts, and random pool budgets. 1 = vanilla, 2 = double.");
+                "Множитель лута на карте",
+                "Множитель лута, который можно подобрать на карте (1 = ванилла, 2 = двойной).");
 
             ModConfig.AutoScaleDropLootByPlayerCount = ModConfig.CreateTrackedEntry(_category,
                 "AutoScaleDropLootByPlayerCount",
                 true,
-                "Auto Scale Drop Loot By Player Count",
-                "Drop loot = items from enemy death tables when killed. When enabled, multiply by player count / 4 above 4 players (stacks with DropLootMultiplier).");
+                "Авто-масштабирование лута с врагов",
+                "Умножает лут с врагов на (игроков / 4) при онлайне больше 4.");
 
             ModConfig.DropLootMultiplier = ModConfig.CreateTrackedEntry(_category,
                 "DropLootMultiplier",
                 1f,
-                "Drop Loot Multiplier",
-                "Multiplier for enemy death drops: extra weighted re-rolls from drop tables and consumable stack count on spawn. 1 = vanilla, 2 = double.");
+                "Множитель лута с врагов",
+                "Множитель лута с мертвых врагов (1 = ванилла, 2 = двойной).");
 
             ModConfig.LootItemFilterMode = ModConfig.CreateTrackedEntry(_category,
                 "LootItemFilterMode",
                 "All",
-                "Loot Item Filter Mode",
-                "All = every item can be scaled; AllowlistOnly = only comma-separated master IDs in LootAllowlist; BlocklistOnly = all items except LootBlocklist.");
+                "Режим фильтра лута",
+                "All = все предметы; AllowlistOnly = только IDs из белого списка; BlocklistOnly = все, кроме черного списка.");
 
             ModConfig.LootAllowlist = ModConfig.CreateTrackedEntry(_category,
                 "LootAllowlist",
                 "",
-                "Loot Allowlist",
-                "Comma-separated item master IDs (e.g. 12345,67890). Used when LootItemFilterMode is AllowlistOnly. See docs/LOOT_ITEM_IDS.md in the repo for the full list.");
+                "Белый список лута",
+                "ID предметов через запятую. Работает при режиме AllowlistOnly.");
 
             ModConfig.LootBlocklist = ModConfig.CreateTrackedEntry(_category,
                 "LootBlocklist",
                 "",
-                "Loot Blocklist",
-                "Comma-separated item master IDs to exclude from scaling. Used when LootItemFilterMode is BlocklistOnly. See docs/LOOT_ITEM_IDS.md in the repo for the full list.");
+                "Черный список лута",
+                "ID предметов через запятую для исключения из масштабирования.");
 
             ModConfig.ConvertFakeActorDyingDropChancePercent = ModConfig.CreateTrackedEntry(_category,
                 "ConvertFakeActorDyingDropChancePercent",
                 30,
-                "Convert Fake Death Drops To Real Chance",
-                "Chance (0-100) that fake items dropped on enemy death (ActorDying, e.g. mimic inventory decoys) become real pickup loot. 0 = vanilla (fake items vanish on grab), 100 = always real. Monster drop-table loot is already real.");
+                "Шанс превращения фейк-лута",
+                "Шанс (0-100%), что фейковые предметы из мимика превратятся в настоящий лут.");
         }
 
         internal static void WireValidation(MelonLogger.Instance logger)

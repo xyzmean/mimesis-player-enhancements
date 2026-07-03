@@ -8,7 +8,7 @@ namespace MimesisPlayerEnhancement.Features.Persistence.Patches
     [HarmonyPatch(typeof(PlatformMgr), nameof(PlatformMgr.Delete))]
     public static class PlatformMgrPatches
     {
-        private const string Feature = "Persistence";
+        private const string Feature = "Сохранение данных";
 
         [HarmonyPostfix]
         public static void Postfix(string fileName)

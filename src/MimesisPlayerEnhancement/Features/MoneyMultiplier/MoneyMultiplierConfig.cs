@@ -13,7 +13,7 @@ namespace MimesisPlayerEnhancement.Features.MoneyMultiplier
 
         internal static void CreateCategory()
         {
-            _category = ModConfig.CreateCategory("MimesisPlayerEnhancement_MoneyMultiplier", "Money Multiplier");
+            _category = ModConfig.CreateCategory("MimesisPlayerEnhancement_MoneyMultiplier", "Множитель денег");
         }
 
         internal static void CreateEntries()
@@ -21,86 +21,86 @@ namespace MimesisPlayerEnhancement.Features.MoneyMultiplier
             ModConfig.EnableMoneyMultiplier = ModConfig.CreateTrackedEntry(_category,
                 "EnableMoneyMultiplier",
                 false,
-                "Enable Money Multiplier",
-                "Scale startup money, round goal quota, scrap/sell values, shop buy prices, and reinforce costs. Host only.");
+                "Включить множитель денег",
+                "Изменяет стартовые деньги, квоту, цены продажи/покупки и стоимость улучшений.");
 
             ModConfig.AutoScaleStartupMoneyByPlayerCount = ModConfig.CreateTrackedEntry(_category,
                 "AutoScaleStartupMoneyByPlayerCount",
                 true,
-                "Auto Scale Startup Money By Player Count",
-                "When enabled, multiply startup money by player count / 4 for sessions with more than 4 players (stacks with StartupMoneyMultiplier).");
+                "Авто-масштаб стартовых денег",
+                "Умножает стартовые деньги на (игроков / 4) при онлайне больше 4.");
 
             ModConfig.StartupMoneyMultiplier = ModConfig.CreateTrackedEntry(_category,
                 "StartupMoneyMultiplier",
                 1f,
-                "Startup Money Multiplier",
-                "Starting maintenance-room currency on a new save slot or session reset to vanilla initial money (1 = vanilla, 2 = double). Does not apply when loading a save game.");
+                "Множитель стартовых денег",
+                "Начальные деньги при старте нового сохранения (1 = ванилла, 2 = двойные).");
 
             ModConfig.AutoScaleRoundGoalMoneyByPlayerCount = ModConfig.CreateTrackedEntry(_category,
                 "AutoScaleRoundGoalMoneyByPlayerCount",
                 true,
-                "Auto Scale Round Goal Money By Player Count",
-                "When enabled, multiply the stage target currency (quota) by player count / 4 for sessions with more than 4 players (stacks with RoundGoalMoneyMultiplier).");
+                "Авто-масштаб квоты этапа",
+                "Умножает квоту на (игроков / 4) при онлайне больше 4.");
 
             ModConfig.RoundGoalMoneyMultiplier = ModConfig.CreateTrackedEntry(_category,
                 "RoundGoalMoneyMultiplier",
                 1f,
-                "Round Goal Money Multiplier",
-                "Target currency required to finish a stage (1 = vanilla, 2 = double).");
+                "Множитель квоты этапа",
+                "Сумма, необходимая для завершения уровня (1 = ванилла, 2 = двойная).");
 
             ModConfig.AutoScaleScrapSellValueByPlayerCount = ModConfig.CreateTrackedEntry(_category,
                 "AutoScaleScrapSellValueByPlayerCount",
                 true,
-                "Auto Scale Scrap Sell Value By Player Count",
-                "When enabled, multiply item scrap/sell values by player count / 4 for sessions with more than 4 players (stacks with ScrapSellValueMultiplier).");
+                "Авто-масштаб ценности продажи",
+                "Умножает ценность продаваемых предметов на (игроков / 4).");
 
             ModConfig.ScrapSellValueMultiplier = ModConfig.CreateTrackedEntry(_category,
                 "ScrapSellValueMultiplier",
                 1f,
-                "Scrap Sell Value Multiplier",
-                "Currency earned when scrapping items and item value counted toward the tram quota (1 = vanilla, 2 = double).");
+                "Множитель цены продажи",
+                "Множитель цены продаваемого лома в трамвае (1 = ванилла, 2 = в два раза дороже).");
 
             ModConfig.AutoScaleShopBuyPriceByPlayerCount = ModConfig.CreateTrackedEntry(_category,
                 "AutoScaleShopBuyPriceByPlayerCount",
                 true,
-                "Auto Scale Shop Buy Price By Player Count",
-                "When enabled, multiply maintenance shop buy prices by player count / 4 for sessions with more than 4 players (stacks with ShopBuyPriceMultiplier).");
+                "Авто-масштаб цен в магазине",
+                "Умножает цены на предметы в магазине на (игроков / 4).");
 
             ModConfig.ShopBuyPriceMultiplier = ModConfig.CreateTrackedEntry(_category,
                 "ShopBuyPriceMultiplier",
                 1f,
-                "Shop Buy Price Multiplier",
-                "Maintenance shop and vending-machine kiosk purchase cost multiplier (1 = vanilla, 2 = double). Applied when shop items are initialized each maintenance round.");
+                "Множитель цен в магазине",
+                "Множитель стоимости покупки в магазине и автоматах.");
 
             ModConfig.ShopDiscountMinPercent = ModConfig.CreateTrackedEntry(_category,
                 "ShopDiscountMinPercent",
                 0,
-                "Shop Discount Min Percent",
-                "Minimum shop discount percentage when a discount is rolled (0-100). Only used when ShopDiscountChancePercent is above 0.");
+                "Мин. скидка в магазине (%)",
+                "Минимальная скидка на предмет, если он получил скидку.");
 
             ModConfig.ShopDiscountMaxPercent = ModConfig.CreateTrackedEntry(_category,
                 "ShopDiscountMaxPercent",
                 100,
-                "Shop Discount Max Percent",
-                "Maximum shop discount percentage when a discount is rolled (0-100). Must be >= ShopDiscountMinPercent.");
+                "Макс. скидка в магазине (%)",
+                "Максимальная скидка на предмет, если он получил скидку.");
 
             ModConfig.ShopDiscountChancePercent = ModConfig.CreateTrackedEntry(_category,
                 "ShopDiscountChancePercent",
                 0,
-                "Shop Discount Chance Percent",
-                "Chance per shop item to receive a discount between min and max percent (0 = vanilla shop discounts, 100 = every item discounted).");
+                "Шанс скидки в магазине (%)",
+                "Шанс применения случайной скидки на предметы в магазине (0 = выкл).");
 
             ModConfig.AutoScaleReinforcePriceByPlayerCount = ModConfig.CreateTrackedEntry(_category,
                 "AutoScaleReinforcePriceByPlayerCount",
                 true,
-                "Auto Scale Reinforce Price By Player Count",
-                "When enabled, multiply item reinforcement costs by player count / 4 for sessions with more than 4 players (stacks with ReinforcePriceMultiplier).");
+                "Авто-масштаб цены улучшений",
+                "Умножает стоимость улучшений на (игроков / 4) при онлайне больше 4.");
 
             ModConfig.ReinforcePriceMultiplier = ModConfig.CreateTrackedEntry(_category,
                 "ReinforcePriceMultiplier",
                 1f,
-                "Reinforce Price Multiplier",
-                "Maintenance item reinforcement cost multiplier (1 = vanilla, 2 = double).");
+                "Множитель цены улучшений",
+                "Множитель стоимости усиления предметов (1 = ванилла, 2 = в два раза дороже).");
         }
 
         /// <summary>Clamps persisted shop discount percents once at startup, before change handlers are wired.</summary>

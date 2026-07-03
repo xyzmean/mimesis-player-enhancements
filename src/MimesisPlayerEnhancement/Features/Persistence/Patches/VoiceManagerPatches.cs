@@ -13,7 +13,7 @@ namespace MimesisPlayerEnhancement.Features.Persistence.Patches
     [HarmonyPatch(typeof(VoiceManager), "GetRandomOtherSpeechEventArchive")]
     public static class VoiceManagerHallucinationPatch
     {
-        private const string Feature = "Persistence";
+        private const string Feature = "Сохранение данных";
 
         [HarmonyPostfix]
         public static void Postfix(ref SpeechEventArchive __result)

@@ -11,7 +11,7 @@ namespace MimesisPlayerEnhancement.Features.Statistics
 {
     public static class StatisticsTracker
     {
-        private const string Feature = "Statistics";
+        private const string Feature = "Статистика";
         private const BindingFlags InstanceMemberFlags =
             BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
 

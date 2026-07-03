@@ -13,7 +13,7 @@ namespace MimesisPlayerEnhancement.Features.Persistence
     /// </summary>
     public static class MimesisSaveManager
     {
-        private const string Feature = "Persistence";
+        private const string Feature = "Сохранение данных";
 
         public static bool IsHost()
         {

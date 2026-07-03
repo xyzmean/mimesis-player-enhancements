@@ -7,7 +7,7 @@ namespace MimesisPlayerEnhancement.Features.Persistence.Patches
     [HarmonyPatch(typeof(MaintenanceRoom), nameof(MaintenanceRoom.SaveGameData))]
     public static class MaintenanceRoomPatches
     {
-        private const string Feature = "Persistence";
+        private const string Feature = "Сохранение данных";
 
         [HarmonyPostfix]
         public static void Postfix(int saveSlotID, List<string> playerNames, bool isAutoSave, MsgErrorCode __result)

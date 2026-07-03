@@ -92,11 +92,11 @@ namespace MimesisPlayerEnhancement.Util
         internal static IReadOnlyList<IFeatureModule> All { get; } =
         [
             new FeatureModule("MoreVoices", MoreVoicesPatches.Apply, MoreVoicesPatches.RefreshFromConfig),
-            new FeatureModule("Persistence", PersistencePatches.Apply, onUpdate: () =>
+            new FeatureModule("Сохранение данных", PersistencePatches.Apply, onUpdate: () =>
             {
                 if (ModConfig.EnablePersistence.Value) { SpeechEventPoolManager.ProcessDeferredUpdates(); } },
                 onDeinitialize: PersistenceWriteQueue.FlushAllSync),
-            new FeatureModule("Statistics", StatisticsPatches.Apply,
+            new FeatureModule("Статистика", StatisticsPatches.Apply,
                 syncFromConfig: StatisticsTracker.RefreshFromConfig,
                 onUpdate: () =>
             {

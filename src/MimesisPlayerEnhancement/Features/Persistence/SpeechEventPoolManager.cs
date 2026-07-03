@@ -15,7 +15,7 @@ namespace MimesisPlayerEnhancement.Features.Persistence
     /// </summary>
     public static class SpeechEventPoolManager
     {
-        private const string Feature = "Persistence";
+        private const string Feature = "Сохранение данных";
         public enum EventState { Pending, Injected }
 
         private static readonly Dictionary<long, (SpeechEvent ev, EventState state, string originalPlayerName)> _pool

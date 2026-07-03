@@ -8,7 +8,7 @@ namespace MimesisPlayerEnhancement.Features.Persistence.Patches
     [HarmonyPatch(typeof(SpeechEventArchive), "OnStartClient")]
     public static class SpeechEventArchivePatches
     {
-        private const string Feature = "Persistence";
+        private const string Feature = "Сохранение данных";
 
         private static int _poolLoadedForSlot = -999;
 

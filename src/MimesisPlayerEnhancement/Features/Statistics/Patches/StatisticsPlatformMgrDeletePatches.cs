@@ -7,7 +7,7 @@ namespace MimesisPlayerEnhancement.Features.Statistics.Patches
     [HarmonyPatch(typeof(PlatformMgr), nameof(PlatformMgr.Delete))]
     public static class StatisticsPlatformMgrDeletePatches
     {
-        private const string Feature = "Statistics";
+        private const string Feature = "Статистика";
 
         [HarmonyPostfix]
         public static void Postfix(string fileName)

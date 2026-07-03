@@ -9,7 +9,7 @@ namespace MimesisPlayerEnhancement.Util
         private const string BackupSuffix = ".bak";
         private const string TempSuffix = ".tmp";
 
-        internal static void WriteBytes(string filePath, byte[] data, string logFeature = "Persistence")
+        internal static void WriteBytes(string filePath, byte[] data, string logFeature = "Сохранение данных")
         {
             string tmpPath = filePath + TempSuffix;
             string bakPath = filePath + BackupSuffix;
@@ -33,12 +33,12 @@ namespace MimesisPlayerEnhancement.Util
             File.Move(tmpPath, filePath);
         }
 
-        internal static void WriteText(string filePath, string text, string logFeature = "Persistence")
+        internal static void WriteText(string filePath, string text, string logFeature = "Сохранение данных")
         {
             WriteBytes(filePath, Encoding.UTF8.GetBytes(text), logFeature);
         }
 
-        internal static byte[]? ReadBytes(string filePath, string logFeature = "Persistence")
+        internal static byte[]? ReadBytes(string filePath, string logFeature = "Сохранение данных")
         {
             if (File.Exists(filePath))
             {
@@ -77,13 +77,13 @@ namespace MimesisPlayerEnhancement.Util
             return null;
         }
 
-        internal static string? ReadText(string filePath, string logFeature = "Persistence")
+        internal static string? ReadText(string filePath, string logFeature = "Сохранение данных")
         {
             byte[]? data = ReadBytes(filePath, logFeature);
             return data == null ? null : Encoding.UTF8.GetString(data);
         }
 
-        internal static void Delete(string filePath, string logFeature = "Persistence")
+        internal static void Delete(string filePath, string logFeature = "Сохранение данных")
         {
             foreach (string path in new[] { filePath, filePath + BackupSuffix, filePath + TempSuffix })
             {

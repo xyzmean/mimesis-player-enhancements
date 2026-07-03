@@ -13,7 +13,7 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
 
         internal static void CreateCategory()
         {
-            _category = ModConfig.CreateCategory("MimesisPlayerEnhancement_WebDashboard", "Web Dashboard");
+            _category = ModConfig.CreateCategory("MimesisPlayerEnhancement_WebDashboard", "Веб-панель управления");
         }
 
         internal static void CreateEntries()
@@ -21,7 +21,7 @@ namespace MimesisPlayerEnhancement.Features.WebDashboard
             ModConfig.EnableWebDashboard = ModConfig.CreateTrackedEntry(_category,
                 "EnableWebDashboard",
                 true,
-                "Enable Web Dashboard",
+                "Включить веб-панель",
                 "Serve a local web UI for connected players and host moderation. Default bind is loopback only.");
 
             ModConfig.WebDashboardListenAddress = ModConfig.CreateTrackedEntry(_category,

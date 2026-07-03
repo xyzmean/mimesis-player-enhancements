@@ -9,7 +9,7 @@ namespace MimesisPlayerEnhancement.Features.Statistics
 {
     public static class StatisticsStore
     {
-        private const string Feature = "Statistics";
+        private const string Feature = "Статистика";
         private const int MaxRecentSessions = 20;
 
         private static int _cachedLoadSlotId = -999;

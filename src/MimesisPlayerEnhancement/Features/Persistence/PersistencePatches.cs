@@ -6,7 +6,7 @@ namespace MimesisPlayerEnhancement.Features.Persistence
 {
     public static class PersistencePatches
     {
-        private const string Feature = "Persistence";
+        private const string Feature = "Сохранение данных";
 
         public static void Apply(HarmonyLib.Harmony harmony)
         {

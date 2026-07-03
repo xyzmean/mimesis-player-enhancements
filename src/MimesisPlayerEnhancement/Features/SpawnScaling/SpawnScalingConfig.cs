@@ -14,7 +14,7 @@ namespace MimesisPlayerEnhancement.Features.SpawnScaling
 
         internal static void CreateCategory()
         {
-            _category = ModConfig.CreateCategory("MimesisPlayerEnhancement_SpawnScaling", "Spawn Scaling");
+            _category = ModConfig.CreateCategory("MimesisPlayerEnhancement_SpawnScaling", "Масштабирование врагов");
         }
 
         internal static void CreateEntries()
@@ -22,98 +22,98 @@ namespace MimesisPlayerEnhancement.Features.SpawnScaling
             ModConfig.EnableSpawnScaling = ModConfig.CreateTrackedEntry(_category,
                 "EnableSpawnScaling",
                 false,
-                "Enable Spawn Scaling",
-                "Scale dungeon monster spawn budgets by type. Host only.");
+                "Включить масштабирование врагов",
+                "Масштабировать количество монстров по типам. Только для хоста.");
 
             ModConfig.AutoScaleMimicSpawnsByPlayerCount = ModConfig.CreateTrackedEntry(_category,
                 "AutoScaleMimicSpawnsByPlayerCount",
                 true,
-                "Auto Scale Mimic Spawns By Player Count",
-                "When enabled, multiply mimic spawn budgets by player count / 4 for sessions with more than 4 players (stacks with MimicSpawnMultiplier).");
+                "Авто-масштабирование Мимиков",
+                "Умножает количество мимиков на (число игроков / 4) при онлайне больше 4.");
 
             ModConfig.MimicSpawnMultiplier = ModConfig.CreateTrackedEntry(_category,
                 "MimicSpawnMultiplier",
                 1f,
-                "Mimic Spawn Multiplier",
-                "Total mimic spawn budget across the run, including periodic spawns (1 = vanilla, 2 = double).");
+                "Множитель Мимиков",
+                "Общий бюджет появления мимиков (1 = ванилла, 2 = в два раза больше).");
 
             ModConfig.AutoScaleBossSpawnsByPlayerCount = ModConfig.CreateTrackedEntry(_category,
                 "AutoScaleBossSpawnsByPlayerCount",
                 true,
-                "Auto Scale Boss Spawns By Player Count",
-                "When enabled, multiply boss spawn budgets by player count / 4 for sessions with more than 4 players (stacks with BossSpawnMultiplier).");
+                "Авто-масштабирование Боссов",
+                "Умножает количество боссов на (игроков / 4) при онлайне больше 4 человек.");
 
             ModConfig.BossSpawnMultiplier = ModConfig.CreateTrackedEntry(_category,
                 "BossSpawnMultiplier",
                 1f,
-                "Boss Spawn Multiplier",
-                "Map-placed bosses: activates unused alternate markers and schedules bonus encounters after kill (1 = vanilla, 2 = double).");
+                "Множитель Боссов",
+                "Включает альт. маркеры боссов и спавнит доп. боссов (1 = ванилла, 2 = в два раза больше).");
 
             ModConfig.AutoScaleJakoSpawnsByPlayerCount = ModConfig.CreateTrackedEntry(_category,
                 "AutoScaleJakoSpawnsByPlayerCount",
                 true,
-                "Auto Scale Jako Spawns By Player Count",
-                "When enabled, multiply jako spawn budgets by player count / 4 for sessions with more than 4 players (stacks with JakoSpawnMultiplier).");
+                "Авто-масштабирование Жако",
+                "Умножает количество Жако на (игроков / 4) при онлайне больше 4 человек.");
 
             ModConfig.JakoSpawnMultiplier = ModConfig.CreateTrackedEntry(_category,
                 "JakoSpawnMultiplier",
                 1f,
-                "Jako Spawn Multiplier",
-                "Total normal-monster threat budget for ambient dungeon spawns (1 = vanilla, 2 = double).");
+                "Множитель Жако",
+                "Обычные монстры в подземелье (1 = ванилла, 2 = в два раза больше).");
 
             ModConfig.AutoScaleSpecialSpawnsByPlayerCount = ModConfig.CreateTrackedEntry(_category,
                 "AutoScaleSpecialSpawnsByPlayerCount",
                 true,
-                "Auto Scale Special Spawns By Player Count",
-                "When enabled, multiply special spawn budgets by player count / 4 for sessions with more than 4 players (stacks with SpecialSpawnMultiplier).");
+                "Авто-масштабирование особых врагов",
+                "Умножает количество особых врагов на (игроков / 4) при онлайне больше 4 человек.");
 
             ModConfig.SpecialSpawnMultiplier = ModConfig.CreateTrackedEntry(_category,
                 "SpecialSpawnMultiplier",
                 1f,
-                "Special Spawn Multiplier",
-                "Special monster budget for periodic spawns and map-placed specials (1 = vanilla, 2 = double).");
+                "Множитель особых врагов",
+                "Бюджет особых монстров для периодических спавнов и точек на карте.");
 
             ModConfig.AutoScaleTrapSpawnsByPlayerCount = ModConfig.CreateTrackedEntry(_category,
                 "AutoScaleTrapSpawnsByPlayerCount",
                 true,
-                "Auto Scale Trap Spawns By Player Count",
-                "When enabled, multiply trap spawn counts by player count / 4 for sessions with more than 4 players (stacks with TrapSpawnMultiplier).");
+                "Авто-масштабирование ловушек",
+                "Умножает количество ловушек на (игроков / 4) при онлайне больше 4 человек.");
 
             ModConfig.TrapSpawnMultiplier = ModConfig.CreateTrackedEntry(_category,
                 "TrapSpawnMultiplier",
                 1f,
-                "Trap Spawn Multiplier",
-                "Map-placed traps: activates unused alternate markers and schedules bonus encounters after trigger/kill (1 = vanilla, 2 = double).");
+                "Множитель ловушек",
+                "Включает альт. маркеры и спавнит доп. ловушки (1 = ванилла, 2 = в два раза больше).");
 
             ModConfig.MapPlacedEncounterDelayMinSeconds = ModConfig.CreateTrackedEntry(_category,
                 "MapPlacedEncounterDelayMinSeconds",
                 5f,
-                "Map-Placed Encounter Delay Min (seconds)",
-                "Shortest wait after a map-placed enemy, trap, or loot marker is cleared before the next bonus encounter from scaling can appear there.");
+                "Мин. задержка спавна (сек)",
+                "Мин. ожидание после зачистки точки перед спавном бонусного объекта.");
 
             ModConfig.MapPlacedEncounterDelayMaxSeconds = ModConfig.CreateTrackedEntry(_category,
                 "MapPlacedEncounterDelayMaxSeconds",
                 30f,
-                "Map-Placed Encounter Delay Max (seconds)",
-                "Longest wait for that random delay. Actual delay is picked between min and max.");
+                "Макс. задержка спавна (сек)",
+                "Макс. ожидание случайной задержки спавна бонусного объекта.");
 
             ModConfig.MapPlacedEncounterMinPlayerDistanceMeters = ModConfig.CreateTrackedEntry(_category,
                 "MapPlacedEncounterMinPlayerDistanceMeters",
                 10f,
-                "Map-Placed Encounter Min Player Distance (m)",
-                "After the delay, hold the spawn until no living players are within this radius of the marker. 0 = spawn as soon as the delay elapses.");
+                "Мин. дистанция спавна от игрока (м)",
+                "Не спавнить объекты, пока в этом радиусе есть игроки. 0 = спавнить мгновенно.");
 
             ModConfig.AutoScaleOtherSpawnsByPlayerCount = ModConfig.CreateTrackedEntry(_category,
                 "AutoScaleOtherSpawnsByPlayerCount",
                 true,
-                "Auto Scale Other Spawns By Player Count",
-                "When enabled, multiply other spawn counts by player count / 4 for sessions with more than 4 players (stacks with OtherSpawnMultiplier).");
+                "Авто-масштабирование остальных",
+                "Умножает количество остальных объектов на (игроков / 4) при онлайне больше 4 человек.");
 
             ModConfig.OtherSpawnMultiplier = ModConfig.CreateTrackedEntry(_category,
                 "OtherSpawnMultiplier",
                 1f,
-                "Other Spawn Multiplier",
-                "Spawn multiplier for entities that are not mimics, bosses, jakos, specials, or traps.");
+                "Множитель остальных объектов",
+                "Множитель сущностей, не являющихся мимиками, боссами, жако, особыми врагами и ловушками.");
         }
 
         internal static void WireValidation(MelonLogger.Instance logger)

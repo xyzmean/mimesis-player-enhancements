@@ -13,7 +13,7 @@ namespace MimesisPlayerEnhancement.Features.MoreVoices
 
         internal static void CreateCategory()
         {
-            _category = ModConfig.CreateCategory("MimesisPlayerEnhancement_MoreVoices", "More Voices");
+            _category = ModConfig.CreateCategory("MimesisPlayerEnhancement_MoreVoices", "Больше голосов (Mimic)");
         }
 
         internal static void CreateEntries()
@@ -21,26 +21,26 @@ namespace MimesisPlayerEnhancement.Features.MoreVoices
             ModConfig.EnableMoreVoices = ModConfig.CreateTrackedEntry(_category,
                 "EnableMoreVoices",
                 true,
-                "Enable More Voices",
-                "Raise per-player voice recording limits.");
+                "Включить расширение голосов",
+                "Увеличить лимиты записи голосов игроков для мимика.");
 
             ModConfig.MaxIndoorVoiceEvents = ModConfig.CreateTrackedEntry(_category,
                 "MaxIndoorVoiceEvents",
                 3000,
-                "Max Indoor Voice Events",
-                "Maximum stored voice events per player in indoor dungeon runs (default game limit is much lower).");
+                "Макс. записей (Внутри)",
+                "Максимум хранимых записей голоса для подземелий.");
 
             ModConfig.MaxDeathMatchVoiceEvents = ModConfig.CreateTrackedEntry(_category,
                 "MaxDeathMatchVoiceEvents",
                 3000,
-                "Max Deathmatch Voice Events",
-                "Maximum stored voice events per player in deathmatch (default game limit is much lower).");
+                "Макс. записей (Deathmatch)",
+                "Максимум хранимых записей голоса для детматча.");
 
             ModConfig.MaxOutdoorVoiceEvents = ModConfig.CreateTrackedEntry(_category,
                 "MaxOutdoorVoiceEvents",
                 3000,
-                "Max Outdoor Voice Events",
-                "Maximum stored voice events per player outdoors (default game limit is much lower).");
+                "Макс. записей (Снаружи)",
+                "Максимум хранимых записей голоса на улице.");
         }
 
         internal static void WireValidation(MelonLogger.Instance logger)

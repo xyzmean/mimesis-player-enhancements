@@ -18,7 +18,7 @@ namespace MimesisPlayerEnhancement.Features.Persistence
 
     internal static class PersistenceWriteQueue
     {
-        private const string Feature = "Persistence";
+        private const string Feature = "Сохранение данных";
 
         private static readonly ConcurrentDictionary<int, PendingSlotSave> InFlightBySlot = new();
 

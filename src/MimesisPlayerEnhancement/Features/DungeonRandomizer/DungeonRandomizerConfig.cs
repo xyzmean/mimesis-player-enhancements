@@ -14,7 +14,7 @@ namespace MimesisPlayerEnhancement.Features.DungeonRandomizer
 
         internal static void CreateCategory()
         {
-            _category = ModConfig.CreateCategory("MimesisPlayerEnhancement_DungeonRandomizer", "Dungeon Randomizer");
+            _category = ModConfig.CreateCategory("MimesisPlayerEnhancement_DungeonRandomizer", "Рандомизатор подземелий");
         }
 
         internal static void CreateEntries()
@@ -22,56 +22,56 @@ namespace MimesisPlayerEnhancement.Features.DungeonRandomizer
             ModConfig.EnableDungeonRandomizer = ModConfig.CreateTrackedEntry(_category,
                 "EnableDungeonRandomizer",
                 false,
-                "Enable Dungeon Randomizer",
-                "Randomize dungeon selection on the host: tram dungeon pick, layout flow, map variant, and procedural seed. Host only.");
+                "Включить рандомизатор подземелий",
+                "Рандомизирует выбор подземелья, варианты карты и генерацию лабиринта.");
 
             ModConfig.RandomizeDungeonPick = ModConfig.CreateTrackedEntry(_category,
                 "RandomizeDungeonPick",
                 true,
-                "Randomize Dungeon Pick",
-                "Override which dungeon master ID is rolled on the tram.");
+                "Случайный выбор подземелья",
+                "Переопределяет выбранное подземелье при отправке трамвая.");
 
             ModConfig.DungeonPickPoolMode = ModConfig.CreateTrackedEntry(_category,
                 "DungeonPickPoolMode",
                 "WidenVanilla",
-                "Dungeon Pick Pool Mode",
-                "WidenVanilla = keep cycle weights but allow repeats sooner; AllActiveUniform = pick uniformly from all active dungeons (ignores cycle table).");
+                "Режим выбора подземелий",
+                "WidenVanilla = ванильный с повторами; AllActiveUniform = полностью случайный.");
 
             ModConfig.DungeonAllowlist = ModConfig.CreateTrackedEntry(_category,
                 "DungeonAllowlist",
                 "",
-                "Dungeon Allowlist",
-                "Comma-separated dungeon master IDs. When non-empty, only these IDs are eligible.");
+                "Белый список подземелий",
+                "ID подземелий через запятую (будут выпадать только они).");
 
             ModConfig.DungeonBlocklist = ModConfig.CreateTrackedEntry(_category,
                 "DungeonBlocklist",
                 "",
-                "Dungeon Blocklist",
-                "Comma-separated dungeon master IDs to exclude from the pool.");
+                "Черный список подземелий",
+                "ID подземелий через запятую (никогда не выпадут).");
 
             ModConfig.IgnoreDungeonExcludeList = ModConfig.CreateTrackedEntry(_category,
                 "IgnoreDungeonExcludeList",
                 true,
-                "Ignore Dungeon Exclude List",
-                "When using WidenVanilla, do not exclude recently played dungeons from the tram roll.");
+                "Игнорировать список исключений",
+                "При WidenVanilla не исключать недавно сыгранные подземелья.");
 
             ModConfig.RandomizeLayoutFlow = ModConfig.CreateTrackedEntry(_category,
                 "RandomizeLayoutFlow",
                 true,
-                "Randomize Layout Flow",
-                "Pick DunGen layout flows uniformly from each dungeon's candidates instead of using weighted vanilla rolls.");
+                "Случайный Layout Flow",
+                "Случайный выбор шаблонов генерации подземелья.");
 
             ModConfig.RandomizeMapVariant = ModConfig.CreateTrackedEntry(_category,
                 "RandomizeMapVariant",
                 true,
-                "Randomize Map Variant",
-                "Pick map variants uniformly from each dungeon's MapIDs instead of vanilla selection.");
+                "Случайный вариант карты",
+                "Случайный вариант макета подземелья.");
 
             ModConfig.RandomizeDungeonSeed = ModConfig.CreateTrackedEntry(_category,
                 "RandomizeDungeonSeed",
                 true,
-                "Randomize Dungeon Seed",
-                "Replace the procedural dungeon seed with a new random value when a dungeon is chosen.");
+                "Случайный сид генерации",
+                "Заменяет сид генерации на случайный каждый раз.");
         }
 
         /// <summary>Clamps persisted values once at startup, before change handlers are wired.</summary>

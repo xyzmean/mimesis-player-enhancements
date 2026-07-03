@@ -13,7 +13,7 @@ namespace MimesisPlayerEnhancement.Features.PlayerAnnouncements
 
         internal static void CreateCategory()
         {
-            _category = ModConfig.CreateCategory("MimesisPlayerEnhancement_PlayerAnnouncements", "Player Announcements");
+            _category = ModConfig.CreateCategory("MimesisPlayerEnhancement_PlayerAnnouncements", "Игровые уведомления");
         }
 
         internal static void CreateEntries()
@@ -22,7 +22,7 @@ namespace MimesisPlayerEnhancement.Features.PlayerAnnouncements
                 "ShowPlayerAnnouncements",
                 true,
                 "Show Player Announcements",
-                "Show in-game toasts for dungeon run settings, boss spawns, and your per-map stats when you die. Does not replace the game's own messages.");
+                "Показывать уведомления о настройках, боссах и личной статистике при смерти. Не заменяет сообщения игры.");
         }
 
         internal static void WireValidation()

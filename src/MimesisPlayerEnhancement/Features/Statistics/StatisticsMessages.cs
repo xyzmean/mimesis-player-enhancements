@@ -11,7 +11,7 @@ namespace MimesisPlayerEnhancement.Features.Statistics
 {
     internal static class StatisticsMessages
     {
-        private const string Feature = "Statistics";
+        private const string Feature = "Статистика";
         private const float LocalIntroDelaySeconds = 1f;
         private const float GlobalStatsJoinDelaySeconds = 3f;
         private const float GlobalStatsDedupSeconds = 3f;
@@ -19,7 +19,7 @@ namespace MimesisPlayerEnhancement.Features.Statistics
         private const BindingFlags InstanceMemberFlags =
             BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
 
-        internal const string PluginDisplayName = "Mimesis Player Enhancement";
+        internal const string PluginDisplayName = "Улучшения Mimesis";
         internal const string AuthorName = "Kandru";
         internal const string DownloadUrl = "github.com/Kandru/mimesis-player-enhancements";
 

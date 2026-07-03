@@ -13,7 +13,7 @@ namespace MimesisPlayerEnhancement.Features.Statistics
 
         internal static void CreateCategory()
         {
-            _category = ModConfig.CreateCategory("MimesisPlayerEnhancement_Statistics", "Statistics");
+            _category = ModConfig.CreateCategory("MimesisPlayerEnhancement_Statistics", "Статистика");
         }
 
         internal static void CreateEntries()
@@ -22,19 +22,19 @@ namespace MimesisPlayerEnhancement.Features.Statistics
                 "EnableStatistics",
                 true,
                 "Enable Player Statistics",
-                "Track per-session and global player statistics per save slot.");
+                "Отслеживать статистику игроков за сессию и за всё время (по слотам сохранения).");
 
             ModConfig.SessionReconnectGraceMinutes = ModConfig.CreateTrackedEntry(_category,
                 "SessionReconnectGraceMinutes",
                 5,
-                "Session Reconnect Grace (minutes)",
-                "Reuse the previous session when a player reconnects within this many minutes.");
+                "Окно переподключения (минуты)",
+                "Использовать ту же сессию, если игрок переподключился в течение указанного времени.");
 
             ModConfig.ShowStatisticsToasts = ModConfig.CreateTrackedEntry(_category,
                 "ShowStatisticsToasts",
                 true,
-                "Show Statistics Toasts",
-                "Show mod stats toasts in plain English (session intro for you, global stats on join/leave). Does not replace the game's own connect messages.");
+                "Показывать статистику в уведомлениях",
+                "Показывать уведомления со статистикой мода (при входе/выходе). Не заменяет сообщения игры.");
         }
 
         internal static void WireValidation(MelonLogger.Instance logger)

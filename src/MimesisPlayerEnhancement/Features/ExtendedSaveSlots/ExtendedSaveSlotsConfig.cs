@@ -13,7 +13,7 @@ namespace MimesisPlayerEnhancement.Features.ExtendedSaveSlots
 
         internal static void CreateCategory()
         {
-            _category = ModConfig.CreateCategory("MimesisPlayerEnhancement_ExtendedSaveSlots", "Extended Save Slots");
+            _category = ModConfig.CreateCategory("MimesisPlayerEnhancement_ExtendedSaveSlots", "Расширенные слоты сохранений");
         }
 
         internal static void CreateEntries()
@@ -21,7 +21,7 @@ namespace MimesisPlayerEnhancement.Features.ExtendedSaveSlots
             ModConfig.EnableExtendedSaveSlots = ModConfig.CreateTrackedEntry(_category,
                 "EnableExtendedSaveSlots",
                 true,
-                "Enable Extended Save Slots",
+                "Включить расширенные слоты",
                 "When enabled, replaces the separate New/Load Tram menus with a unified save picker (up to 99 manual slots). When disabled, vanilla New/Load Tram behavior is used.");
         }
 

@@ -13,7 +13,7 @@ namespace MimesisPlayerEnhancement.Features.DungeonTime
 
         internal static void CreateCategory()
         {
-            _category = ModConfig.CreateCategory("MimesisPlayerEnhancement_DungeonTime", "Dungeon Time");
+            _category = ModConfig.CreateCategory("MimesisPlayerEnhancement_DungeonTime", "Время в подземелье");
         }
 
         internal static void CreateEntries()
@@ -21,20 +21,20 @@ namespace MimesisPlayerEnhancement.Features.DungeonTime
             ModConfig.EnableDungeonTime = ModConfig.CreateTrackedEntry(_category,
                 "EnableDungeonTime",
                 false,
-                "Enable Dungeon Time",
-                "Extend dungeon shift length on the host when player count exceeds the baseline.");
+                "Включить управление временем",
+                "Продлевает время прохождения подземелья, когда игроков больше стандарта.");
 
             ModConfig.DungeonTimeBaselinePlayerCount = ModConfig.CreateTrackedEntry(_category,
                 "DungeonTimeBaselinePlayerCount",
                 4,
-                "Dungeon Time Baseline Player Count",
-                "No extra shift time at or below this player count (vanilla is 4). Minimum is 1.");
+                "Стандартное кол-во игроков",
+                "Без доп. времени при этом числе игроков и меньше (по умолчанию 4).");
 
             ModConfig.ExtraShiftSecondsPerPlayerAboveBaseline = ModConfig.CreateTrackedEntry(_category,
                 "ExtraShiftSecondsPerPlayerAboveBaseline",
                 10f,
-                "Extra Shift Seconds Per Player Above Baseline",
-                "Real seconds added to the shift deadline for each player above the baseline. Minimum is 0.");
+                "Доп. время (сек) за каждого сверх лимита",
+                "Сколько секунд добавляется ко времени подземелья за каждого лишнего игрока.");
         }
 
         internal static void WireValidation(MelonLogger.Instance logger)

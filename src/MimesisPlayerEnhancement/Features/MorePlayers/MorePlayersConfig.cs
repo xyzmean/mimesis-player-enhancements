@@ -13,7 +13,7 @@ namespace MimesisPlayerEnhancement.Features.MorePlayers
 
         internal static void CreateCategory()
         {
-            _category = ModConfig.CreateCategory("MimesisPlayerEnhancement_MorePlayers", "More Players");
+            _category = ModConfig.CreateCategory("MimesisPlayerEnhancement_MorePlayers", "Больше игроков");
         }
 
         internal static void CreateEntries()
@@ -21,14 +21,14 @@ namespace MimesisPlayerEnhancement.Features.MorePlayers
             ModConfig.EnableMorePlayers = ModConfig.CreateTrackedEntry(_category,
                 "EnableMorePlayers",
                 false,
-                "Enable More Players",
-                "Raise the multiplayer player cap above 4.");
+                "Включить увеличение числа игроков",
+                "Увеличить лимит игроков в сессии (больше 4).");
 
             ModConfig.MaxPlayers = ModConfig.CreateTrackedEntry(_category,
                 "MaxPlayers",
                 32,
-                "Max Players",
-                "Maximum players in a session including the host (1 = solo, 2 = host + 1 client, etc.).");
+                "Макс. игроков",
+                "Максимальное количество игроков, включая хоста (1 = соло, 2 = хост + 1 клиент и т.д.).");
         }
 
         /// <summary>Clamps persisted values once at startup, before change handlers are wired.</summary>

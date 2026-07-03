@@ -72,11 +72,11 @@ namespace MimesisPlayerEnhancement.Features.Statistics
                     return;
                 }
 
-                ModLog.Debug("Statistics", "Player enter info UI unavailable for mod toast.");
+                ModLog.Debug("Статистика", "Player enter info UI unavailable for mod toast.");
             }
             catch (Exception ex)
             {
-                ModLog.Debug("Statistics", $"Mod toast failed: {ex.Message}");
+                ModLog.Debug("Статистика", $"Mod toast failed: {ex.Message}");
             }
         }
 

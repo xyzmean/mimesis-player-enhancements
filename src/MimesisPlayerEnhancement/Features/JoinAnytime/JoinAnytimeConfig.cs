@@ -13,7 +13,7 @@ namespace MimesisPlayerEnhancement.Features.JoinAnytime
 
         internal static void CreateCategory()
         {
-            _category = ModConfig.CreateCategory("MimesisPlayerEnhancement_JoinAnytime", "Join Anytime");
+            _category = ModConfig.CreateCategory("MimesisPlayerEnhancement_JoinAnytime", "Присоединение во время игры");
         }
 
         internal static void CreateEntries()
@@ -21,14 +21,14 @@ namespace MimesisPlayerEnhancement.Features.JoinAnytime
             ModConfig.EnableJoinAnytime = ModConfig.CreateTrackedEntry(_category,
                 "EnableJoinAnytime",
                 true,
-                "Enable Join Anytime",
-                "Allow players to join a session after it has already started.");
+                "Включить присоединение во время игры",
+                "Позволять игрокам подключаться к сессии после того, как игра уже началась.");
 
             ModConfig.JoinConnectionGraceSeconds = ModConfig.CreateTrackedEntry(_category,
                 "JoinConnectionGraceSeconds",
                 30,
-                "Join Connection Grace Seconds",
-                "When a player connects, block tram departure for this many seconds. Players who fail to finish loading are kicked (host is never kicked).");
+                "Время ожидания при подключении (сек)",
+                "При подключении игрока трамвай не отправится указанное число секунд. Застрявшие исключаются.");
         }
 
         /// <summary>Clamps persisted values once at startup, before change handlers are wired.</summary>

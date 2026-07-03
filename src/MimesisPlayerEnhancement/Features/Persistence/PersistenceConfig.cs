@@ -13,7 +13,7 @@ namespace MimesisPlayerEnhancement.Features.Persistence
 
         internal static void CreateCategory()
         {
-            _category = ModConfig.CreateCategory("MimesisPlayerEnhancement_Persistence", "Persistence");
+            _category = ModConfig.CreateCategory("MimesisPlayerEnhancement_Persistence", "Сохранение данных");
         }
 
         internal static void CreateEntries()
@@ -22,7 +22,7 @@ namespace MimesisPlayerEnhancement.Features.Persistence
                 "EnablePersistence",
                 true,
                 "Enable Voice Persistence",
-                "Save and restore mimic voice recordings across save/load.");
+                "Сохранять и восстанавливать голосовые записи мимика после перезапуска игры.");
         }
 
         internal static void WireValidation()

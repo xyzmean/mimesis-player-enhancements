@@ -91,7 +91,7 @@ namespace MimesisPlayerEnhancement
             }
         }
 
-        internal static void DeleteSidecarFile(string filePath, string logFeature = "Persistence")
+        internal static void DeleteSidecarFile(string filePath, string logFeature = "Сохранение данных")
         {
             AtomicFileIO.Delete(filePath, logFeature);
         }

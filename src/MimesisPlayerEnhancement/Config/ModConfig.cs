@@ -160,7 +160,7 @@ namespace MimesisPlayerEnhancement
             FilePath = Path.Combine(MelonEnvironment.UserDataDirectory, "MimesisPlayerEnhancement.cfg");
             SparseTomlConfig.RepairTomletCompatibility(FilePath);
 
-            MainCategory = CreateCategory(MainCategoryId, "Mimesis Player Enhancement");
+            MainCategory = CreateCategory(MainCategoryId, "Улучшения Mimesis");
             MorePlayersConfig.CreateCategory();
             MoreVoicesConfig.CreateCategory();
             PersistenceConfig.CreateCategory();
@@ -180,14 +180,14 @@ namespace MimesisPlayerEnhancement
             ModToastDurationSeconds = CreateTrackedEntry(MainCategory,
                 "ModToastDurationSeconds",
                 5f,
-                "Mod Toast Duration (seconds)",
-                "How long [PlayerEnhancements] toasts stay visible before fading. Vanilla join/leave toasts are unchanged (~2 seconds). Each player controls this locally.");
+                "Длительность уведомления (секунды)",
+                "Как долго уведомления [PlayerEnhancements] остаются на экране. Ванильные уведомления не меняются (~2 сек). Настраивается индивидуально.");
 
             EnableDebugLogging = CreateTrackedEntry(MainCategory,
                 "EnableDebugLogging",
                 false,
-                "Enable Debug Logging",
-                "Emit verbose diagnostic lines to the MelonLoader console.");
+                "Включить отладочное логирование",
+                "Выводить подробные диагностические сообщения в консоль MelonLoader.");
 
             MorePlayersConfig.CreateEntries();
             MoreVoicesConfig.CreateEntries();

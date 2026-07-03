@@ -13,7 +13,7 @@ namespace MimesisPlayerEnhancement.Features.MimicTuning
 
         internal static void CreateCategory()
         {
-            _category = ModConfig.CreateCategory("MimesisPlayerEnhancement_MimicTuning", "Mimic Tuning");
+            _category = ModConfig.CreateCategory("MimesisPlayerEnhancement_MimicTuning", "Настройки Мимика");
         }
 
         internal static void CreateEntries()
@@ -21,32 +21,32 @@ namespace MimesisPlayerEnhancement.Features.MimicTuning
             ModConfig.EnableMimicTuning = ModConfig.CreateTrackedEntry(_category,
                 "EnableMimicTuning",
                 false,
-                "Enable Mimic Tuning",
-                "Tune dead-player mimic possession speak duration and cooldown on the host.");
+                "Включить настройки Мимика",
+                "Настраивает время речи и перезарядку при вселении мертвых игроков в мимика.");
 
             ModConfig.RandomizeMimicPossessionDuration = ModConfig.CreateTrackedEntry(_category,
                 "RandomizeMimicPossessionDuration",
                 false,
-                "Randomize Mimic Possession Duration",
-                "Roll a random speak window per E-possession between min and max seconds below. Host only.");
+                "Случайное время речи мимика",
+                "Случайное время речи при использовании способности от мин. до макс. секунд.");
 
             ModConfig.MimicPossessionMinTimeSeconds = ModConfig.CreateTrackedEntry(_category,
                 "MimicPossessionMinTimeSeconds",
                 MimicTuningResolver.VanillaPossessionDurationSeconds,
-                "Mimic Possession Min Time (seconds)",
-                "Minimum rolled speak duration in seconds (vanilla is 12). Host only.");
+                "Мин. время речи Мимика (сек)",
+                "Минимальная длительность речи (по умолчанию 12).");
 
             ModConfig.MimicPossessionMaxTimeSeconds = ModConfig.CreateTrackedEntry(_category,
                 "MimicPossessionMaxTimeSeconds",
                 MimicTuningResolver.VanillaPossessionDurationSeconds,
-                "Mimic Possession Max Time (seconds)",
-                "Maximum rolled speak duration in seconds (vanilla is 12). Host only.");
+                "Макс. время речи Мимика (сек)",
+                "Максимальная длительность речи (по умолчанию 12).");
 
             ModConfig.MimicPossessionCooltimeMultiplier = ModConfig.CreateTrackedEntry(_category,
                 "MimicPossessionCooltimeMultiplier",
                 1f,
-                "Mimic Possession Cooltime Multiplier",
-                "Multiplier for wait time after mimic possession before the next E-possession (1 = vanilla). Host only.");
+                "Множитель перезарядки Мимика",
+                "Множитель задержки перед следующим вселением (1 = ванилла).");
         }
 
         internal static void WireValidation(MelonLogger.Instance logger)

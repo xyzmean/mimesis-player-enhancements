@@ -4,7 +4,7 @@ namespace MimesisPlayerEnhancement.Features.Statistics
 {
     internal static class StatisticsPatchGuard
     {
-        private const string Feature = "Statistics";
+        private const string Feature = "Статистика";
 
         internal static void Run(string context, Action action)
         {

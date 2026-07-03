@@ -13,7 +13,7 @@ namespace MimesisPlayerEnhancement.Features.PlayerTuning
 
         internal static void CreateCategory()
         {
-            _category = ModConfig.CreateCategory("MimesisPlayerEnhancement_PlayerTuning", "Player Tuning");
+            _category = ModConfig.CreateCategory("MimesisPlayerEnhancement_PlayerTuning", "Настройки игрока");
         }
 
         internal static void CreateEntries()
@@ -21,44 +21,44 @@ namespace MimesisPlayerEnhancement.Features.PlayerTuning
             ModConfig.EnablePlayerTuning = ModConfig.CreateTrackedEntry(_category,
                 "EnablePlayerTuning",
                 false,
-                "Enable Player Tuning",
-                "Scale player move speed, stamina, and carry weight on the host. Joining clients do not need the mod.");
+                "Включить настройки игрока",
+                "Масштабирует скорость, выносливость и переносимый вес (нужно только хосту).");
 
             ModConfig.MoveSpeedMultiplier = ModConfig.CreateTrackedEntry(_category,
                 "MoveSpeedMultiplier",
                 1f,
-                "Move Speed Multiplier",
-                "Scales walk and run base speed (1 = vanilla, 2 = double). Host only.");
+                "Множитель скорости бега",
+                "Множитель скорости ходьбы и бега (1 = ванилла, 2 = в 2 раза быстрее).");
 
             ModConfig.MaxStaminaMultiplier = ModConfig.CreateTrackedEntry(_category,
                 "MaxStaminaMultiplier",
                 1f,
-                "Max Stamina Multiplier",
-                "Scales maximum stamina (1 = vanilla, 2 = double). Host only.");
+                "Множитель выносливости",
+                "Множитель максимальной выносливости (1 = ванилла, 2 = двойная).");
 
             ModConfig.StaminaDrainMultiplier = ModConfig.CreateTrackedEntry(_category,
                 "StaminaDrainMultiplier",
                 1f,
-                "Stamina Drain Multiplier",
-                "Scales sprint stamina cost per tick (1 = vanilla, 0.5 = half drain). Host only.");
+                "Множитель расхода выносливости",
+                "Множитель расхода выносливости при беге (1 = ванилла, 0.5 = половина).");
 
             ModConfig.StaminaRegenMultiplier = ModConfig.CreateTrackedEntry(_category,
                 "StaminaRegenMultiplier",
                 1f,
-                "Stamina Regen Multiplier",
-                "Scales stamina recovered per regen tick (1 = vanilla, 2 = double). Host only.");
+                "Множитель регена выносливости",
+                "Множитель скорости восстановления выносливости (1 = ванилла).");
 
             ModConfig.StaminaRegenDelayMultiplier = ModConfig.CreateTrackedEntry(_category,
                 "StaminaRegenDelayMultiplier",
                 1f,
-                "Stamina Regen Delay Multiplier",
-                "Scales wait time before stamina regen starts after sprinting (1 = vanilla, 0.5 = regen starts sooner). Host only.");
+                "Множитель задержки регена",
+                "Задержка перед восстановлением выносливости после бега.");
 
             ModConfig.MaxCarryWeightMultiplier = ModConfig.CreateTrackedEntry(_category,
                 "MaxCarryWeightMultiplier",
                 1f,
-                "Max Carry Weight Multiplier",
-                "Scales carry capacity before encumbrance slows movement (1 = vanilla, 2 = double capacity). Host only.");
+                "Множитель переносимого веса",
+                "Влияет на вес, при котором начинается замедление.");
         }
 
         internal static void WireValidation(MelonLogger.Instance logger)
