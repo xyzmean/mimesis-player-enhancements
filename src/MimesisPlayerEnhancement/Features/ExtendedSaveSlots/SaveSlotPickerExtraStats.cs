@@ -7,7 +7,7 @@ namespace MimesisPlayerEnhancement.Features.ExtendedSaveSlots
 {
     internal static class SaveSlotPickerExtraStats
     {
-        private const string NoStatisticsText = "No statistics available yet";
+        private const string NoStatisticsText = "Статистика пока недоступна";
 
         internal static string FormatLine3(int slotId)
         {
@@ -22,7 +22,7 @@ namespace MimesisPlayerEnhancement.Features.ExtendedSaveSlots
             int voiceEvents = SpeechEventFileStore.TryGetSavedSpeechEventCount(slotId);
             if (voiceEvents > 0)
             {
-                parts.Add(voiceEvents + " voice events");
+                parts.Add(voiceEvents + " голосовых событий");
             }
 
             return parts.Count == 0 ? NoStatisticsText : string.Join(" · ", parts);
@@ -40,7 +40,7 @@ namespace MimesisPlayerEnhancement.Features.ExtendedSaveSlots
 
         private static void AppendLeaderboardSummary(List<string> parts, List<LeaderboardEntry> entries)
         {
-            parts.Add(entries.Count + (entries.Count == 1 ? " player" : " players"));
+            parts.Add(entries.Count + (entries.Count == 1 ? " игр." : " игр."));
 
             long sessions = 0;
             long survivalWins = 0;
@@ -59,22 +59,22 @@ namespace MimesisPlayerEnhancement.Features.ExtendedSaveSlots
 
             if (sessions > 0)
             {
-                parts.Add(sessions + (sessions == 1 ? " session" : " sessions"));
+                parts.Add(sessions + (sessions == 1 ? " сессия" : " сессий"));
             }
 
             if (survivalWins > 0)
             {
-                parts.Add(survivalWins + " survival wins");
+                parts.Add(survivalWins + " поб. (выживание)");
             }
 
             if (survivalDeaths > 0)
             {
-                parts.Add(survivalDeaths + " survival deaths");
+                parts.Add(survivalDeaths + " смерт. (выживание)");
             }
 
             if (revives > 0)
             {
-                parts.Add(revives + " revives");
+                parts.Add(revives + " воскр.");
             }
 
             if (playSeconds >= 60)
@@ -94,14 +94,14 @@ namespace MimesisPlayerEnhancement.Features.ExtendedSaveSlots
         {
             if (totalSeconds < 60)
             {
-                return totalSeconds + "s played";
+                return totalSeconds + "с в игре";
             }
 
             long hours = totalSeconds / 3600;
             long minutes = (totalSeconds % 3600) / 60;
             return hours > 0
-                ? minutes > 0 ? hours + "h " + minutes + "m played" : hours + "h played"
-                : minutes + "m played";
+                ? minutes > 0 ? hours + "ч " + minutes + "м в игре" : hours + "ч в игре"
+                : minutes + "м в игре";
         }
     }
 }

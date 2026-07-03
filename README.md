@@ -3,124 +3,101 @@
 [![issues - mimesis-player-enhancements](https://img.shields.io/github/issues/Kandru/mimesis-player-enhancements?color=darkgreen)](https://github.com/Kandru/mimesis-player-enhancements/issues)
 [![](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/donate/?hosted_button_id=C2AVYKGVP9TRG)
 
-# Mimesis Player Enhancement
+# Mimesis Player Enhancement (Улучшения для Игроков)
 
 ![Mimesis Player Enhancement Logo](images/logo.png)
 
 > [!NOTE]  
-> Disclosure: this project is being build with help of AI!
+> Примечание: этот проект создается с помощью ИИ!
 
 > [!CAUTION]  
-> **Alpha — under heavy development.** This plugin is not finished and things may not work as expected. Please report bugs and share feedback via [GitHub issues](https://github.com/Kandru/mimesis-player-enhancements/issues).  
-> I am not responsible for any damage, data loss, bans, or other problems that come from using this mod. Mods change how the game runs, and things can break.
+> **Альфа-версия — в активной разработке.** Этот плагин не завершен и некоторые вещи могут работать не так, как ожидается. Пожалуйста, сообщайте об ошибках и делитесь отзывами через [GitHub issues](https://github.com/Kandru/mimesis-player-enhancements/issues).  
+> Я не несу ответственности за любой ущерб, потерю данных, баны или другие проблемы, возникающие при использовании этого мода. Моды изменяют то, как работает игра, и могут вызывать сбои.
 
-Mimesis Player Enhancement is a mod for Mimesis that consolidates and extends a lot of tweaks into one maintained package. Hosts can raise the player limits, expand mimic voice recording and persistence (across game sessions), allow players to join at any time, scale spawns/loot/money to match their needs, randomize dungeons, tune player and mimic behavior, and track session statistics — all from one config file. Clients do not need the mod; only the host does. It also enables the player to use up to 99 different save games within a new UI.
+Mimesis Player Enhancement — это мод для Mimesis, который объединяет и расширяет множество настроек в одном поддерживаемом пакете. Хосты могут увеличивать лимит игроков, расширять запись и сохранение голосовых линий мимиков (между игровыми сессиями), позволять игрокам присоединяться в любое время, масштабировать спавн/лут/деньги под свои нужды, рандомизировать подземелья, настраивать поведение игроков и мимиков, а также отслеживать статистику сессии — все это из одного конфигурационного файла. Клиентам мод не нужен; он нужен только хосту. Мод также позволяет использовать до 99 различных сохранений в новом пользовательском интерфейсе.
 
-Tested with **MIMESIS 0.3.0** and **MelonLoader 0.7.3**.
+Протестировано с **MIMESIS 0.3.0** и **MelonLoader 0.7.3**.
 
-## Features
+## Возможности
 
-| Feature | What it does | Everyone needs the mod? |
+| Функция | Описание | Нужен ли мод всем? |
 |---------|--------------|-------------------------|
-| **More Players** | Raise the 4-player limit (default: 32) | No — host only |
-| **More Voices** | Record more player voice lines per context (default: 3000 instead of ~150) | No — host only |
-| **Persistence** | Save player voice lines to disk | No — host only |
-| **Join Anytime** | Let friends join an active lobby whenever players are not inside a dungeon | No — host only |
-| **Extended Save Slots** | Unified main-menu save picker with up to 99 manual slots (vanilla: 3) | No — local UI only |
-| **Statistics** | Session stats and leaderboards per save slot | No — host only |
-| **Web Dashboard** | Browser UI for players, stats, and moderation | No — host only |
-| **Player Announcements** | In-game notifications for dungeon settings, boss spawns, and per-map death stats | No — host only |
-| **Spawn Scaling** | Scale mimic/monster spawns by type and player count | No — host only |
-| **Loot Multiplicator** | Scale loot quantity and limit item types | No — host only |
-| **Money Multiplier** | Scale startup money, round goal, and shop buy prices | No — host only |
-| **Dungeon Time** | Extend dungeon shift length by X seconds per player above a baseline (default: +10s per player above 4) | No — host only |
-| **Mimic Tuning** | Randomize dead-player mimic possession speak duration and scale post-possession cooldown | No — host only |
-| **Player Tuning** | Scale player move speed, stamina (max/drain/regen/delay), and max carry weight | No — host only |
-| **Dungeon Randomizer** | Randomize tram dungeon pick, layout flow, map variant, and procedural seed | No — host only |
+| **Больше игроков** | Увеличивает лимит в 4 игрока (по умолчанию: 32) | Нет — только хосту |
+| **Больше голосов** | Записывает больше голосовых реплик игроков для каждого контекста (по умолчанию: 3000 вместо ~150) | Нет — только хосту |
+| **Сохранение голосов** | Сохраняет голосовые реплики игроков на диск (Persistence) | Нет — только хосту |
+| **Присоединение в любое время** | Позволяет друзьям присоединяться к активному лобби в любой момент, когда игроки не находятся в подземелье | Нет — только хосту |
+| **Расширенные слоты сохранений** | Единый интерфейс выбора сохранений в главном меню, поддерживающий до 99 слотов (в ванильной игре: 3) | Нет — только локально (UI) |
+| **Статистика** | Статистика сессии и списки лидеров для каждого слота сохранения | Нет — только хосту |
+| **Веб-панель управления** | Браузерный интерфейс (Web Dashboard) для просмотра игроков, статистики и модерации | Нет — только хосту |
+| **Уведомления игрокам** | Внутриигровые оповещения о настройках подземелья, спавне боссов и статистике смертей на карте | Нет — только хосту |
+| **Масштабирование спавна** | Масштабирует спавн мимиков/монстров в зависимости от типа и количества игроков | Нет — только хосту |
+| **Множитель лута** | Масштабирует количество лута и ограничивает типы предметов | Нет — только хосту |
+| **Множитель денег** | Масштабирует начальные деньги, цели раунда и цены в магазине | Нет — только хосту |
+| **Время подземелья** | Увеличивает длину смены в подземелье на X секунд за каждого игрока сверх базы (по умолчанию: +10с за каждого игрока сверх 4) | Нет — только хосту |
+| **Настройка мимиков** | Рандомизирует продолжительность разговора мимика после захвата мертвого игрока и масштабирует кулдаун после одержимости | Нет — только хосту |
+| **Настройка игроков** | Масштабирует скорость передвижения игроков, выносливость (макс/трата/реген/задержка) и максимальный вес инвентаря | Нет — только хосту |
+| **Рандомизатор подземелий** | Рандомизирует выбор подземелья трамвая, поток лабиринта, вариант карты и процедурный сид | Нет — только хосту |
 
-Inspired by community mods like [MorePlayers from NeoMimicry](https://github.com/NeoMimicry/MorePlayers), [MoreVoices from Risikus](https://thunderstore.io/c/mimesis/p/Risikus/More_Voices/), [MimesisPersistence from JoanR](https://github.com/JoanRLopez/MimesisPersistence), and [MimesisJoinAnytime from Shlygly](https://github.com/Shlygly/MimesisJoinAnytime). Thanks for your ideas and initial work :)
+Вдохновлено такими модами сообщества, как [MorePlayers от NeoMimicry](https://github.com/NeoMimicry/MorePlayers), [MoreVoices от Risikus](https://thunderstore.io/c/mimesis/p/Risikus/More_Voices/), [MimesisPersistence от JoanR](https://github.com/JoanRLopez/MimesisPersistence) и [MimesisJoinAnytime от Shlygly](https://github.com/Shlygly/MimesisJoinAnytime). Спасибо за ваши идеи и начальную работу :)
 
-## Install
+## Установка
 
-### Mod manager (recommended)
+### Мод-менеджер (рекомендуется)
 
-Install through [Thunderstore](https://thunderstore.io/c/mimesis/p/Kandru/MimesisPlayerEnhancement/) using **r2modman**, **Gale**, or another Thunderstore client. The MelonLoader dependency is pulled in automatically.
+Устанавливайте через [Thunderstore](https://thunderstore.io/c/mimesis/p/Kandru/MimesisPlayerEnhancement/) используя **r2modman**, **Gale** или другой клиент Thunderstore. Зависимость MelonLoader подтягивается автоматически.
 
-### Manual
+### Вручную
 
-1. Install the latest [MelonLoader](https://melonwiki.xyz/) on your MIMESIS Steam copy.
-2. Download the [latest release](https://github.com/Kandru/mimesis-player-enhancements/releases).
-3. Copy the file(s) and folder into your game folder:  
-   `<Mimesis Steam folder>/Mods/MimesisPlayerEnhancement.dll`  
-   `<Mimesis Steam folder>/Mods/MimesisPlayerEnhancement/*`
-4. Start the game once.
+1. Установите последнюю версию [MelonLoader](https://melonwiki.xyz/) в папку с игрой MIMESIS из Steam.
+2. Скачайте [последний релиз](https://github.com/Kandru/mimesis-player-enhancements/releases).
+3. Скопируйте файл(ы) и папку в папку с игрой:  
+   `<Папка Mimesis в Steam>/Mods/MimesisPlayerEnhancement.dll`  
+   `<Папка Mimesis в Steam>/Mods/MimesisPlayerEnhancement/*`
+4. Запустите игру один раз.
 
-If you used the old separate mods (MorePlayers, More Voices, MimesisPersistence, JoinAnytime, MoreMimics), remove them so they do not fight with this one or disable the feature inside this modification.
+Если вы использовали старые отдельные моды (MorePlayers, More Voices, MimesisPersistence, JoinAnytime, MoreMimics), удалите их, чтобы они не конфликтовали с этим модом, или отключите соответствующую функцию внутри этой модификации.
 
-If you do not trust a pre-built `.dll`, you can [build this mod yourself](docs/BUILD.md) from the source code here on GitHub.
+Если вы не доверяете скомпилированному `.dll`, вы можете [собрать этот мод самостоятельно](docs/BUILD.md) из исходного кода здесь, на GitHub.
 
-## Screenshot(s)
+## Скриншоты
 
-### Intuitive savegame UI
+### Интуитивный интерфейс сохранений
 
-![Feature: Savegame UI](images/savegames.jpg)
+![Функция: Интерфейс сохранений](images/savegames.jpg)
 
-## Config
+## Конфигурация
 
-After the first launch, the mod creates a config file here:
+После первого запуска мод создает конфигурационный файл по этому пути:
 
 ```
-<Mimesis Steam folder>/UserData/MimesisPlayerEnhancement.cfg
+<Папка Mimesis в Steam>/UserData/MimesisPlayerEnhancement.cfg
 ```
 
-You can edit it anytime. The game reloads the file while running, but **most changes only fully apply after a restart**. Some settings may not update correctly until you quit and start again.
+Вы можете редактировать его в любое время. Игра перезагружает файл во время работы, но **большинство изменений полностью применяются только после перезапуска**. Некоторые настройки могут не обновиться корректно до тех пор, пока вы не выйдете и не запустите игру снова.
 
-Settings are grouped into TOML sections:
+Настройки сгруппированы в секции TOML:
 
-- **`[MimesisPlayerEnhancement]`** — global options not tied to a single feature
-- **`[MimesisPlayerEnhancement_FeatureName]`** — one section per feature (e.g. `[MimesisPlayerEnhancement_MorePlayers]`)
+- **`[MimesisPlayerEnhancement]`** — глобальные опции, не привязанные к одной функции
+- **`[MimesisPlayerEnhancement_ИмяФункции]`** — по одной секции на каждую функцию (например, `[MimesisPlayerEnhancement_MorePlayers]`)
 
-Each feature section has its own master toggle plus feature-specific options. The web dashboard can edit global defaults and per-save-slot overrides.
+Каждая секция функции имеет свой главный переключатель, плюс специфические опции для функции. Веб-панель (Web Dashboard) позволяет редактировать глобальные настройки по умолчанию и переопределения для каждого слота сохранения.
 
-**Full config reference:** [docs/CONFIG.md](docs/CONFIG.md)
+**Полная документация по конфигурации:** [docs/CONFIG.md](docs/CONFIG.md)
 
-Example section layout:
+## Сборка из исходников
 
-```toml
-[MimesisPlayerEnhancement]
-ModToastDurationSeconds = 5.0
-EnableDebugLogging = false
+Смотрите [docs/BUILD.md](docs/BUILD.md). В проект также добавлена автоматическая сборка с помощью GitHub Actions.
 
-[MimesisPlayerEnhancement_MorePlayers]
-EnableMorePlayers = false
-MaxPlayers = 32
+## Вклад в развитие (Contribute)
 
-[MimesisPlayerEnhancement_JoinAnytime]
-EnableJoinAnytime = true
-JoinConnectionGraceSeconds = 30
+1. [Сделайте форк](https://github.com/Kandru/mimesis-player-enhancements/fork) этого репозитория на GitHub.
+2. Создайте ветку для ваших изменений (`git checkout -b my-fix`).
+3. Внесите изменения и запустите `./scripts/build.sh`, чтобы убедиться в успешной компиляции.
+4. Отправьте изменения (push) и откройте [pull request](https://github.com/Kandru/mimesis-player-enhancements/compare) к ветке `main`.
+5. Опишите, что и зачем вы изменили.
 
-[MimesisPlayerEnhancement_WebDashboard]
-EnableWebDashboard = true
-WebDashboardListenAddress = "127.0.0.1"
-WebDashboardListenPort = 8001
-```
+Для получения информации об архитектуре, скаффолдинге функций и руководствах ориентированных на агентов, смотрите [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) и [AGENTS.md](AGENTS.md).
 
-## Build from source
+## Лицензия
 
-See [docs/BUILD.md](docs/BUILD.md).
-
-## Contribute
-
-1. [Fork](https://github.com/Kandru/mimesis-player-enhancements/fork) this repo on GitHub.
-2. Create a branch for your change (`git checkout -b my-fix`).
-3. Make your edits and run `./scripts/build.sh` to check it compiles (see [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for build and formatting commands).
-4. Push your branch and open a [pull request](https://github.com/Kandru/mimesis-player-enhancements/compare) against `main`.
-5. Describe what you changed and why. Confirm `./scripts/build.sh` passes locally before opening the PR.
-
-For architecture, feature scaffolding, and agent-oriented guidance, see [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) and [AGENTS.md](AGENTS.md).
-
-Bug fixes and small improvements are welcome. For bigger features, open an issue first so we can agree on the approach.
-
-## License
-
-See [LICENSE](LICENSE). Persistence and More Players code derives from the original community mods — respect their licenses when sharing builds.
+Смотрите [LICENSE](LICENSE). Код функций Persistence и More Players берет начало из оригинальных модов сообщества — уважайте их лицензии при распространении сборок.

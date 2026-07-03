@@ -61,7 +61,7 @@ namespace MimesisPlayerEnhancement.Features.ExtendedSaveSlots
                 if (_emptyLabel == null)
                 {
                     _emptyLabel = _scrollList
-                        .CreatePlaceholderLabel(_assets, "No save games found.")
+                        .CreatePlaceholderLabel(_assets, "Сохранений не найдено.")
                         .gameObject;
                 }
 
@@ -130,7 +130,7 @@ namespace MimesisPlayerEnhancement.Features.ExtendedSaveSlots
             DeleteButton = ModButton.Create(
                 actionRow,
                 _assets,
-                "Delete",
+                "Удалить",
                 expandWidth: true,
                 () => DeleteClicked?.Invoke());
             LoadButton = ModButton.Create(
@@ -141,7 +141,7 @@ namespace MimesisPlayerEnhancement.Features.ExtendedSaveSlots
                 () => LoadClicked?.Invoke());
 
             RectTransform backRow = page.CreateBackButtonRow();
-            string backLabel = ReadButtonLabel(loadTram.UE_ButtonClose.gameObject) ?? "Back";
+            string backLabel = ReadButtonLabel(loadTram.UE_ButtonClose.gameObject) ?? "Назад";
             BackButton = ModButton.Create(
                 backRow,
                 _assets,

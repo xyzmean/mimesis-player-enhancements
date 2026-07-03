@@ -25,19 +25,19 @@
           </div>
           <nav class="app-header-actions" aria-label="Dashboard navigation">
             <a class="app-header-link" href="#/players" x-show="status.isConnected"
-              :class="{ active: isGameRoute }">Game</a>
+              :class="{ active: isGameRoute }">Игра</a>
             <a class="app-header-link" href="#/global-settings" :class="{ active: route === 'global-settings' }">Global
-              Settings</a>
-            <a class="app-header-link" href="#/donation" :class="{ active: route === 'donation' }">Donation</a>
+              Настройки</a>
+            <a class="app-header-link" href="#/donation" :class="{ active: route === 'donation' }">Поддержка</a>
             <div class="app-header-blind" x-show="status.isHost && status.isConnected" x-cloak>
-              <span class="app-header-blind-label">Blind mode</span>
+              <span class="app-header-blind-label">Слепой режим</span>
               <button type="button" class="feature-toggle" role="switch" :class="{ 'is-on': playerBlindMode }"
-                title="Hide alive/dead status, health, toxic, and respawn actions to avoid spoilers." aria-label="Blind mode"
+                title="Скрыть статус жизни/смерти, здоровье, токсичность и действия воскрешения, чтобы избежать спойлеров." aria-label="Blind mode"
                 @click="togglePlayerBlindMode">
                 <span class="feature-toggle-track" aria-hidden="true">
                   <span class="feature-toggle-thumb"></span>
                 </span>
-                <span class="feature-toggle-label" x-text="playerBlindMode ? 'On' : 'Off'"></span>
+                <span class="feature-toggle-label" x-text="playerBlindMode ? 'Вкл' : 'Выкл'"></span>
               </button>
             </div>
           </nav>
@@ -47,16 +47,16 @@
       <nav class="app-nav" aria-label="Main navigation" x-show="status.isConnected" x-cloak>
         <ul>
           <li>
-            <a href="#/players" :class="{ active: route === 'players' }">Players</a>
+            <a href="#/players" :class="{ active: route === 'players' }">Игроки</a>
           </li>
           <li>
-            <a href="#/minimap" :class="{ active: route === 'minimap' }">Minimap</a>
+            <a href="#/minimap" :class="{ active: route === 'minimap' }">Миникарта</a>
           </li>
           <li x-show="status.isHost">
-            <a href="#/leaderboard" :class="{ active: route === 'leaderboard' }">Leaderboard</a>
+            <a href="#/leaderboard" :class="{ active: route === 'leaderboard' }">Таблица лидеров</a>
           </li>
           <li x-show="status.isHost">
-            <a href="#/settings" :class="{ active: route === 'settings' }">Settings</a>
+            <a href="#/settings" :class="{ active: route === 'settings' }">Настройки</a>
           </li>
         </ul>
       </nav>
@@ -68,21 +68,21 @@
 
           <!-- Donation -->
           <div x-show="route === 'donation'" x-cloak>
-            <h2 class="page-heading">Donation</h2>
+            <h2 class="page-heading">Поддержка</h2>
             <div class="donation-panel surface-card">
               <p class="donation-lead">
                 Please support my work with a small donation if you can. Maintaining this mod takes a lot of dedicated
                 time.
               </p>
               <p>
-                Mimesis Player Enhancement is not a quick patch — it merges several community mods into one maintained
+                Mimesis Player Enhancement - это не быстрый патч — it merges several community mods into one maintained
                 package
                 and adds original work on top: Harmony patches across the game, this web dashboard, session statistics,
                 spawn/loot/money scaling, dungeon tweaks, and ongoing compatibility testing with new MIMESIS releases.
               </p>
               <p>
-                If you enjoy playing with it and want to say thanks, a small donation is genuinely appreciated
-                <strong>but never required</strong>.
+                Если вам нравится играть с ним и вы хотите сказать спасибо, небольшое пожертвование искренне приветствуется
+                <strong>но никогда не требуется</strong>.
               </p>
               <p class="donation-action">
                 <a class="donation-button" href="https://www.paypal.com/donate/?hosted_button_id=C2AVYKGVP9TRG"
@@ -92,7 +92,7 @@
                 </a>
               </p>
               <p class="donation-footnote">
-                The mod stays free and open source either way. Please also support the original mod authors listed in
+                Мод остается бесплатным и с открытым исходным кодом в любом случае. Please also support the original mod authors listed in
                 the
                 <a class="external-link" href="https://github.com/Kandru/mimesis-player-enhancements" target="_blank"
                   rel="noopener noreferrer">GitHub README</a>.
@@ -104,10 +104,10 @@
           <div x-show="!status.isConnected && !isOfflineRoute()" class="waiting-panel">
             <div class="waiting-card">
               <div class="spinner" role="progressbar" aria-label="Waiting for game" x-show="!apiError"></div>
-              <h2 x-text="apiError ? 'Dashboard unavailable' : 'Not connected'"></h2>
+              <h2 x-text="apiError ? 'Панель управления недоступна' : 'Не подключено'"></h2>
               <p x-text="apiError
-                ? 'Cannot reach the dashboard API. Make sure the game is running with the mod loaded.'
-                : 'Host or join a game in Mimesis first. This dashboard will connect automatically once you are in a game.'">
+                ? 'Не удается связаться с API панели управления. Убедитесь, что игра запущена с загруженным модом.'
+                : 'Сначала создайте или присоединитесь к игре в Mimesis. Эта панель управления подключится автоматически, как только вы окажетесь в игре.'">
               </p>
             </div>
           </div>
@@ -115,12 +115,12 @@
           <!-- Players -->
           <div x-show="status.isConnected && route === 'players'" x-cloak>
             <div class="page-heading-row">
-              <h2 class="page-heading">Players</h2>
+              <h2 class="page-heading">Игроки</h2>
               <span class="page-heading-count" x-show="connectedOverviewPlayers().length > 0"
-                x-text="connectedOverviewPlayers().length + ' connected'"></span>
+                x-text="connectedOverviewPlayers().length + ' подкл.'"></span>
             </div>
             <div class="empty-state" x-show="connectedOverviewPlayers().length === 0 && !pageError">
-              <p>No players connected.</p>
+              <p>Нет подключенных игроков.</p>
             </div>
             <div class="empty-state" x-show="pageError">
               <p x-text="pageError"></p>
@@ -134,25 +134,25 @@
                     <div class="player-entry-name">
                       <span class="player-entry-display-name" x-text="p.displayName"></span>
                       <span class="badge ping" :class="pingClass(p)"
-                        :title="'Connection: ' + pingLabel(p)" x-text="pingLabel(p)"></span>
-                      <a class="badge badge-link" x-show="status.isHost" :href="'#/player/' + p.steamId">Stats</a>
-                      <span class="badge host" x-show="p.isHost">Host</span>
-                      <span class="badge local" x-show="p.isLocal">You</span>
-                      <span class="badge alive" x-show="showPlayerAliveState(p) && p.isAlive">Alive</span>
-                      <span class="badge dead" x-show="showPlayerAliveState(p) && !p.isAlive">Dead</span>
-                      <span class="badge banned" x-show="p.isBanned">Banned</span>
+                        :title="'Соединение: ' + pingLabel(p)" x-text="pingLabel(p)"></span>
+                      <a class="badge badge-link" x-show="status.isHost" :href="'#/player/' + p.steamId">Стат.</a>
+                      <span class="badge host" x-show="p.isHost">Хост</span>
+                      <span class="badge local" x-show="p.isLocal">Вы</span>
+                      <span class="badge alive" x-show="showPlayerAliveState(p) && p.isAlive">Жив</span>
+                      <span class="badge dead" x-show="showPlayerAliveState(p) && !p.isAlive">Мертв</span>
+                      <span class="badge banned" x-show="p.isBanned">Забанен</span>
                       <span class="player-entry-actions"
                         x-show="status.isHost && (canModerate(p) || canRespawn(p) || canHeal(p) || p.isBanned)">
                         <button class="btn btn-outlined btn-badge" x-show="canHeal(p)"
-                          @click="moderate(p.steamId, 'heal')">Heal</button>
+                          @click="moderate(p.steamId, 'heal')">Исцелить</button>
                         <button class="btn btn-outlined btn-badge" x-show="canRespawn(p)"
-                          @click="moderate(p.steamId, 'respawn')">Respawn</button>
+                          @click="moderate(p.steamId, 'respawn')">Воскресить</button>
                         <button class="btn btn-outlined btn-badge" x-show="canModerate(p)"
-                          @click="moderate(p.steamId, 'kick')">Kick</button>
+                          @click="moderate(p.steamId, 'kick')">Кикнуть</button>
                         <button class="btn btn-danger btn-badge" x-show="canModerate(p)"
-                          @click="moderate(p.steamId, 'ban')">Ban</button>
+                          @click="moderate(p.steamId, 'ban')">Забанить</button>
                         <button class="btn btn-text btn-badge" x-show="p.isBanned"
-                          @click="moderate(p.steamId, 'unban')">Unban</button>
+                          @click="moderate(p.steamId, 'unban')">Разбанить</button>
                       </span>
                     </div>
                     <small class="player-entry-detail">
@@ -164,7 +164,7 @@
                             rel="noopener noreferrer">Steam</a>
                           <span> · </span>
                           <a class="external-link" :href="csStatsUrl(p.steamId)" target="_blank"
-                            rel="noopener noreferrer">CSStats</a>
+                            rel="noopener noreferrer">CSСтат.</a>
                         </span>
                       </template>
                     </small>
@@ -172,7 +172,7 @@
                       x-show="playerDetailLines(p).stats || showPlayerVitals(p)">
                       <span x-show="playerDetailLines(p).stats" x-text="playerDetailLines(p).stats"></span>
                       <span class="player-entry-vitals" x-show="showPlayerVitals(p) && vitalsPercent(p)">
-                        <span class="vital-bar" title="Health">
+                        <span class="vital-bar" title="Здоровье">
                           <span class="vital-bar-label">HP</span>
                           <span class="vital-bar-track">
                             <span class="vital-bar-fill health"
@@ -180,7 +180,7 @@
                             <span class="vital-bar-value" x-text="formatVitalPercent(vitalsPercent(p).health)"></span>
                           </span>
                         </span>
-                        <span class="vital-bar" title="Toxicity">
+                        <span class="vital-bar" title="Токсичность">
                           <span class="vital-bar-label">Tox</span>
                           <span class="vital-bar-track">
                             <span class="vital-bar-fill toxic"
@@ -196,7 +196,7 @@
             </div>
             <section class="players-stored-section" x-show="storedOverviewPlayers().length > 0">
               <h3 class="players-stored-title">
-                Previously connected
+                Ранее подключенные
                 <span class="players-stored-count" x-text="'(' + storedOverviewPlayers().length + ')'"></span>
               </h3>
               <div class="player-chips">
@@ -205,7 +205,7 @@
                     <a class="player-chip" :class="{ banned: p.isBanned }" :href="'#/player/' + p.steamId"
                       x-text="p.displayName"></a>
                     <button type="button" class="btn btn-text btn-compact player-chip-unban" x-show="p.isBanned"
-                      @click="moderate(p.steamId, 'unban')">Unban</button>
+                      @click="moderate(p.steamId, 'unban')">Разбанить</button>
                   </span>
                 </template>
               </div>
@@ -214,19 +214,19 @@
 
           <!-- Minimap -->
           <div x-show="status.isConnected && route === 'minimap'" x-cloak>
-            <h2 class="page-heading">Minimap</h2>
+            <h2 class="page-heading">Миникарта</h2>
             <div class="minimap-toolbar surface-card">
               <div class="minimap-toolbar-group">
-                <label class="minimap-label" for="minimap-focus">Focus player</label>
+                <label class="minimap-label" for="minimap-focus">Следить за игроком</label>
                 <select id="minimap-focus" class="settings-input settings-select minimap-select"
                   :value="resolveMinimapFocus()" @change="onMinimapFocusChange($event)">
                   <template x-for="p in minimapFocusOptions()" :key="p.steamId">
-                    <option :value="String(p.steamId)" x-text="p.displayName + (p.isLocal ? ' (you)' : '')"></option>
+                    <option :value="String(p.steamId)" x-text="p.displayName + (p.isLocal ? ' (вы)' : '')"></option>
                   </template>
                 </select>
               </div>
               <div class="minimap-toolbar-group" x-show="!isMinimapUserCentric() && minimapAreaOptions().length > 1">
-                <label class="minimap-label" for="minimap-area">Area</label>
+                <label class="minimap-label" for="minimap-area">Зона</label>
                 <select id="minimap-area" class="settings-input settings-select minimap-select"
                   :value="minimap.activeAreaId || minimapAreaId" @change="onMinimapAreaChange($event)">
                   <template x-for="area in minimapAreaOptions()" :key="area.id">
@@ -236,7 +236,7 @@
               </div>
               <label class="minimap-toggle" x-show="status.isHost">
                 <input type="checkbox" :checked="minimapShowAll" @change="onMinimapShowAllChange($event)">
-                <span>Show all alive players</span>
+                <span>Показать всех живых игроков</span>
               </label>
             </div>
             <div class="empty-state" x-show="pageError">
@@ -246,12 +246,12 @@
               <div class="minimap-meta" x-show="minimap">
                 <span class="minimap-scene" x-text="minimap?.sceneLabel || 'Session'"></span>
                 <span class="minimap-area" x-show="minimap?.activeAreaLabel" x-text="minimap?.activeAreaLabel"></span>
-                <span class="minimap-mode" x-show="isMinimapUserCentric()">Following player</span>
+                <span class="minimap-mode" x-show="isMinimapUserCentric()">Слежение за игроком</span>
               </div>
               <div class="empty-state minimap-unavailable" x-show="!minimapShowsMap()">
                 <p x-text="isMinimapUserCentric() && minimap?.layoutKind === 'dungeon'
-                  ? 'Focused player is in the tram — no map available.'
-                  : 'No map available for this scene.'"></p>
+                  ? 'Игрок в трамвае — карта недоступна.'
+                  : 'Для этой сцены нет карты.'"></p>
               </div>
               <div class="minimap-canvas-wrap" x-show="minimapShowsMap()">
                 <svg class="minimap-canvas" data-minimap-svg viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid meet"
@@ -268,7 +268,7 @@
               </template>
               <p class="minimap-hint"
                 x-show="minimapShowsMap() && minimap?.layoutKind === 'dungeon' && !minimapHasTileLayout()">
-                Dungeon layout is still generating or unavailable. Player markers will appear once positions are known.
+                Планировка подземелья всё ещё генерируется или недоступна. Маркеры игроков появятся, когда станут известны позиции.
               </p>
             </div>
           </div>
@@ -277,32 +277,32 @@
           <div x-show="status.isConnected && route === 'leaderboard'" x-cloak>
             <template x-if="!status.isHost">
               <div class="empty-state">
-                <p>Leaderboard is only available to the host.</p>
+                <p>Таблица лидеров доступна только хосту.</p>
               </div>
             </template>
             <template x-if="status.isHost">
               <div>
-                <h2 class="page-heading">Leaderboard</h2>
+                <h2 class="page-heading">Таблица лидеров</h2>
                 <div class="empty-state" x-show="pageError">
                   <p x-text="pageError"></p>
                 </div>
                 <div class="empty-state"
                   x-show="!pageError && (!leaderboard || !leaderboard.entries || leaderboard.entries.length === 0)">
-                  <p>No leaderboard data for this save slot yet.</p>
+                  <p>Пока нет данных таблицы лидеров для этого слота сохранения.</p>
                 </div>
                 <template x-if="leaderboard && leaderboard.entries && leaderboard.entries.length > 0">
                   <div>
-                    <p class="table-meta" x-text="'Updated ' + (leaderboard.updatedAtUtc || '—')"></p>
+                    <p class="table-meta" x-text="'Обновлено ' + (leaderboard.updatedAtUtc || '—')"></p>
                     <div class="table-wrap">
                       <table>
                         <thead>
                           <tr>
-                            <th>Player</th>
-                            <th>Currency</th>
-                            <th>Mimics</th>
-                            <th>Items</th>
-                            <th>D/R</th>
-                            <th>Time</th>
+                            <th>Игрок</th>
+                            <th>Валюта</th>
+                            <th>Мимики</th>
+                            <th>Предметы</th>
+                            <th>С/В</th>
+                            <th>Время</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -319,7 +319,7 @@
                         </tbody>
                       </table>
                     </div>
-                    <p class="table-caption">Highlighted rows are currently connected.</p>
+                    <p class="table-caption">Выделенные строки в настоящее время подключены.</p>
                   </div>
                 </template>
               </div>
@@ -334,7 +334,7 @@
                 <div class="minimap-embed-header">
                   <h3 class="section-title">Minimap<span class="minimap-embed-area" x-show="minimap?.activeAreaLabel"> ·
                       <span x-text="minimap?.activeAreaLabel"></span></span></h3>
-                  <a class="btn-text btn" href="#/minimap">Open full minimap</a>
+                  <a class="btn-text btn" href="#/minimap">Открыть полную миникарту</a>
                 </div>
                 <div class="minimap-canvas-wrap compact" x-show="minimapShowsMap()">
                   <svg class="minimap-canvas" data-minimap-svg viewBox="0 0 1000 1000"
@@ -343,33 +343,33 @@
               </div>
               <template x-if="!status.isHost">
                 <div class="empty-state">
-                  <p>Player statistics are only available to the host.</p>
+                  <p>Статистика игрока доступна только хосту.</p>
                 </div>
               </template>
               <template x-if="status.isHost">
                 <div>
                   <div class="loading-panel" x-show="loadingStats">
-                    <div class="spinner" role="progressbar" aria-label="Loading statistics"></div>
+                    <div class="spinner" role="progressbar" aria-label="Загрузка статистики"></div>
                   </div>
                   <div x-show="!loadingStats && pageError" class="empty-state">
                     <p x-text="pageError"></p>
                   </div>
                   <div x-show="!loadingStats && !pageError && playerStats">
-                    <a class="back-link" href="#/leaderboard">&larr; Back to leaderboard</a>
+                    <a class="back-link" href="#/leaderboard">&larr; Назад к таблице лидеров</a>
                     <div class="player-detail-header">
                       <img class="avatar" :src="avatarUrl(steamId)" alt="" @error="onAvatarError($event)">
                       <div>
                         <h2 class="page-heading player-detail-name" x-text="resolveDisplayName(steamId)"></h2>
                         <div class="player-external-links" x-show="isValidSteamId(steamId)">
                           <a class="external-link" :href="steamProfileUrl(steamId)" target="_blank"
-                            rel="noopener noreferrer">Steam profile</a>
+                            rel="noopener noreferrer">Профиль Steam</a>
                           <span> · </span>
                           <a class="external-link" :href="csStatsUrl(steamId)" target="_blank"
-                            rel="noopener noreferrer">CSStats</a>
+                            rel="noopener noreferrer">CSСтат.</a>
                         </div>
                       </div>
                     </div>
-                    <h3 class="section-title">Global</h3>
+                    <h3 class="section-title">Глобально</h3>
                     <div class="stat-grid">
                       <template x-for="card in globalStatCards" :key="card[0]">
                         <article class="stat-card">
@@ -380,7 +380,7 @@
                     </div>
                     <template x-if="sessionStatCards.length > 0">
                       <div>
-                        <h3 class="section-title">Current session</h3>
+                        <h3 class="section-title">Текущая сессия</h3>
                         <div class="stat-grid">
                           <template x-for="card in sessionStatCards" :key="card[0]">
                             <article class="stat-card">
@@ -400,12 +400,12 @@
           <!-- Global settings -->
           <div x-show="route === 'global-settings'" x-cloak>
             <div class="settings-page">
-              <h2 class="page-heading">Global Settings</h2>
+              <h2 class="page-heading">Глобальные настройки</h2>
 
               <div class="settings-search-panel surface-card">
                 <label class="settings-search-wrap">
-                  <span class="settings-search-label">Search settings</span>
-                  <input type="search" class="settings-search" placeholder="Search by name, key, or value…"
+                  <span class="settings-search-label">Поиск настроек</span>
+                  <input type="search" class="settings-search" placeholder="Поиск по имени, ключу или значению…"
                     x-model="settingsQuery" autocomplete="off" spellcheck="false" role="combobox"
                     :aria-expanded="settingsSearchOpen" aria-controls="global-settings-suggestions"
                     @input="settingsSearchOpen = true" @focus="settingsSearchOpen = true" @blur="onSettingsSearchBlur()"
@@ -430,7 +430,7 @@
               <template x-if="settingsGlobal">
                 <div class="settings-toolbar surface-card">
                   <div class="settings-path">
-                    <span class="settings-path-label">Config file</span>
+                    <span class="settings-path-label">Файл конфигурации</span>
                     <code class="settings-path-value" x-text="settingsGlobal.configPath || '—'"></code>
                   </div>
                 </div>
@@ -440,12 +440,12 @@
                 <p x-text="pageError"></p>
               </div>
               <div class="loading-panel" x-show="loadingSettings && !pageError">
-                <div class="spinner" role="progressbar" aria-label="Loading settings"></div>
+                <div class="spinner" role="progressbar" aria-label="Загрузка настроек"></div>
               </div>
 
               <div class="empty-state"
                 x-show="!loadingSettings && !pageError && settingsGlobal && filteredSections.length === 0">
-                <p x-text="settingsQuery ? 'No settings match your search.' : 'No configuration entries found.'"></p>
+                <p x-text="settingsQuery ? 'Ни одна настройка не соответствует вашему поиску.' : 'Записи конфигурации не найдены.'"></p>
               </div>
 
               <div class="settings-sections" x-show="!loadingSettings && !pageError && filteredSections.length > 0">
@@ -471,11 +471,11 @@
                               <span class="feature-toggle-thumb"></span>
                             </span>
                             <span class="feature-toggle-label"
-                              x-text="featureEnabled(section.id) ? 'On' : 'Off'"></span>
+                              x-text="featureEnabled(section.id) ? 'Вкл' : 'Выкл'"></span>
                           </button>
                         </template>
                         <span class="settings-section-count" x-show="sectionEntryCount(section.id) > 0"
-                          x-text="sectionEntryCount(section.id) + ' keys'"></span>
+                          x-text="sectionEntryCount(section.id) + ' ключей'"></span>
                       </div>
                     </header>
                     <div class="settings-entries" x-show="sectionEntryCount(section.id) > 0">
@@ -487,7 +487,7 @@
                             <div class="settings-entry-head">
                               <strong class="settings-entry-title" x-text="entry.title"></strong>
                               <span class="settings-type-pill" x-text="entry.type"></span>
-                              <span class="badge settings-hidden-badge" x-show="entry.isHidden">Hidden</span>
+                              <span class="badge settings-hidden-badge" x-show="entry.isHidden">Скрыто</span>
                             </div>
                             <p class="settings-entry-desc" x-show="entry.description" x-text="entry.description"></p>
                             <code class="settings-key" x-text="entry.key"></code>
@@ -526,7 +526,7 @@
                                 @change="onTextSettingCommit(section.id, entry, $event)">
                             </template>
                             <small class="settings-default-hint" x-show="settingDiffersFromDefault(entry)"
-                              x-text="'Default: ' + formatSettingValue({ type: entry.type, value: entry.defaultValue })"></small>
+                              x-text="'По умолчанию: ' + formatSettingValue({ type: entry.type, value: entry.defaultValue })"></small>
                           </div>
                         </article>
                       </template>
@@ -542,17 +542,17 @@
             <div>
               <template x-if="!status.isHost">
                 <div class="empty-state">
-                  <p>Settings are only available to the host.</p>
+                  <p>Настройки доступны только хосту.</p>
                 </div>
               </template>
               <template x-if="status.isHost">
                 <div class="settings-page">
-                  <h2 class="page-heading">Settings</h2>
+                  <h2 class="page-heading">Настройки</h2>
 
                   <div class="settings-search-panel surface-card" x-show="settingsSave" x-cloak>
                     <label class="settings-search-wrap">
-                      <span class="settings-search-label">Search settings</span>
-                      <input type="search" class="settings-search" placeholder="Search by name, key, or value…"
+                      <span class="settings-search-label">Поиск настроек</span>
+                      <input type="search" class="settings-search" placeholder="Поиск по имени, ключу или значению…"
                         x-model="settingsQuery" autocomplete="off" spellcheck="false" role="combobox"
                         :aria-expanded="settingsSearchOpen" aria-controls="save-settings-suggestions"
                         @input="settingsSearchOpen = true" @focus="settingsSearchOpen = true"
@@ -577,7 +577,7 @@
                   <template x-if="settingsSave">
                     <div class="settings-toolbar surface-card">
                       <div class="settings-path">
-                        <span class="settings-path-label">Override file</span>
+                        <span class="settings-path-label">Файл переопределений</span>
                         <code class="settings-path-value" x-text="settingsSave.configPath || '—'"></code>
                       </div>
                     </div>
@@ -587,12 +587,12 @@
                     <p x-text="pageError"></p>
                   </div>
                   <div class="loading-panel" x-show="loadingSettings && !pageError">
-                    <div class="spinner" role="progressbar" aria-label="Loading settings"></div>
+                    <div class="spinner" role="progressbar" aria-label="Загрузка настроек"></div>
                   </div>
 
                   <div class="empty-state"
                     x-show="!loadingSettings && !pageError && settingsSave && filteredSections.length === 0">
-                    <p x-text="settingsQuery ? 'No settings match your search.' : 'No configuration entries found.'">
+                    <p x-text="settingsQuery ? 'Ни одна настройка не соответствует вашему поиску.' : 'Записи конфигурации не найдены.'">
                     </p>
                   </div>
 
@@ -619,11 +619,11 @@
                                   <span class="feature-toggle-thumb"></span>
                                 </span>
                                 <span class="feature-toggle-label"
-                                  x-text="featureEnabled(section.id) ? 'On' : 'Off'"></span>
+                                  x-text="featureEnabled(section.id) ? 'Вкл' : 'Выкл'"></span>
                               </button>
                             </template>
                             <span class="settings-section-count" x-show="sectionEntryCount(section.id) > 0"
-                              x-text="sectionEntryCount(section.id) + ' keys'"></span>
+                              x-text="sectionEntryCount(section.id) + ' ключей'"></span>
                           </div>
                         </header>
                         <div class="settings-entries" x-show="sectionEntryCount(section.id) > 0">
@@ -636,8 +636,8 @@
                                   <strong class="settings-entry-title" x-text="entry.title"></strong>
                                   <span class="settings-type-pill" x-text="entry.type"></span>
                                   <span class="badge settings-override-badge"
-                                    x-show="entry.isOverridden">Overridden</span>
-                                  <span class="badge settings-hidden-badge" x-show="entry.isHidden">Hidden</span>
+                                    x-show="entry.isOverridden">Переопределено</span>
+                                  <span class="badge settings-hidden-badge" x-show="entry.isHidden">Скрыто</span>
                                 </div>
                                 <p class="settings-entry-desc" x-show="entry.description" x-text="entry.description">
                                 </p>
@@ -677,7 +677,7 @@
                                     @change="onTextSettingCommit(section.id, entry, $event)">
                                 </template>
                                 <small class="settings-default-hint" x-show="settingDiffersFromGlobal(entry)"
-                                  x-text="'Global: ' + formatSettingValue({ type: entry.type, value: entry.globalValue })"></small>
+                                  x-text="'Глобально: ' + formatSettingValue({ type: entry.type, value: entry.globalValue })"></small>
                               </div>
                             </article>
                           </template>

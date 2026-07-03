@@ -1,10 +1,10 @@
-const GRADE_LABELS = ['Broken', 'Terrible', 'Slow', 'Medium', 'Fine'];
+const GRADE_LABELS = ['Сломано', 'Ужасно', 'Медленно', 'Средне', 'Нормально'];
 
 function formatDuration(seconds) {
   if (!seconds) return '0m';
   const h = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);
-  return h > 0 ? h + 'h ' + m + 'm' : m + 'm';
+  return h > 0 ? h + 'ч ' + m + 'м' : m + 'м';
 }
 
 function formatCountMap(map, labelPrefix) {
@@ -144,17 +144,17 @@ document.addEventListener('alpine:init', () => {
 
     get subtitle() {
       if (this.apiError) {
-        return 'Cannot reach dashboard API';
+        return 'Не удается связаться с API панели управления';
       }
       if (!this.status.isConnected) {
         return this.status.modVersion
-          ? 'v' + this.status.modVersion + ' · Waiting for game'
-          : 'Waiting for game';
+          ? 'v' + this.status.modVersion + ' · Ожидание игры'
+          : 'Ожидание игры';
       }
       const parts = [];
       if (this.status.modVersion) parts.push('v' + this.status.modVersion);
-      parts.push(this.status.isHost ? 'Host' : 'Client');
-      if (this.status.saveSlotId >= 0) parts.push('Savegame ' + this.status.saveSlotId);
+      parts.push(this.status.isHost ? 'Хост' : 'Клиент');
+      if (this.status.saveSlotId >= 0) parts.push('Сохранение ' + this.status.saveSlotId);
       return parts.join(' · ');
     },
 
@@ -167,21 +167,21 @@ document.addEventListener('alpine:init', () => {
       if (!this.playerStats || !this.playerStats.global) return [];
       const c = (this.playerStats.global.counters || {});
       return [
-        ['Currency', c.currencyEarned ?? 0],
-        ['Mimic encounters', c.mimicEncounterCount ?? 0],
-        ['Items carried', c.itemCarryCount ?? 0],
-        ['Survival wins', c.survivalWins ?? 0],
-        ['Left behind', c.survivalLeftBehind ?? 0],
-        ['Survival deaths', c.survivalDeaths ?? 0],
-        ['Deathmatch wins', c.deathmatchWins ?? 0],
-        ['Deathmatch deaths', c.deathmatchDeaths ?? 0],
-        ['Revives', c.revives ?? 0],
-        ['Voices recorded', c.voiceEvents ?? 0],
-        ['Ally damage', c.damageToAlly ?? 0],
-        ['Connected time', formatDuration(c.totalConnectedSeconds ?? 0)],
-        ['Sessions', this.playerStats.global.sessionsCompleted ?? 0],
-        ...formatCountMap(c.monsterKillsByMasterId, 'Monster kills'),
-        ...formatCountMap(c.deathsByTrapType, 'Trap deaths'),
+        ['Валюта', c.currencyEarned ?? 0],
+        ['Встречи с мимиками', c.mimicEncounterCount ?? 0],
+        ['Перенесено предметов', c.itemCarryCount ?? 0],
+        ['Победы (выживание)', c.survivalWins ?? 0],
+        ['Оставлено позади', c.survivalLeftBehind ?? 0],
+        ['Смерти (выживание)', c.survivalDeaths ?? 0],
+        ['Победы (бой насмерть)', c.deathmatchWins ?? 0],
+        ['Смерти (бой насмерть)', c.deathmatchDeaths ?? 0],
+        ['Воскрешения', c.revives ?? 0],
+        ['Записано голосов', c.voiceEvents ?? 0],
+        ['Урон союзникам', c.damageToAlly ?? 0],
+        ['Время в игре', formatDuration(c.totalConnectedSeconds ?? 0)],
+        ['Сессии', this.playerStats.global.sessionsCompleted ?? 0],
+        ...formatCountMap(c.monsterKillsByMasterId, 'Убийства монстров'),
+        ...formatCountMap(c.deathsByTrapType, 'Смерти от ловушек'),
       ];
     },
 
@@ -190,15 +190,15 @@ document.addEventListener('alpine:init', () => {
       if (!cs || !cs.counters) return [];
       const s = cs.counters;
       return [
-        ['Currency', s.currencyEarned ?? 0],
-        ['Survival deaths', s.survivalDeaths ?? 0],
-        ['Survival wins', s.survivalWins ?? 0],
-        ['Left behind', s.survivalLeftBehind ?? 0],
-        ['Deathmatch wins', s.deathmatchWins ?? 0],
-        ['Deathmatch deaths', s.deathmatchDeaths ?? 0],
-        ['Revives', s.revives ?? 0],
-        ...formatCountMap(s.monsterKillsByMasterId, 'Monster kills'),
-        ...formatCountMap(s.deathsByTrapType, 'Trap deaths'),
+        ['Валюта', s.currencyEarned ?? 0],
+        ['Смерти (выживание)', s.survivalDeaths ?? 0],
+        ['Победы (выживание)', s.survivalWins ?? 0],
+        ['Оставлено позади', s.survivalLeftBehind ?? 0],
+        ['Победы (бой насмерть)', s.deathmatchWins ?? 0],
+        ['Смерти (бой насмерть)', s.deathmatchDeaths ?? 0],
+        ['Воскрешения', s.revives ?? 0],
+        ...formatCountMap(s.monsterKillsByMasterId, 'Убийства монстров'),
+        ...formatCountMap(s.deathsByTrapType, 'Смерти от ловушек'),
       ];
     },
 
@@ -422,10 +422,10 @@ document.addEventListener('alpine:init', () => {
 
     settingsIntro() {
       if (this.route === 'global-settings') {
-        return 'Edit global mod defaults. These apply everywhere unless overridden for the active save slot.';
+        return 'Изменение глобальных настроек мода. Они применяются везде, если не переопределены для активного слота сохранения.';
       }
       const slot = this.status.saveSlotId >= 0 ? this.status.saveSlotId : (this.settingsSave?.saveSlotId ?? '—');
-      return 'Edit settings for save slot ' + slot + '. Values matching global defaults are not stored in the save override file.';
+      return 'Изменение настроек для слота сохранения ' + slot + '. Значения, совпадающие с глобальными настройками, не сохраняются в файле переопределений сохранения.';
     },
 
     resolveDisplayName(steamId) {
@@ -450,8 +450,8 @@ document.addEventListener('alpine:init', () => {
     },
 
     pingLabel(p) {
-      if (p.isHost || (this.status.isHost && p.isLocal)) return 'Host';
-      if (p.networkGrade == null || p.networkGrade < 0) return 'Unknown';
+      if (p.isHost || (this.status.isHost && p.isLocal)) return 'Хост';
+      if (p.networkGrade == null || p.networkGrade < 0) return 'Неизвестно';
       const level = Math.max(0, Math.min(4, p.networkGrade));
       return GRADE_LABELS[level];
     },
@@ -476,7 +476,7 @@ document.addEventListener('alpine:init', () => {
       if (p.playerUid) parts.push('#' + p.playerUid);
       if (p.connectionRole) parts.push(p.connectionRole);
       if (p.connectionAddress) parts.push(p.connectionAddress);
-      parts.push(p.voiceLineCount + ' voice lines');
+      parts.push(p.voiceLineCount + ' голосовых линий');
       return parts.join(' · ');
     },
 
@@ -484,20 +484,20 @@ document.addEventListener('alpine:init', () => {
       const s = p.currentSession;
       if (!s) return '';
       const parts = [];
-      if (s.currencyEarned) parts.push(s.currencyEarned + ' currency');
+      if (s.currencyEarned) parts.push(s.currencyEarned + ' валюты');
       parts.push(
         (s.survivalWins ?? 0) + 'W/' +
         (s.survivalDeaths ?? 0) + 'D/' +
         (s.survivalLeftBehind ?? 0) + 'L'
       );
       if (s.deathmatchWins || s.deathmatchDeaths) {
-        parts.push((s.deathmatchWins ?? 0) + '/' + (s.deathmatchDeaths ?? 0) + ' DM W/D');
+        parts.push((s.deathmatchWins ?? 0) + '/' + (s.deathmatchDeaths ?? 0) + ' БН П/С');
       }
-      if (s.revives) parts.push(s.revives + ' revives');
+      if (s.revives) parts.push(s.revives + ' воскр.');
       if (s.totalConnectedSeconds) parts.push(formatDuration(s.totalConnectedSeconds));
-      if (s.mimicEncounterCount) parts.push(s.mimicEncounterCount + ' mimics');
-      if (s.itemCarryCount) parts.push(s.itemCarryCount + ' items');
-      if (s.damageToAlly) parts.push(s.damageToAlly + ' ally dmg');
+      if (s.mimicEncounterCount) parts.push(s.mimicEncounterCount + ' мимиков');
+      if (s.itemCarryCount) parts.push(s.itemCarryCount + ' предм.');
+      if (s.damageToAlly) parts.push(s.damageToAlly + ' урона союзникам');
       return parts.join(' · ');
     },
 
@@ -602,10 +602,10 @@ document.addEventListener('alpine:init', () => {
     },
 
     async moderate(steamId, action) {
-      if (!confirm('Confirm ' + action + ' for player ' + steamId + '?')) return;
+      if (!confirm('Подтвердите действие ' + action + ' для игрока ' + steamId + '?')) return;
       try {
         const res = await Api.postAction(steamId, action);
-        this.showToast(res.message || 'Done');
+        this.showToast(res.message || 'Готово');
       } catch (e) {
         this.showToast(e.message);
       }
@@ -747,7 +747,7 @@ document.addEventListener('alpine:init', () => {
     formatSettingValue(entry) {
       const value = entry.value;
       if (entry.type === 'Boolean') {
-        return parseBool(value) ? 'On' : 'Off';
+        return parseBool(value) ? 'Вкл' : 'Выкл';
       }
       if (value == null || value === '') return '—';
       return String(value);
